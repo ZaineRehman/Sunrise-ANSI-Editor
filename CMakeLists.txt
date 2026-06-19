@@ -11,6 +11,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 add_executable(Sunrise_ANSI_Editor 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/output.cpp
 )
 
 target_include_directories(Sunrise_ANSI_Editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
