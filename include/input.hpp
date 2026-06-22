@@ -21,7 +21,7 @@ enum class Key {
 
 #else
 
-// gets the keyboard handler by 
+// gets the keyboard handler by searching through INPUT_DEVICE_SEARCH_PATH until it finds the first keyboard device
 std::string getKeyboardHandler();
 
 #endif
@@ -35,19 +35,20 @@ extern std::atomic<int> KEY2;
 extern std::atomic<int> KEY3;
 extern std::atomic<bool> INPUT_THREAD_RUNNING;
 
-// 
+// input function for when INPUT_SAFE_MODE is true
+// supposed to be threaded but ig you dont have to
 void inputHelper();
 
-// 
+// you will never fucking guess what this does
 void setKeyStatesOff(std::unordered_map<Key,bool>& keyStates);
 
-// 
+// INPUT_SAFE_MODE version of updateKeyStates
 void updateKeyStates_SAFE(std::unordered_map<Key,bool>& keyStates);
 
 
 
-// 
-void updateKeyStates();
+// updates the key states, $0.34 is charged to your bank account for each function call
+void updateKeyStates(std::unordered_map<Key,bool>& keyStates, int keyChecker);
 
-// 
+// for debugging, call it and find out what it does
 std::string getActiveKeys(std::unordered_map<Key,bool>& keyStates);

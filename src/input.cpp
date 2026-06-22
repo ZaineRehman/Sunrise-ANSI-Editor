@@ -7,9 +7,13 @@
 #include "settings.hpp"
 
 #ifdef _WIN32
+#else
+	#include <unistd.h>
+	#include <linux/input.h>
+#endif
 
 
-
+#ifdef _WIN32
 #else
 
 std::string getKeyboardHandler() {
@@ -145,10 +149,8 @@ void setKeyStatesOff(std::unordered_map<Key,bool>& keyStates) {
 	}
 }
 
-void updateKeyStates() {
-	#ifdef INPUT_SAFE_MODE
-		return
-	#endif
+void updateKeyStates(std::unordered_map<Key,bool>& keyStates, int keyChecker) {
+	if (INPUT_SAFE_MODE) return;
 	#ifdef _WIN32
 		
 	#else

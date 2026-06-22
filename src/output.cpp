@@ -11,8 +11,31 @@
 	#include <windows.h>
 #else
 	#include <unistd.h>
+	#include <sys/ioctl.h>
 #endif
 
+
+std::pair<int,int> getTerminalDimensions() {
+	#ifdef _WIN32
+		CONSOLE_SCREEN_BUFFER_INFO info;
+		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+		if (GetConsoleScreenBufferInfo(hstdout, &info)) {
+			return std::make_pair<int,int>(info.srWindow.Right-info.srWindow.Left+1, info.srWindow.Bottom-info.srWindow.Top+1);
+		} else {
+			std::cerr << "ERR: could not find terminal dimensions" << std::endl;
+			while (1);
+		}
+	#else
+		struct winsize w;
+		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+			return std::make_pair<int,int>(w.ws_col,w.ws_row);
+		} else {
+			std::cerr << "ERR: could not find terminal dimensions" << std::endl;
+			while (1);
+		}
+	#endif
+}
 
 void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
 	#ifdef SAFE_ASSERTIONS
@@ -53,6 +76,12 @@ void Renderer::clear(const Cell& replacement) {
 			buffer[y*width + x] = replacement;
 		}
 	}
+}
+
+void Renderer::resize(int _width, int _height) {
+	width = _width;
+	height = _height;
+	buffer.resize(width*height, Cell{".",""});
 }
 
 

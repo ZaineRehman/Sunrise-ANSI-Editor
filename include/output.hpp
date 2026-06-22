@@ -5,11 +5,18 @@
 #include <vector>
 
 
+// returns the width and height of the terminal (width, height)
+std::pair<int,int> getTerminalDimensions();
+
+
+// contains a "character" and "color" string
+// do NOT put more than 1 character in 'ch' (you WILL be found)
 struct Cell {
 	std::string ch;
 	std::string color;
 };
 
+// renders.
 class Renderer {
 private:
 	uint32_t width, height;
@@ -24,6 +31,8 @@ public:
 	void render() const;
 
 	void clear(const Cell& replacement = Cell{" ",""});
+
+	void resize(int width, int height);
 };
 
 
