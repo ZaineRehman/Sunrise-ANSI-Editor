@@ -44,7 +44,19 @@ void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
 	#else
 		assert(x < width && y < height);
 	#endif
+
 	buffer[y*width + x] = cell;
+}
+
+Cell Renderer::get(uint32_t x, uint32_t y) const {
+	#ifdef SAFE_ASSERTIONS
+		if (x >= width) x = width;
+		if (y >= height) y = height;
+	#else
+		assert(x < width && y < height);
+	#endif
+
+	return buffer[y*width + x];
 }
 
 void Renderer::render() const {

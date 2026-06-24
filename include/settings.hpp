@@ -7,6 +7,13 @@ inline bool INPUT_SAFE_MODE = true;
 // path to search for input devices
 inline const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
+// fps
+inline float FPS = 30;
+
+
+// animation duration for cursor (seconds)
+inline float ANIM_CURSOR = 0.5;
+
 
 // screen width
 inline int SCREEN_WIDTH = 20;

@@ -28,6 +28,8 @@ public:
 
 	void put(uint32_t x, uint32_t y, const Cell& cell);
 
+	Cell get(uint32_t x, uint32_t y) const;
+
 	void render() const;
 
 	void clear(const Cell& replacement = Cell{" ",""});

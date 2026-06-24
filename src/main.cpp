@@ -3,6 +3,7 @@
 #include <csignal>
 #include <thread>
 #include <cstring>
+#include <chrono>
 
 #include "input.hpp"
 #include "output.hpp"
@@ -36,7 +37,8 @@ void signalHandler(int signal) {
 
 
 std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{" ", ""});
-int centerX = ART_WIDTH/2, centerY = ART_HEIGHT/2;
+int artGlobalX = 0, artGlobalY = 0;
+int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
 
 int main() {
@@ -90,7 +92,12 @@ int main() {
 
 	//  -- LOOP -- 
 
+	int frame = 0;
+	int cursorAnim = 0;
+
 	while (RUNNING) {
+		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
+
 		//  -- INPUTS -- 
 
 		setKeyStatesOff(keyStates);
@@ -109,6 +116,10 @@ int main() {
 			SCREEN_WIDTH = check.first - 1;
 			SCREEN_HEIGHT = check.second - 1;
 			render.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+			// also put art in center (for now)
+			artGlobalX = SCREEN_WIDTH/2 - ART_WIDTH/2;
+			artGlobalY = SCREEN_HEIGHT/2 - ART_HEIGHT/2;
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -116,12 +127,21 @@ int main() {
 				/*        SX
 				############
 				#          #
+				#    $@@@  #
 				#    @@@@  #
 				#    @@@@  #
-				#          #
 				#          #
 				############ SY
+
+				art: 4x3
+				window: 12, 7
+				top left: 5, 2
+
+				bottom right: 8, 4 global  --  top left + (art dimensions - 1)
+							: 3, 2 local  --  art dimensions - 1
 				*/
+				// screen borders
+
 				if (y == 0) {
 					if (x == 0) render.put(0, 0, Cell{"╔", ANSI::bold});
 					else if (x != SCREEN_WIDTH-1) render.put(x, 0, Cell{"═", ANSI::bold});
@@ -135,10 +155,40 @@ int main() {
 				else if (x == 0 || x == SCREEN_WIDTH-1) {
 					render.put(x, y, Cell{"║", ANSI::bold});
 				}
+
+				// cursor
+				else if (x == cursorX && y == cursorY) {
+					if (frame && cursorAnim == 2) {
+						render.put(x, y, Cell{" ", ANSI::yellow_back_bright});
+					}
+					if (cursorAnim == 0) cursorAnim = 2;
+				}
+
+				// art
+				else {
+					if (
+						x >= artGlobalX && x < artGlobalX+ART_WIDTH &&
+						y >= artGlobalY && y < artGlobalY+ART_HEIGHT
+					) {
+						// in bounds of art
+						render.put(x, y, artMapping[(y-artGlobalY)*ART_WIDTH + (x-artGlobalX)]);
+						//render.put(x, y, Cell{"!",""});
+					}
+				}
 			}
 		}
 
 		render.render();
+
+		frame++;
+		if (cursorAnim && !(frame % static_cast<int>(ANIM_CURSOR*FPS))) cursorAnim--;
+
+		double delta = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timeStart).count())/1e6;
+		if (delta < 1.0/(FPS)) {
+			std::this_thread::sleep_for(std::chrono::microseconds(
+				static_cast<int>(1e6*((1.0/(FPS)) - delta))
+			));
+		}
 	}
 
 
