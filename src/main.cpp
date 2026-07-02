@@ -35,8 +35,15 @@ void signalHandler(int signal) {
 	}
 }
 
+// inclusive
+template <typename T>
+inline void clamp(T& num, const T& lower, const T& upper) {
+	     if (num < lower) num = lower;
+	else if (num > upper) num = upper;
+}
 
-std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{" ", ""});
+
+std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{"@", ""});
 int artGlobalX = 0, artGlobalY = 0;
 int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
@@ -56,9 +63,6 @@ int main() {
 
 	// terminal raw mode
 	#ifdef _WIN32
-		if (INPUT_SAFE_MODE) {
-			std::thread(inputHelper).detach();
-		} else {}
 	#else
 		system("setterm -cursor off");
 	
@@ -82,10 +86,11 @@ int main() {
 					<< "\nErr: " << std::strerror(errno)
 					<< std::endl;
 			}
-		} else {
-			std::thread(inputHelper).detach();
 		}
 	#endif
+	if (INPUT_SAFE_MODE) {
+		std::thread(inputHelper).detach();
+	}
 
 	clear();
 
@@ -106,6 +111,14 @@ int main() {
 
 		if (keyStates[Key::ESC]) RUNNING = false;
 
+		if (keyStates[Key::LEFT])  cursorX--;
+		if (keyStates[Key::RIGHT]) cursorX++;
+		if (keyStates[Key::UP])    cursorY--;
+		if (keyStates[Key::DOWN])  cursorY++;
+
+		clamp(cursorX, 0, SCREEN_WIDTH-1);
+		clamp(cursorY, 0, SCREEN_HEIGHT-1);
+
 		//  -- RENDER --
 
 		render.clear();
@@ -120,6 +133,9 @@ int main() {
 			// also put art in center (for now)
 			artGlobalX = SCREEN_WIDTH/2 - ART_WIDTH/2;
 			artGlobalY = SCREEN_HEIGHT/2 - ART_HEIGHT/2;
+			// cursor as well
+			cursorX = artGlobalX + ART_WIDTH/2;
+			cursorY = artGlobalY + ART_HEIGHT/2;
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -155,15 +171,7 @@ int main() {
 				else if (x == 0 || x == SCREEN_WIDTH-1) {
 					render.put(x, y, Cell{"║", ANSI::bold});
 				}
-
-				// cursor
-				else if (x == cursorX && y == cursorY) {
-					if (frame && cursorAnim == 2) {
-						render.put(x, y, Cell{" ", ANSI::yellow_back_bright});
-					}
-					if (cursorAnim == 0) cursorAnim = 2;
-				}
-
+				
 				// art
 				else {
 					if (
@@ -175,6 +183,14 @@ int main() {
 						//render.put(x, y, Cell{"!",""});
 					}
 				}
+
+				// cursor
+				if (x == cursorX && y == cursorY) {
+					if (frame && cursorAnim == 2) {
+						render.edit(x, y, ANSI::yellow_back_bright);
+					}
+					if (cursorAnim == 0) cursorAnim = 2;
+				}
 			}
 		}
 
@@ -184,9 +200,9 @@ int main() {
 		if (cursorAnim && !(frame % static_cast<int>(ANIM_CURSOR*FPS))) cursorAnim--;
 
 		double delta = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timeStart).count())/1e6;
-		if (delta < 1.0/(FPS)) {
+		if (delta < static_cast<double>(1.0f/(FPS))) {
 			std::this_thread::sleep_for(std::chrono::microseconds(
-				static_cast<int>(1e6*((1.0/(FPS)) - delta))
+				static_cast<int>(1e6*(static_cast<double>((1.0f/(FPS))) - delta))
 			));
 		}
 	}

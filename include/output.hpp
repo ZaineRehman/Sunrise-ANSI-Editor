@@ -16,7 +16,7 @@ struct Cell {
 	std::string color;
 };
 
-// renders.
+// stores a screen buffer of Cells and renders them
 class Renderer {
 private:
 	uint32_t width, height;
@@ -26,14 +26,22 @@ public:
 
 	Renderer(uint32_t width, uint32_t height) : width(width), height(height), buffer(width*height, Cell{".", ""}) {}
 
+	// puts a cell onto the buffer
 	void put(uint32_t x, uint32_t y, const Cell& cell);
+	// edits a cell in the buffer
+	// col = true (default): edit color, col = false: edit char
+	void edit(uint32_t x, uint32_t y, const std::string& str, bool col = true);
 
+	// get
 	Cell get(uint32_t x, uint32_t y) const;
 
+	// renders all cells
 	void render() const;
 
+	// sets all cells to value of 'replacement'
 	void clear(const Cell& replacement = Cell{" ",""});
 
+	// resizes the cell bounds
 	void resize(int width, int height);
 };
 

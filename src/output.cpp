@@ -48,6 +48,18 @@ void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
 	buffer[y*width + x] = cell;
 }
 
+void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, bool col) {
+	#ifdef SAFE_ASSERTIONS
+		if (x >= width) x = width;
+		if (y >= height) y = height;
+	#else
+		assert(x < width && y < height);
+	#endif
+
+	if (col) buffer[y*width + x].color = str;
+	else     buffer[y*width + x].ch    = str;
+}
+
 Cell Renderer::get(uint32_t x, uint32_t y) const {
 	#ifdef SAFE_ASSERTIONS
 		if (x >= width) x = width;

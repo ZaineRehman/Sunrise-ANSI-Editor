@@ -8,11 +8,11 @@ inline bool INPUT_SAFE_MODE = true;
 inline const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
 // fps
-inline float FPS = 30;
+inline float FPS = 30.0f;
 
 
 // animation duration for cursor (seconds)
-inline float ANIM_CURSOR = 0.5;
+inline float ANIM_CURSOR = 0.5f;
 
 
 // screen width
