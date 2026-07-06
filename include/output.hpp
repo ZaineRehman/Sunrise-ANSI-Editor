@@ -16,6 +16,30 @@ struct Cell {
 	std::string color;
 };
 
+struct CellString {
+	std::vector<Cell> internal;
+
+	CellString() = default;
+	CellString(const std::string& str) {
+		for (size_t i = 0; i < str.size(); ++i) {
+			internal.push_back(Cell{std::string(1, str[i]), ""});
+		}
+	}
+	CellString(const std::string& str, const std::string& color) {
+		for (size_t i = 0; i < str.size(); ++i) {
+			internal.push_back(Cell{std::string(1, str[i]), color});
+		}
+	}
+
+	inline const Cell& operator[](std::size_t i) const noexcept {
+		return internal[i];
+	}
+
+	inline size_t size() const noexcept {
+		return internal.size();
+	}
+};
+
 // stores a screen buffer of Cells and renders them
 class Renderer {
 private:
@@ -31,6 +55,8 @@ public:
 	// edits a cell in the buffer
 	// col = true (default): edit color, col = false: edit char
 	void edit(uint32_t x, uint32_t y, const std::string& str, bool col = true);
+	// puts a string of cells onto the buffer
+	void putString(uint32_t x, uint32_t y, const CellString& str);
 
 	// get
 	Cell get(uint32_t x, uint32_t y) const;

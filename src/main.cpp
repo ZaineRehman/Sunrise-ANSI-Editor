@@ -111,10 +111,10 @@ int main() {
 
 		if (keyStates[Key::ESC]) RUNNING = false;
 
-		if (keyStates[Key::LEFT])  cursorX--;
-		if (keyStates[Key::RIGHT]) cursorX++;
-		if (keyStates[Key::UP])    cursorY--;
-		if (keyStates[Key::DOWN])  cursorY++;
+		if (keyStates[Key::LEFT])  { cursorX--; cursorAnim = 3; }
+		if (keyStates[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
+		if (keyStates[Key::UP])    { cursorY--; cursorAnim = 3; }
+		if (keyStates[Key::DOWN])  { cursorY++; cursorAnim = 3; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
@@ -133,9 +133,9 @@ int main() {
 			// also put art in center (for now)
 			artGlobalX = SCREEN_WIDTH/2 - ART_WIDTH/2;
 			artGlobalY = SCREEN_HEIGHT/2 - ART_HEIGHT/2;
-			// cursor as well
-			cursorX = artGlobalX + ART_WIDTH/2;
-			cursorY = artGlobalY + ART_HEIGHT/2;
+			// cursor as well, only if program just opened
+			if (!frame) cursorX = artGlobalX + ART_WIDTH/2;
+			if (!frame) cursorY = artGlobalY + ART_HEIGHT/2;
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -160,15 +160,23 @@ int main() {
 
 				if (y == 0) {
 					if (x == 0) render.put(0, 0, Cell{"╔", ANSI::bold});
-					else if (x != SCREEN_WIDTH-1) render.put(x, 0, Cell{"═", ANSI::bold});
-					else render.put(x, 0, Cell{"╗", ANSI::bold});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", ANSI::bold});
+					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", ANSI::bold});
+					else render.put(x, 0, Cell{"═", ANSI::bold});
+				}
+				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
+					if (x == 0) render.put(0, y, Cell{"╠",ANSI::bold});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",ANSI::bold});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", ANSI::bold});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╣",ANSI::bold});
 				}
 				else if (y == SCREEN_HEIGHT-1) {
 					if (x == 0) render.put(0, y, Cell{"╚", ANSI::bold});
-					else if (x != SCREEN_WIDTH-1) render.put(x, y, Cell{"═", ANSI::bold});
-					else render.put(x, y, Cell{"╝", ANSI::bold});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", ANSI::bold});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", ANSI::bold});
+					else render.put(x, y, Cell{"═", ANSI::bold});
 				}
-				else if (x == 0 || x == SCREEN_WIDTH-1) {
+				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
 					render.put(x, y, Cell{"║", ANSI::bold});
 				}
 				
@@ -186,11 +194,21 @@ int main() {
 
 				// cursor
 				if (x == cursorX && y == cursorY) {
-					if (frame && cursorAnim == 2) {
+					if (cursorAnim > 1) {
 						render.edit(x, y, ANSI::yellow_back_bright);
 					}
 					if (cursorAnim == 0) cursorAnim = 2;
 				}
+
+				//  -- TEXT --
+
+				// side panel
+				if (y == 1 && x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
+					render.putString(x, y, CellString("Hello!", ANSI::magenta));
+				}
+
+				// bottom panel
+				
 			}
 		}
 

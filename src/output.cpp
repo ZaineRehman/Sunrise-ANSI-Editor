@@ -60,6 +60,19 @@ void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, bool col) {
 	else     buffer[y*width + x].ch    = str;
 }
 
+void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
+	#ifdef SAFE_ASSERTIONS
+		if (x + cells.size()-1 >= width) x = width;
+		if (y + cells.size()-1 >= height) y = height;
+	#else
+		assert(x+cells.size()-1 < width && y+cells.size()-1 < height);
+	#endif
+
+	for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
+		buffer[y*width + x + i] = cells[i];
+	}
+}
+
 Cell Renderer::get(uint32_t x, uint32_t y) const {
 	#ifdef SAFE_ASSERTIONS
 		if (x >= width) x = width;
