@@ -203,12 +203,16 @@ int main() {
 				//  -- TEXT --
 
 				// side panel
-				if (y == 1 && x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
-					render.putString(x, y, CellString("Hello!", ANSI::magenta));
+				if (y == 1) {
+					if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
+						render.putString(x, y, CellString("Sunrise ANSI Editor v", ANSI::magenta));
+					}
 				}
 
 				// bottom panel
-				
+				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
+
+				}
 			}
 		}
 

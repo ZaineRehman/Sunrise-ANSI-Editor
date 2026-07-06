@@ -1,0 +1,22 @@
+	 == [[07260-UA]] ==
+- most boilerplate established
+- project set up and whatnot
+- I am simply bored at work
+	- making naming conventions is fun
+	- I have no reason to be making this a version
+- many many features to be added
+	- editing the art (this is probably important as it is the whole point of the program)
+		- ANSI mode
+		- color and character hotkeys
+		- dynamic art size
+		- MOUSE INPUT!
+	- exporting the art
+	- saving art and preferences
+	- some nice music
+	- UI finishes
+		- character selector panel
+		- color selector panel
+			- select from ANSI codes
+			- enter RGB value
+		- ANSI mode switcher
+		- so much more bruh

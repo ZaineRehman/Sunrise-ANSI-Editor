@@ -31,6 +31,7 @@ debug: GCC_FLAGS += -g -Wall -Wextra -Wpedantic -march=native
 debug: build
 
 release: CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
+release: BUILD_FLAGS += --config Release
 release: GCC_FLAGS += -O2 -march=native -DNDEBUG -s
 release: build
 ifeq ($(OS), Windows_NT)
@@ -46,6 +47,9 @@ ifeq ($(OS), Windows_NT)
 else
 	mkdir -p build  &&  cd build  &&  cmake $(CONFIG_FLAGS) -DCMAKE_CXX_FLAGS="$(GCC_FLAGS)" ..  &&  cmake --build . $(BUILD_FLAGS)
 endif
+
+package: 
+	cd build && cpack
 
 clean: 
 ifeq ($(OS), Windows_NT)
