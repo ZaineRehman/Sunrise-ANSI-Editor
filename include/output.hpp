@@ -9,11 +9,12 @@
 std::pair<int,int> getTerminalDimensions();
 
 
-// contains a "character" and "color" string
+// contains strings for a character along with 2 color strings (fore/back)
 // do NOT put more than 1 character in 'ch' (you WILL be found)
 struct Cell {
 	std::string ch;
-	std::string color;
+	std::string color_fore;
+	std::string color_back;
 };
 
 struct CellString {
@@ -22,22 +23,18 @@ struct CellString {
 	CellString() = default;
 	CellString(const std::string& str) {
 		for (size_t i = 0; i < str.size(); ++i) {
-			internal.push_back(Cell{std::string(1, str[i]), ""});
+			internal.push_back(Cell{std::string(1, str[i]), "", ""});
 		}
 	}
 	CellString(const std::string& str, const std::string& color) {
 		for (size_t i = 0; i < str.size(); ++i) {
-			internal.push_back(Cell{std::string(1, str[i]), color});
+			internal.push_back(Cell{std::string(1, str[i]), color, ""});
 		}
 	}
 
-	inline const Cell& operator[](std::size_t i) const noexcept {
-		return internal[i];
-	}
+	inline const Cell& operator[](std::size_t i) const noexcept;
 
-	inline size_t size() const noexcept {
-		return internal.size();
-	}
+	inline size_t size() const noexcept;
 };
 
 // stores a screen buffer of Cells and renders them
@@ -48,13 +45,13 @@ private:
 public: 
 	std::vector<Cell> buffer {};
 
-	Renderer(uint32_t width, uint32_t height) : width(width), height(height), buffer(width*height, Cell{".", ""}) {}
+	Renderer(uint32_t width, uint32_t height) : width(width), height(height), buffer(width*height, Cell{".", "", ""}) {}
 
 	// puts a cell onto the buffer
 	void put(uint32_t x, uint32_t y, const Cell& cell);
 	// edits a cell in the buffer
-	// col = true (default): edit color, col = false: edit char
-	void edit(uint32_t x, uint32_t y, const std::string& str, bool col = true);
+	// col = 0 (default): edit foreground color,  col = 1: edit background color,  col = 2: edit character
+	void edit(uint32_t x, uint32_t y, const std::string& str, char col = 0);
 	// puts a string of cells onto the buffer
 	void putString(uint32_t x, uint32_t y, const CellString& str);
 
@@ -65,7 +62,7 @@ public:
 	void render() const;
 
 	// sets all cells to value of 'replacement'
-	void clear(const Cell& replacement = Cell{" ",""});
+	void clear(const Cell& replacement = Cell{" ","", ""});
 
 	// resizes the cell bounds
 	void resize(int width, int height);

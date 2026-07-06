@@ -42,8 +42,12 @@ inline void clamp(T& num, const T& lower, const T& upper) {
 	else if (num > upper) num = upper;
 }
 
+std::string concat(const std::string& str1, const char* str2) {
+	return str1 + str2;
+}
 
-std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{"@", ""});
+
+std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{"@", "", ""});
 int artGlobalX = 0, artGlobalY = 0;
 int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
@@ -94,6 +98,25 @@ int main() {
 
 	clear();
 
+	//  -- PRE CALCULATED STUFF -- 
+
+	CellString sunriseAnsi {concat("Sunrise ANSI Editor   v", VERSION)};
+
+	float r = 255.0f, g = 230.0f, b = 0.0f;
+	for (size_t i = 0; i < sunriseAnsi.size(); ++i) {
+		// start = 255, 230, 0
+		// end   = 145, 225, 255
+		sunriseAnsi.internal[i].color_fore = ANSI::Color_24bit::makeColor(
+			static_cast<uint8_t>(r), 
+			static_cast<uint8_t>(g), 
+			static_cast<uint8_t>(b), 
+			false
+		);
+		r -= (255.0f - 145.0f) / static_cast<float>(sunriseAnsi.size());
+		g -= (230.0f - 225.0f) / static_cast<float>(sunriseAnsi.size());
+		b -=   (0.0f - 255.0f) / static_cast<float>(sunriseAnsi.size());
+	}
+
 
 	//  -- LOOP -- 
 
@@ -115,6 +138,8 @@ int main() {
 		if (keyStates[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
 		if (keyStates[Key::UP])    { cursorY--; cursorAnim = 3; }
 		if (keyStates[Key::DOWN])  { cursorY++; cursorAnim = 3; }
+
+		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { artMapping[cursorY*ART_WIDTH + cursorX].ch = HOTKEY_CHAR_1; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
@@ -159,25 +184,25 @@ int main() {
 				// screen borders
 
 				if (y == 0) {
-					if (x == 0) render.put(0, 0, Cell{"╔", ANSI::bold});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", ANSI::bold});
-					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", ANSI::bold});
-					else render.put(x, 0, Cell{"═", ANSI::bold});
+					if (x == 0) render.put(0, 0, Cell{"╔", ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", ANSI::bold, ""});
+					else render.put(x, 0, Cell{"═", ANSI::bold, ""});
 				}
 				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-					if (x == 0) render.put(0, y, Cell{"╠",ANSI::bold});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",ANSI::bold});
-					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", ANSI::bold});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╣",ANSI::bold});
+					if (x == 0) render.put(0, y, Cell{"╠",ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",ANSI::bold, ""});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╣",ANSI::bold, ""});
 				}
 				else if (y == SCREEN_HEIGHT-1) {
-					if (x == 0) render.put(0, y, Cell{"╚", ANSI::bold});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", ANSI::bold});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", ANSI::bold});
-					else render.put(x, y, Cell{"═", ANSI::bold});
+					if (x == 0) render.put(0, y, Cell{"╚", ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", ANSI::bold, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", ANSI::bold, ""});
+					else render.put(x, y, Cell{"═", ANSI::bold, ""});
 				}
 				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
-					render.put(x, y, Cell{"║", ANSI::bold});
+					render.put(x, y, Cell{"║", ANSI::bold, ""});
 				}
 				
 				// art
@@ -188,14 +213,14 @@ int main() {
 					) {
 						// in bounds of art
 						render.put(x, y, artMapping[(y-artGlobalY)*ART_WIDTH + (x-artGlobalX)]);
-						//render.put(x, y, Cell{"!",""});
+						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
 				}
 
 				// cursor
 				if (x == cursorX && y == cursorY) {
 					if (cursorAnim > 1) {
-						render.edit(x, y, ANSI::yellow_back_bright);
+						render.edit(x, y, ANSI::yellow_back_bright, 2);
 					}
 					if (cursorAnim == 0) cursorAnim = 2;
 				}
@@ -205,13 +230,17 @@ int main() {
 				// side panel
 				if (y == 1) {
 					if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
-						render.putString(x, y, CellString("Sunrise ANSI Editor v", ANSI::magenta));
+						render.putString(x, y, sunriseAnsi);
 					}
 				}
 
 				// bottom panel
-				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-
+				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1) {
+					if (x == 2) {
+						render.putString(2, y, CellString{
+							"[0-9]: characters        [Q-Y]: foreground colors        [A-H]: background colors"
+						});
+					}
 				}
 			}
 		}

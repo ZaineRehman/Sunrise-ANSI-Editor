@@ -79,59 +79,45 @@ void inputHelper() {
 void updateKeyStates_SAFE(std::unordered_map<Key,bool>& keyStates) {
 	if (KEY != -1) {
 		switch (KEY) {
+		case 48: keyStates[Key::_0] = true; break;
+		case 49: keyStates[Key::_1] = true; break;
+		case 50: keyStates[Key::_2] = true; break;
+		case 51: keyStates[Key::_3] = true; break;
+		case 52: keyStates[Key::_4] = true; break;
+		case 53: keyStates[Key::_5] = true; break;
+		case 54: keyStates[Key::_6] = true; break;
+		case 55: keyStates[Key::_7] = true; break;
+		case 56: keyStates[Key::_8] = true; break;
+		case 57: keyStates[Key::_9] = true; break;
+
+		case 58: keyStates[Key::SEMICOLON] = true; break;
+		
+		case 97:  keyStates[Key::A] = true; break;
+		case 100: keyStates[Key::D] = true; break;
+		case 115: keyStates[Key::S] = true; break;
+		case 119: keyStates[Key::W] = true; break;
+
 		case 27:
 			switch (KEY2) {
-			case 27:
-				// escape
-				keyStates[Key::ESC] = true;
-				break;
+			case 27: keyStates[Key::ESC] = true; break;
 				
 			case 91:
-				// up down right left
 				switch (KEY3) {
-				case 65:
-					keyStates[Key::UP] = true;
-					break;
-				case 66:
-					keyStates[Key::DOWN] = true;
-					break;
-				case 67:
-					keyStates[Key::RIGHT] = true;
-					break;
-				case 68:
-					keyStates[Key::LEFT] = true;
-					break;
+				case 65: keyStates[Key::UP]    = true; break;
+				case 66: keyStates[Key::DOWN]  = true; break;
+				case 67: keyStates[Key::RIGHT] = true; break;
+				case 68: keyStates[Key::LEFT]  = true; break;
 				}
 				break;
 			case 79:
 				switch (KEY3) {
-				case 80:
-					keyStates[Key::F1] = true;
-					break;
-				case 81:
-					keyStates[Key::F2] = true;
-					break;
-				case 82:
-					keyStates[Key::F3] = true;
-					break;
-				case 83:
-					keyStates[Key::F4] = true;
-					break;
+				case 80: keyStates[Key::F1] = true; break;
+				case 81: keyStates[Key::F2] = true; break;
+				case 82: keyStates[Key::F3] = true; break;
+				case 83: keyStates[Key::F4] = true; break;
 				}
 				break;
 			}
-			break;
-		case 119:
-			keyStates[Key::W] = true;
-			break;
-		case 97:
-			keyStates[Key::A] = true;
-			break;
-		case 115:
-			keyStates[Key::S] = true;
-			break;
-		case 100:
-			keyStates[Key::D] = true;
 			break;
 		}
 		

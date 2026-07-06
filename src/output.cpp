@@ -15,6 +15,15 @@
 #endif
 
 
+
+inline const Cell& CellString::operator[](std::size_t i) const noexcept {
+	return internal[i];
+}
+inline size_t CellString::size() const noexcept {
+	return internal.size();
+}
+
+
 std::pair<int,int> getTerminalDimensions() {
 	#ifdef _WIN32
 		CONSOLE_SCREEN_BUFFER_INFO info;
@@ -48,7 +57,7 @@ void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
 	buffer[y*width + x] = cell;
 }
 
-void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, bool col) {
+void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
 	#ifdef SAFE_ASSERTIONS
 		if (x >= width) x = width;
 		if (y >= height) y = height;
@@ -56,16 +65,16 @@ void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, bool col) {
 		assert(x < width && y < height);
 	#endif
 
-	if (col) buffer[y*width + x].color = str;
-	else     buffer[y*width + x].ch    = str;
+	     if (col == 1) buffer[y*width + x].color_fore = str;
+	else if (col == 2) buffer[y*width + x].color_back = str;
+	else buffer[y*width + x].ch    = str;
 }
 
 void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
 	#ifdef SAFE_ASSERTIONS
 		if (x + cells.size()-1 >= width) x = width;
-		if (y + cells.size()-1 >= height) y = height;
 	#else
-		assert(x+cells.size()-1 < width && y+cells.size()-1 < height);
+		assert(x+cells.size()-1);
 	#endif
 
 	for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
@@ -88,12 +97,13 @@ void Renderer::render() const {
 	std::string frame = ANSI::cursor_home;
 
 	for (uint32_t y = 0; y < height; ++y) {
+		// TODO
 		//std::string prevColor;
 		for (uint32_t x = 0; x < width; ++x) {
 			Cell c = buffer[y*width + x];
-			frame += c.color + c.ch;
+			frame += c.color_fore + c.color_back + c.ch;
 
-			if (c.color.size() /*&& prevColor != c.color*/) frame += ANSI::reset;
+			if (c.color_fore.size() || c.color_back.size() /*&& prevColor != c.color*/) frame += ANSI::reset;
 			//prevColor = c.color;
 		}
 		frame += ANSI::reset + '\n';
@@ -118,7 +128,7 @@ void Renderer::clear(const Cell& replacement) {
 void Renderer::resize(int _width, int _height) {
 	width = _width;
 	height = _height;
-	buffer.resize(width*height, Cell{".",""});
+	buffer.resize(width*height, Cell{".","", ""});
 }
 
 

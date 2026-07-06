@@ -22,7 +22,7 @@
  * 		B = beta (most/all features implemented, needs refining)
  * 		W = working (all planned features implemented and working well)
 **/
-constexpr const char* VERSION = "07260-UA";
+constexpr const char* VERSION = "07261-UA";
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
 inline bool INPUT_SAFE_MODE = true;
@@ -53,7 +53,7 @@ inline bool ART_IS_ASCII = false;
 
 
 // size of side panel
-constexpr int PANEL_SIZE = 30;
+constexpr int PANEL_SIZE = 40;
 
 // size of bottom panel
 constexpr int BOTTOM_PANEL_SIZE = 2;
