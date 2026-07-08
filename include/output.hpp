@@ -32,9 +32,12 @@ struct CellString {
 		}
 	}
 
-	inline const Cell& operator[](std::size_t i) const noexcept;
-
-	inline size_t size() const noexcept;
+	inline const Cell& operator[](std::size_t i) const noexcept {
+		return internal[i];
+	}
+	inline size_t size() const noexcept {
+		return internal.size();
+	}
 };
 
 // stores a screen buffer of Cells and renders them
@@ -196,6 +199,10 @@ namespace ANSI {
 		// creates a color code using the 8-bit ANSI code formula: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
 		// values should be between 0-5 (inclusive)
 		std::string makeColor(int r, int g, int b, bool background = false);
+
+		// creates the color code from the actual code value
+		// https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit:~:text=hide-,256%2Dcolor%20mode,-Foreground%3A%20ESC%5B38%3B5
+		std::string makeColor(int n, bool background = false);
 
 		// creates a gray color using the 8-bit ANSI grayscale color table
 		// level value is between 1-24 (inclusive)

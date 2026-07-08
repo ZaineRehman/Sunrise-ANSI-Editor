@@ -15,15 +15,6 @@
 #endif
 
 
-
-inline const Cell& CellString::operator[](std::size_t i) const noexcept {
-	return internal[i];
-}
-inline size_t CellString::size() const noexcept {
-	return internal.size();
-}
-
-
 std::pair<int,int> getTerminalDimensions() {
 	#ifdef _WIN32
 		CONSOLE_SCREEN_BUFFER_INFO info;
@@ -246,6 +237,10 @@ namespace ANSI {
 			);
 		#endif
 		return (background ? "\033[48;5;" : "\033[38;5;") + std::to_string(16 + 36*r + 6*g + b) + "m";
+	}
+
+	std::string Color_8bit::makeColor(int n, bool background) {
+		return (background ? "\033[48;5;" : "\033[38;5;") + std::to_string(n) + "m";
 	}
 
 	std::string Color_8bit::makeGray(int level, bool background) {

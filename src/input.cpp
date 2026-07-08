@@ -79,46 +79,81 @@ void inputHelper() {
 void updateKeyStates_SAFE(std::unordered_map<Key,bool>& keyStates) {
 	if (KEY != -1) {
 		switch (KEY) {
-		case 48: keyStates[Key::_0] = true; break;
-		case 49: keyStates[Key::_1] = true; break;
-		case 50: keyStates[Key::_2] = true; break;
-		case 51: keyStates[Key::_3] = true; break;
-		case 52: keyStates[Key::_4] = true; break;
-		case 53: keyStates[Key::_5] = true; break;
-		case 54: keyStates[Key::_6] = true; break;
-		case 55: keyStates[Key::_7] = true; break;
-		case 56: keyStates[Key::_8] = true; break;
-		case 57: keyStates[Key::_9] = true; break;
+			case 32: keyStates[Key::SPACE]   = true; break;
+			//case 42: keyStates[Key::KP_MUL]  = true; break;
+			//case 43: keyStates[Key::KP_PLUS] = true; break;
+			case 44: keyStates[Key::COMMA]   = true; break;
+			case 45: keyStates[Key::DASH]    = true; break;
+			case 46: keyStates[Key::PERIOD]  = true; break;
+			case 47: keyStates[Key::SLASH]   = true; break;
 
-		case 58: keyStates[Key::SEMICOLON] = true; break;
-		
-		case 97:  keyStates[Key::A] = true; break;
-		case 100: keyStates[Key::D] = true; break;
-		case 115: keyStates[Key::S] = true; break;
-		case 119: keyStates[Key::W] = true; break;
+			case 48: keyStates[Key::_0] = true; break;
+			case 49: keyStates[Key::_1] = true; break;
+			case 50: keyStates[Key::_2] = true; break;
+			case 51: keyStates[Key::_3] = true; break;
+			case 52: keyStates[Key::_4] = true; break;
+			case 53: keyStates[Key::_5] = true; break;
+			case 54: keyStates[Key::_6] = true; break;
+			case 55: keyStates[Key::_7] = true; break;
+			case 56: keyStates[Key::_8] = true; break;
+			case 57: keyStates[Key::_9] = true; break;
 
-		case 27:
-			switch (KEY2) {
-			case 27: keyStates[Key::ESC] = true; break;
-				
-			case 91:
-				switch (KEY3) {
-				case 65: keyStates[Key::UP]    = true; break;
-				case 66: keyStates[Key::DOWN]  = true; break;
-				case 67: keyStates[Key::RIGHT] = true; break;
-				case 68: keyStates[Key::LEFT]  = true; break;
+			case 59: keyStates[Key::SEMICOLON] = true; break;
+			case 61: keyStates[Key::EQUALS]    = true; break;
+			case 91: keyStates[Key::LBRACKET]  = true; break;
+			case 92: keyStates[Key::BSLASH]    = true; break;
+			case 93: keyStates[Key::RBRACKET]  = true; break;
+			case 96: keyStates[Key::TICK]      = true; break;
+			
+			case 97:  keyStates[Key::A] = true; break;
+			case 98:  keyStates[Key::B] = true; break;
+			case 99:  keyStates[Key::C] = true; break;
+			case 100: keyStates[Key::D] = true; break;
+			case 101: keyStates[Key::E] = true; break;
+			case 102: keyStates[Key::F] = true; break;
+			case 103: keyStates[Key::G] = true; break;
+			case 104: keyStates[Key::H] = true; break;
+			case 105: keyStates[Key::I] = true; break;
+			case 106: keyStates[Key::J] = true; break;
+			case 107: keyStates[Key::K] = true; break;
+			case 108: keyStates[Key::L] = true; break;
+			case 109: keyStates[Key::M] = true; break;
+			case 110: keyStates[Key::N] = true; break;
+			case 111: keyStates[Key::O] = true; break;
+			case 112: keyStates[Key::P] = true; break;
+			case 113: keyStates[Key::Q] = true; break;
+			case 114: keyStates[Key::R] = true; break;
+			case 115: keyStates[Key::S] = true; break;
+			case 116: keyStates[Key::T] = true; break;
+			case 117: keyStates[Key::U] = true; break;
+			case 118: keyStates[Key::V] = true; break;
+			case 119: keyStates[Key::W] = true; break;
+			case 120: keyStates[Key::X] = true; break;
+			case 121: keyStates[Key::Y] = true; break;
+			case 122: keyStates[Key::Z] = true; break;
+
+			case 27:
+				switch (KEY2) {
+					case 27: keyStates[Key::ESC] = true; break;
+					
+					case 91:
+						switch (KEY3) {
+							case 65: keyStates[Key::UP]    = true; break;
+							case 66: keyStates[Key::DOWN]  = true; break;
+							case 67: keyStates[Key::RIGHT] = true; break;
+							case 68: keyStates[Key::LEFT]  = true; break;
+						}
+						break;
+				case 79:
+					switch (KEY3) {
+							case 80: keyStates[Key::F1] = true; break;
+							case 81: keyStates[Key::F2] = true; break;
+							case 82: keyStates[Key::F3] = true; break;
+							case 83: keyStates[Key::F4] = true; break;
+						}
+						break;
 				}
 				break;
-			case 79:
-				switch (KEY3) {
-				case 80: keyStates[Key::F1] = true; break;
-				case 81: keyStates[Key::F2] = true; break;
-				case 82: keyStates[Key::F3] = true; break;
-				case 83: keyStates[Key::F4] = true; break;
-				}
-				break;
-			}
-			break;
 		}
 		
 		KEY = -1;
@@ -158,7 +193,7 @@ void updateKeyStates(std::unordered_map<Key,bool>& keyStates, int keyChecker) {
 	#endif
 }
 
-std::string getActiveKeys(std::unordered_map<Key,bool>& keyStates) {
+/*std::string getActiveKeys(std::unordered_map<Key,bool>& keyStates) {
 	std::string activeKeys = "";
 
 	if (keyStates[Key::F1]) activeKeys += "[F1] ";
@@ -175,4 +210,4 @@ std::string getActiveKeys(std::unordered_map<Key,bool>& keyStates) {
 	if (keyStates[Key::D]) activeKeys += "[D] ";
 
 	return activeKeys;
-}
+}*/

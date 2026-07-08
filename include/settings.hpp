@@ -8,7 +8,7 @@
  * 
  * date: [month][year (2 digits)]
  * 
- * minor: for multiple versions on the same day
+ * minor: for multiple versions in the same month
  * 
  * program conditions: 
  * 		N = not working (critical bug)
@@ -22,7 +22,7 @@
  * 		B = beta (most/all features implemented, needs refining)
  * 		W = working (all planned features implemented and working well)
 **/
-constexpr const char* VERSION = "07261-UA";
+constexpr const char* VERSION = "v07261-UA";
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
 inline bool INPUT_SAFE_MODE = true;
@@ -42,11 +42,6 @@ inline float ANIM_CURSOR = 0.5f;
 inline int SCREEN_WIDTH = 20;
 // screen height
 inline int SCREEN_HEIGHT = 8;
-
-// width of art
-inline int ART_WIDTH = 10;
-// height of art
-inline int ART_HEIGHT = 5;
 
 // if true, ASCII art instead of ANSI art
 inline bool ART_IS_ASCII = false;

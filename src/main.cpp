@@ -1,3 +1,5 @@
+// Zaine Rehman, 6/19/2026
+
 #include <iostream>
 #include <atomic>
 #include <csignal>
@@ -46,10 +48,35 @@ std::string concat(const std::string& str1, const char* str2) {
 	return str1 + str2;
 }
 
+class Art {
+public: 
+	std::vector<Cell> map;
+	int width, height;
+	int x, y;
 
-std::vector<Cell> artMapping (ART_WIDTH*ART_HEIGHT, Cell{"@", "", ""});
-int artGlobalX = 0, artGlobalY = 0;
+	Art() = default;
+	Art(int w, int h, const Cell& def) {
+		map.resize(w*h, def);
+	}
+};
+
+
+Art ART (20, 5, Cell{"@", "", ""});
 int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
+
+std::string colorForePalette[16] = {
+	ANSI::red, ANSI::green, ANSI::blue, ANSI::yellow, 
+	ANSI::magenta, ANSI::cyan, ANSI::white, ANSI::black, 
+	ANSI::red_bright, ANSI::green_bright, ANSI::blue_bright, ANSI::yellow_bright, 
+	ANSI::magenta_bright, ANSI::cyan_bright, ANSI::white_bright, ANSI::black_bright
+};
+std::string colorBackPalette[16] = {
+	ANSI::red_back, ANSI::green_back, ANSI::blue_back, ANSI::yellow_back, 
+	ANSI::magenta_back, ANSI::cyan_back, ANSI::white_back, ANSI::black_back, 
+	ANSI::red_back_bright, ANSI::green_back_bright, ANSI::blue_back_bright, ANSI::yellow_back_bright, 
+	ANSI::magenta_back_bright, ANSI::cyan_back_bright, ANSI::white_back_bright, ANSI::black_back_bright
+};
+int colorForeIndex = 0, colorBackIndex = 0;
 
 
 int main() {
@@ -98,11 +125,13 @@ int main() {
 
 	clear();
 
+	
+
 	//  -- PRE CALCULATED STUFF -- 
 
-	CellString sunriseAnsi {concat("Sunrise ANSI Editor   v", VERSION)};
+	CellString sunriseAnsi {concat("Sunrise ANSI Editor   ", VERSION)};
 
-	float r = 255.0f, g = 230.0f, b = 0.0f;
+	float r = 255.0f, g = 200.0f, b = 0.0f;
 	for (size_t i = 0; i < sunriseAnsi.size(); ++i) {
 		// start = 255, 230, 0
 		// end   = 145, 225, 255
@@ -113,7 +142,7 @@ int main() {
 			false
 		);
 		r -= (255.0f - 145.0f) / static_cast<float>(sunriseAnsi.size());
-		g -= (230.0f - 225.0f) / static_cast<float>(sunriseAnsi.size());
+		g -= (200.0f - 225.0f) / static_cast<float>(sunriseAnsi.size());
 		b -=   (0.0f - 255.0f) / static_cast<float>(sunriseAnsi.size());
 	}
 
@@ -128,6 +157,20 @@ int main() {
 
 		//  -- INPUTS -- 
 
+		/*
+		* [0-9]: set character
+		* 
+		* [QE/W]: change/set background color
+		* [AD/S]: change/set foreground color
+		* 
+		* 
+		* 
+		* arrows OR [UHJK]: cursor
+		* 
+		* [Z]: open character catalogue
+		* [X]: open color catalogue
+		**/
+
 		setKeyStatesOff(keyStates);
 		if (INPUT_SAFE_MODE) updateKeyStates_SAFE(keyStates);
 		else updateKeyStates(keyStates, keyChecker);
@@ -139,7 +182,16 @@ int main() {
 		if (keyStates[Key::UP])    { cursorY--; cursorAnim = 3; }
 		if (keyStates[Key::DOWN])  { cursorY++; cursorAnim = 3; }
 
-		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { artMapping[cursorY*ART_WIDTH + cursorX].ch = HOTKEY_CHAR_1; }
+		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_1; }
+		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_2; }
+		if (keyStates[Key::_3] || keyStates[Key::KP_3]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_3; }
+		if (keyStates[Key::_4] || keyStates[Key::KP_4]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_4; }
+		if (keyStates[Key::_5] || keyStates[Key::KP_5]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_5; }
+		if (keyStates[Key::_6] || keyStates[Key::KP_6]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_6; }
+		if (keyStates[Key::_7] || keyStates[Key::KP_7]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_7; }
+		if (keyStates[Key::_8] || keyStates[Key::KP_8]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_8; }
+		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_9; }
+		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { ART.map[cursorY*ART.width + cursorX].ch = HOTKEY_CHAR_0; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
@@ -156,11 +208,11 @@ int main() {
 			render.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 			// also put art in center (for now)
-			artGlobalX = SCREEN_WIDTH/2 - ART_WIDTH/2;
-			artGlobalY = SCREEN_HEIGHT/2 - ART_HEIGHT/2;
+			ART.x = SCREEN_WIDTH/2 - ART.width/2;
+			ART.y = SCREEN_HEIGHT/2 - ART.height/2;
 			// cursor as well, only if program just opened
-			if (!frame) cursorX = artGlobalX + ART_WIDTH/2;
-			if (!frame) cursorY = artGlobalY + ART_HEIGHT/2;
+			if (!frame) cursorX = ART.x + ART.width/2;
+			if (!frame) cursorY = ART.y + ART.height/2;
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -208,11 +260,11 @@ int main() {
 				// art
 				else {
 					if (
-						x >= artGlobalX && x < artGlobalX+ART_WIDTH &&
-						y >= artGlobalY && y < artGlobalY+ART_HEIGHT
+						x >= ART.x && x < ART.x+ART.width &&
+						y >= ART.y && y < ART.y+ART.height
 					) {
 						// in bounds of art
-						render.put(x, y, artMapping[(y-artGlobalY)*ART_WIDTH + (x-artGlobalX)]);
+						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
 				}
@@ -232,14 +284,20 @@ int main() {
 					if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
 						render.putString(x, y, sunriseAnsi);
 					}
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 4) {
+						render.putString(x, y, static_cast<std::string>(ART.x + ", " + ART.y));
+					}
 				}
 
 				// bottom panel
 				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1) {
 					if (x == 2) {
-						render.putString(2, y, CellString{
-							"[0-9]: characters        [Q-Y]: foreground colors        [A-H]: background colors"
-						});
+						//render.putString(2, y, CellString{
+						//	"[0-9]: characters        [Q-Y]: foreground colors        [A-H]: background colors"  // len = 81
+						//});
+						//render.putString(2+81, y, CellString{
+						//	"[←↕→]: cursor        "
+						//});
 					}
 				}
 			}
