@@ -53,6 +53,15 @@ constexpr int PANEL_SIZE = 40;
 // size of bottom panel
 constexpr int BOTTOM_PANEL_SIZE = 2;
 
+// colors in palette
+constexpr int PALETTE_SIZE = 16;
+
+// color catalogue x
+constexpr float COLOR_CATALOGUE_X = 32.0f;
+
+// color catalogue y
+constexpr float COLOR_CATALOGUE_Y = 6.0f;
+
 
 // mode of operation
 // 0 = standard, 1 = ANSI

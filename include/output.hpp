@@ -22,14 +22,13 @@ struct CellString {
 
 	CellString() = default;
 	CellString(const std::string& str) {
-		for (size_t i = 0; i < str.size(); ++i) {
-			internal.push_back(Cell{std::string(1, str[i]), "", ""});
-		}
+		append(str);
 	}
 	CellString(const std::string& str, const std::string& color) {
-		for (size_t i = 0; i < str.size(); ++i) {
-			internal.push_back(Cell{std::string(1, str[i]), color, ""});
-		}
+		append(str, color);
+	}
+	CellString(const std::string& str, const std::string& colorF, const std::string& colorB) {
+		append(str, colorF, colorB);
 	}
 
 	inline const Cell& operator[](std::size_t i) const noexcept {
@@ -37,6 +36,24 @@ struct CellString {
 	}
 	inline size_t size() const noexcept {
 		return internal.size();
+	}
+
+	inline CellString& operator+=(const std::string& str) {
+		append(str);
+		return *this;
+	}
+	inline CellString& operator+=(const Cell& str) {
+		append(str);
+		return *this;
+	}
+
+	inline void append(const std::string& str, const std::string& colorF = "", const std::string& colorB = "") {
+		for (size_t i = 0; i < str.size(); ++i) {
+			internal.push_back(Cell{std::string(1, str[i]), colorF, colorB});
+		}
+	}
+	inline void append(const Cell& cell) {
+		internal.push_back(cell);
 	}
 };
 
@@ -194,6 +211,9 @@ namespace ANSI {
 
 	const inline std::string resetUnderlineColor = "\033[59m";
 
+	// inverts a color-code string from foreground to background and vice versa
+	std::string invertColor(const std::string& code);
+
 	// selection from 8-bit color codes
 	namespace Color_8bit {
 		// creates a color code using the 8-bit ANSI code formula: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
@@ -219,7 +239,7 @@ namespace ANSI {
 	// 24-bit color codes
 	namespace Color_24bit {
 		// creates a color code with 24-bit color
-		std::string makeColor(uint8_t r, uint8_t g, uint8_t b, bool background = true);
+		std::string makeColor(uint8_t r, uint8_t g, uint8_t b, bool background = false);
 
 		// sets underline color using 24-bit color
 		std::string underlineColor(int r, int g, int b);

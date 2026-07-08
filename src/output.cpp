@@ -56,8 +56,8 @@ void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
 		assert(x < width && y < height);
 	#endif
 
-	     if (col == 1) buffer[y*width + x].color_fore = str;
-	else if (col == 2) buffer[y*width + x].color_back = str;
+	     if (col == 0) buffer[y*width + x].color_fore = str;
+	else if (col == 1) buffer[y*width + x].color_back = str;
 	else buffer[y*width + x].ch    = str;
 }
 
@@ -220,6 +220,46 @@ namespace ANSI {
 			<< ANSI::white_back_bright   << "###" << ANSI::reset << std::endl;
 	}
 
+	std::string invertColor(const std::string& code) {
+		int section = std::stoi(code.substr(2, 2));
+		// in case of 100-107
+		if (section == 10) section = std::stoi(code.substr(2,3));
+
+		// 4-bit foreground
+		if (30 <= section && section <= 37) {
+			std::string temp = code;
+			return temp.replace(2, 2, std::to_string(section+10));
+		}
+		// 4-bit background
+		if (40 <= section && section <= 47) {
+			std::string temp = code;
+			return temp.replace(2, 2, std::to_string(section-10));
+		}
+		// 4-bit foreground (bright)
+		if (90 <= section && section <= 97) {
+			std::string temp = code;
+			return temp.replace(2, 2, std::to_string(section+10));
+		}
+		// 4-bit background (bright)
+		if (100 <= section && section <= 107) {
+			std::string temp = code;
+			return temp.replace(2, 3, std::to_string(section-10));
+		}
+
+		// 8-bit, 24-bit foreground
+		if (section == 38) {
+			std::string temp = code;
+			return temp.replace(2, 2, std::to_string(section+10));
+		}
+		// 8-bit, 24-bit background
+		if (section == 48) {
+			std::string temp = code;
+			return temp.replace(2, 2, std::to_string(section-10));
+		}
+
+		// fallthrough
+		return ANSI::red_back_bright;
+	}
 
 	std::string Color_8bit::makeColor(int r, int g, int b, bool background) {
 		#ifdef SAFE_ASSERTIONS
