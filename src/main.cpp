@@ -68,12 +68,32 @@ public:
 	}
 
 	// col = 0: edit foreground color,  col = 1: edit background color,  col = 2: edit character
-	void edit(int x, int y, const std::string& str, char col) {
-		assert(x < width && y < height);
+	void edit(int _x, int _y, const std::string& str, char col) {
+		//assert(x < width && y < height);
 
-		if (!col) map[y*width + x].color_fore = str;
-		else if (col == 1) map[y*width + x].color_back = str;
-		else map[y*width + x].ch = str;
+		if (_x < 0 || _y < 0 || _x >= width || _y >= height) {
+			// out of bounds, resize art
+
+			int left = _x < 0 ? -_x : 0;
+			int right = _x >= width ? _x-width+1 : 0;
+			int up = _y < 0 ? -_y : 0;
+			int down = _y >= width ? _y-height+1 : 0;
+
+			std::cout << _x << "," << _y << ": " << left << '.' << right << '.' << up << '.' << down << std::endl;
+			resize(left, right, up, down);
+
+			// change coordinates to match
+			_x = _x - left + right;
+			_y = _y - up + down;
+
+			std::cout << "New: " << _x << ',' << _y << std::endl;
+
+			return;
+		}
+
+		     if (!col)     map[_y*width + _x].color_fore = str;
+		else if (col == 1) map[_y*width + _x].color_back = str;
+		else               map[_y*width + _x].ch = str;
 	}
 
 	inline constexpr bool inBounds(int _x, int _y) {
@@ -92,17 +112,19 @@ public:
 	void resize(int wLeft, int wRight, int hUp, int hDown) {
 		for (int i = 0; i < hUp; ++i) {
 			for (int e = 0; e < width; ++e) map.insert(map.begin(), defCell);
-		} height += hUp;
+		}
+		height += hUp; y -= hUp;
 
 		for (int i = 0; i < hDown; ++i) {
 			for (int e = 0; e < width; ++e) map.push_back(defCell);
-		} height += hDown;
+		}
+		height += hDown;
 
 		for (int i = 0; i < wLeft; ++i) {
 			for (int e = 0; e < height; ++e) {
 				map.insert(map.begin()+e*width + e, defCell);
 			}
-			width++;
+			width++; x--;
 		}
 
 		for (int i = 0; i < wRight; ++i) {
@@ -148,6 +170,25 @@ int main() {
 
 	// terminal raw mode
 	#ifdef _WIN32
+		//SetConsoleCP(437);
+		//SetConsoleOutputCP(437);
+		SetConsoleCP(65001);       
+		SetConsoleOutputCP(65001); 
+
+		HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+		HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+
+		if (hInput == INVALID_HANDLE_VALUE || hOutput == INVALID_HANDLE_VALUE) return -1;
+
+		DWORD dwOutputMode = 0;
+		GetConsoleMode(hOutput, &dwOutputMode);
+		dwOutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		SetConsoleMode(hOutput, dwOutputMode);
+
+		DWORD dwInputMode = 0;
+		GetConsoleMode(hInput, &dwInputMode);
+		dwInputMode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+		SetConsoleMode(hInput, dwInputMode);
 	#else
 		system("setterm -cursor off");
 	
@@ -274,35 +315,37 @@ int main() {
 		if (keyStates[Key::UP])    { cursorY--; cursorAnim = 3; }
 		if (keyStates[Key::DOWN])  { cursorY++; cursorAnim = 3; }
 
-		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
-		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
-		if (keyStates[Key::_3] || keyStates[Key::KP_3]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2); }
-		if (keyStates[Key::_4] || keyStates[Key::KP_4]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2); }
-		if (keyStates[Key::_5] || keyStates[Key::KP_5]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2); }
-		if (keyStates[Key::_6] || keyStates[Key::KP_6]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2); }
-		if (keyStates[Key::_7] || keyStates[Key::KP_7]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2); }
-		if (keyStates[Key::_8] || keyStates[Key::KP_8]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2); }
-		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2); }
-		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { if (ART.inBounds(cursorX, cursorY)) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2); }
+		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
+		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
+		if (keyStates[Key::_3] || keyStates[Key::KP_3]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2); }
+		if (keyStates[Key::_4] || keyStates[Key::KP_4]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2); }
+		if (keyStates[Key::_5] || keyStates[Key::KP_5]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2); }
+		if (keyStates[Key::_6] || keyStates[Key::KP_6]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2); }
+		if (keyStates[Key::_7] || keyStates[Key::KP_7]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2); }
+		if (keyStates[Key::_8] || keyStates[Key::KP_8]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2); }
+		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2); }
+		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2); }
 
 		if (keyStates[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE; }
 		if (keyStates[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE) colorForeIndex = 0; }
 		if (keyStates[Key::W]) {
-			if (ART.inBounds(cursorX, cursorY)) {
-				std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
-				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
-				cursorAnim = 1;
-			}
+			std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
+			ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
+			cursorAnim = 1;
 		}
 
 		if (keyStates[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE; }
 		if (keyStates[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
-			if (ART.inBounds(cursorX, cursorY)) {
-				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
-				cursorAnim = 1;
-			}
+			ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
+			cursorAnim = 1;
 		}
+
+		if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
+		if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
+		if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
+		if (keyStates[Key::L]) { ART.resize(0, 0, 0, 1); }
+		if (keyStates[Key::C]) { DEBUG_STR = ""; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
@@ -311,6 +354,10 @@ int main() {
 
 		render.clear();
 
+		//DEBUG_STR = std::to_string(ART.x);
+		//DEBUG_STR += ",";
+		//DEBUG_STR += std::to_string(ART.y);
+
 		std::pair<int,int> check = getTerminalDimensions();
 		if (SCREEN_WIDTH != check.first || SCREEN_HEIGHT != check.second) {
 			// minuz 1
@@ -318,12 +365,14 @@ int main() {
 			SCREEN_HEIGHT = check.second - 1;
 			render.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-			// also put art in center (for now)
-			ART.x = SCREEN_WIDTH/2 - ART.width;
-			ART.y = SCREEN_HEIGHT/2 - ART.height/2;
-			// cursor as well, only if program just opened
-			if (!frame) cursorX = ART.x + ART.width/2;
-			if (!frame) cursorY = ART.y + ART.height/2;
+			// put art in center if first time
+			if (frame < 5) {  // no, this isnt right
+				ART.x = SCREEN_WIDTH/2 - ART.width;
+				ART.y = SCREEN_HEIGHT/2 - ART.height/2;
+				// cursor as well, only if program just opened
+				if (!frame) cursorX = ART.x + ART.width/2;
+				if (!frame) cursorY = ART.y + ART.height/2;
+			}
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -372,7 +421,7 @@ int main() {
 				else {
 					if (ART.inBounds(x, y)) {
 						// in bounds of art
-						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
+						render.put(x, y, (x == ART.x && y == ART.y) ? Cell{"!", "", ANSI::cyan_back_bright} : ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
 				}
@@ -380,6 +429,7 @@ int main() {
 				// cursor
 				if (x == cursorX && y == cursorY) {
 					if (cursorAnim > 1) {
+						render.edit(x, y, ANSI::yellow_bright, 0);
 						render.edit(x, y, ANSI::yellow_back_bright, 1);
 					}
 					if (cursorAnim == 0) cursorAnim = 2;
@@ -410,6 +460,8 @@ int main() {
 						for (int c = 0; c < PALETTE_SIZE; ++c) {
 							colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
 						} colors += Cell{" ", ANSI::reset, ""};
+
+						for (int b = 0; b < DEBUG_STR.size(); ++b) colors += Cell{std::string(1, DEBUG_STR[b]), "", ""};
 
 						render.putString(2, y, colors);
 					}

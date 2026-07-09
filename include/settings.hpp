@@ -4,6 +4,32 @@
 
 
 /*
+ *  == TODO ==
+ * [ ] extend art bounds when inserting outside of range
+ * [ ] clean up main.cpp
+ * [ ] color catalogue picker
+ * [ ] character catalogue picker
+ * [ ] stop re-calculating some things every single frame
+ * [ ] export art to .ans file
+ * [ ] ANSI mode
+ * [ ] minimum screen size
+ * [ ] custom palettes
+ * [ ] music
+ * [ ] mouse input
+ * [ ] highlighting sections for copy/paste
+ * [ ] loading art from file
+ * [ ] saving preferences
+ * [ ] changing to/from input safe mode
+ * [ ] creating animations
+ * [ ] animation time delay
+ * [ ] animations to gif
+**/
+
+
+inline std::string DEBUG_STR = "";
+
+
+/*
  * [date][minor]-[program condition][dev stage]
  * 
  * date: [month][year (2 digits)]
@@ -46,9 +72,12 @@ inline int SCREEN_HEIGHT = 8;
 // if true, ASCII art instead of ANSI art
 inline bool ART_IS_ASCII = false;
 
+// if true, use HJKL instead of UHJK for arrows, vim style
+inline bool VIM_ARROWS = false;
+
 
 // size of side panel
-constexpr int PANEL_SIZE = 40;
+constexpr int PANEL_SIZE = 48;
 
 // size of bottom panel
 constexpr int BOTTOM_PANEL_SIZE = 2;
@@ -71,12 +100,12 @@ inline std::string HOTKEY_CHAR_1 = "█";
 inline std::string HOTKEY_CHAR_2 = "▓";
 inline std::string HOTKEY_CHAR_3 = "▒";
 inline std::string HOTKEY_CHAR_4 = "░";
-inline std::string HOTKEY_CHAR_5 = "▀";
-inline std::string HOTKEY_CHAR_6 = "▄";
-inline std::string HOTKEY_CHAR_7 = "▌";
-inline std::string HOTKEY_CHAR_8 = "▐";
-inline std::string HOTKEY_CHAR_9 = "■";
-inline std::string HOTKEY_CHAR_0 = "☻";
+inline std::string HOTKEY_CHAR_5 = " ";
+inline std::string HOTKEY_CHAR_6 = "▌";
+inline std::string HOTKEY_CHAR_7 = "▐";
+inline std::string HOTKEY_CHAR_8 = "▀";
+inline std::string HOTKEY_CHAR_9 = "▄";
+inline std::string HOTKEY_CHAR_0 = "■";
 
 inline std::string HOTKEY_COLOR_Q = ANSI::red;
 inline std::string HOTKEY_COLOR_A = ANSI::red_back;
