@@ -163,7 +163,6 @@ void updateKeyStates_SAFE(std::unordered_map<Key,bool>& keyStates) {
 }
 
 
-
 void setKeyStatesOff(std::unordered_map<Key,bool>& keyStates) {
 	for (const auto& [key, val] : keyStates) {
 		keyStates[key] = false;
@@ -171,7 +170,6 @@ void setKeyStatesOff(std::unordered_map<Key,bool>& keyStates) {
 }
 
 void updateKeyStates(std::unordered_map<Key,bool>& keyStates, int keyChecker) {
-	//if (INPUT_SAFE_MODE) return;
 	#ifdef _WIN32
 		
 	#else

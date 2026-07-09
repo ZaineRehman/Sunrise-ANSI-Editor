@@ -9,6 +9,8 @@ ifeq ($(OS), Windows_NT)
 	CONFIG_FLAGS += -G "MinGW Makefiles"
 endif
 
+all: debug
+
 run: run_d
 run_d: 
 ifeq ($(OS), Windows_NT)
@@ -24,15 +26,13 @@ else
 	sudo ./build/Debug/Sunrise_ANSI_Editor
 endif
 
-all: debug
-
 debug: CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Debug
 debug: GCC_FLAGS += -g -Wall -Wextra -Wpedantic -march=native
 debug: build
 
 release: CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
 release: BUILD_FLAGS += --config Release
-release: GCC_FLAGS += -O2 -march=native -DNDEBUG -s
+release: GCC_FLAGS += -O3 -march=x86-64 -DNDEBUG -s -flto -ffast-math -static-libgcc -static-libstdc++  # check on these last 2
 release: build
 ifeq ($(OS), Windows_NT)
 	cd build  &&  cpack -G ZIP

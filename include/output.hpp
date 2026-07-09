@@ -30,6 +30,7 @@ struct CellString {
 	CellString(const std::string& str, const std::string& colorF, const std::string& colorB) {
 		append(str, colorF, colorB);
 	}
+	CellString(const std::vector<Cell>& vec) : internal(vec) {}
 
 	inline const Cell& operator[](std::size_t i) const noexcept {
 		return internal[i];
@@ -46,6 +47,12 @@ struct CellString {
 		append(str);
 		return *this;
 	}
+	inline CellString& operator+=(const CellString& cellstr) {
+		for (const Cell& c : cellstr.internal) {
+			append(c);
+		}
+		return *this;
+	}
 
 	inline void append(const std::string& str, const std::string& colorF = "", const std::string& colorB = "") {
 		for (size_t i = 0; i < str.size(); ++i) {
@@ -56,6 +63,8 @@ struct CellString {
 		internal.push_back(cell);
 	}
 };
+
+int findHighestColorCode(const CellString& cells);
 
 // stores a screen buffer of Cells and renders them
 class Renderer {
@@ -210,6 +219,12 @@ namespace ANSI {
 	void colorTest();
 
 	const inline std::string resetUnderlineColor = "\033[59m";
+
+	// returns the type of color code given
+	// 4-bit: 0=foreground, 1=background, 2=foreground (bright), 3=background (bright)
+	// 8-bit: 4=foreground, 5=background
+	// 24-bit: 6=foreground, 7=background
+	int findColorType(const std::string& code);
 
 	// inverts a color-code string from foreground to background and vice versa
 	std::string invertColor(const std::string& code);

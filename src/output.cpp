@@ -38,23 +38,13 @@ std::pair<int,int> getTerminalDimensions() {
 }
 
 void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
-	#ifdef SAFE_ASSERTIONS
-		if (x >= width) x = width;
-		if (y >= height) y = height;
-	#else
-		assert(x < width && y < height);
-	#endif
+	assert(x < width && y < height);
 
 	buffer[y*width + x] = cell;
 }
 
 void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
-	#ifdef SAFE_ASSERTIONS
-		if (x >= width) x = width;
-		if (y >= height) y = height;
-	#else
-		assert(x < width && y < height);
-	#endif
+	assert(x < width && y < height);
 
 	     if (col == 0) buffer[y*width + x].color_fore = str;
 	else if (col == 1) buffer[y*width + x].color_back = str;
@@ -62,11 +52,7 @@ void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
 }
 
 void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
-	#ifdef SAFE_ASSERTIONS
-		if (x + cells.size()-1 >= width) x = width;
-	#else
-		assert(x+cells.size()-1);
-	#endif
+	assert(x+cells.size()-1);  // what the fuck is this
 
 	for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
 		buffer[y*width + x + i] = cells[i];
@@ -74,12 +60,7 @@ void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
 }
 
 Cell Renderer::get(uint32_t x, uint32_t y) const {
-	#ifdef SAFE_ASSERTIONS
-		if (x >= width) x = width;
-		if (y >= height) y = height;
-	#else
-		assert(x < width && y < height);
-	#endif
+	assert(x < width && y < height);
 
 	return buffer[y*width + x];
 }
@@ -129,6 +110,19 @@ void clear() {
 	#else
 		system("clear");
 	#endif
+}
+
+int findHighestColorCode(const CellString& cells) {
+	int highest = 0;
+	for (size_t c = 0; c < cells.size(); ++c) {
+		int type1 = ANSI::findColorType(cells[c].color_fore) + 1;
+		int type2 = ANSI::findColorType(cells[c].color_back) + 1;
+		if (type1 > highest) highest = type1;
+		if (type2 > highest) highest = type2;
+
+		if (highest == 2) break;
+	}
+	return highest;
 }
 
 
@@ -220,6 +214,34 @@ namespace ANSI {
 			<< ANSI::white_back_bright   << "###" << ANSI::reset << std::endl;
 	}
 
+	int findColorType(const std::string& code) {
+		if (!code.size() || code[0] != '\033') return -1;
+		int section = std::stoi(code.substr(2,2));
+		// in case of 100-107
+		if (section == 10) section = std::stoi(code.substr(2,3));
+
+		// 4-bit foreground
+		if (30 <= section && section <= 37) return 0;
+		// 4-bit background
+		if (40 <= section && section <= 47) return 1;
+		// 4-bit foreground (bright)
+		if (90 <= section && section <= 97) return 2;
+		// 4-bit background (bright)
+		if (100 <= section && section <= 107) return 3;
+
+		// 8-bit foreground
+		if (section == 38 && code.substr(5,1) == "5") return 4;
+		// 8-bit background
+		if (section == 48 && code.substr(5,1) == "5") return 5;
+
+		// 24-bit foreground
+		if (section == 38 && code.substr(5,1) == "2") return 6;
+		// 24-bit background
+		if (section == 48 && code.substr(5,1) == "2") return 7;
+
+		return -1;
+	}
+
 	std::string invertColor(const std::string& code) {
 		int section = std::stoi(code.substr(2, 2));
 		// in case of 100-107
@@ -262,20 +284,11 @@ namespace ANSI {
 	}
 
 	std::string Color_8bit::makeColor(int r, int g, int b, bool background) {
-		#ifdef SAFE_ASSERTIONS
-				 if (0 > r) r = 0;
-			else if (r > 5) r = 5
-				 if (0 > g) g = 0;
-			else if (g > 5) g = 5
-				 if (0 > b) b = 0;
-			else if (b > 5) b = 5
-		#else
-			assert(
-				0 <= r && r <= 5 && 
-				0 <= g && g <= 5 && 
-				0 <= b && b <= 5
-			);
-		#endif
+		assert(
+			0 <= r && r <= 5 && 
+			0 <= g && g <= 5 && 
+			0 <= b && b <= 5
+		);
 		return (background ? "\033[48;5;" : "\033[38;5;") + std::to_string(16 + 36*r + 6*g + b) + "m";
 	}
 
@@ -284,12 +297,7 @@ namespace ANSI {
 	}
 
 	std::string Color_8bit::makeGray(int level, bool background) {
-		#ifdef SAFE_ASSERTIONS
-			if (1 > level) level = 1;
-			else if (level > 24) level = 24;
-		#else
-			assert(1 <= level && level <= 24);
-		#endif
+		assert(1 <= level && level <= 24);
 		return (background ? "\033[48;5;" : "\033[38;5;") + std::to_string(231+level) + "m";
 	}
 

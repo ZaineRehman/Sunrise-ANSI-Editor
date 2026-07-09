@@ -5,8 +5,10 @@
 
 /*
  *  == TODO ==
- * [ ] extend art bounds when inserting outside of range
- * [ ] clean up main.cpp
+ * [x] extend art bounds when inserting outside of range
+ * [x] clean up main.cpp
+ * [ ] proper windows support
+ * [ ] proper linux support
  * [ ] color catalogue picker
  * [ ] character catalogue picker
  * [ ] stop re-calculating some things every single frame
@@ -23,6 +25,11 @@
  * [ ] creating animations
  * [ ] animation time delay
  * [ ] animations to gif
+ * [ ] CHECK ALL TODO COMMENTS
+ * [ ] gradient maker
+ * [ ] trim empty spaces from art
+ * [ ] downgrading color mode -> remove those codes from art
+ * [ ] finalize window sizes
 **/
 
 
@@ -50,34 +57,39 @@ inline std::string DEBUG_STR = "";
 **/
 constexpr const char* VERSION = "v07261-UA";
 
+
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
 inline bool INPUT_SAFE_MODE = true;
 
 // path to search for input devices
 inline constexpr const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
+// default background char
+inline const std::string DEFAULT_BACK = ".";
+
+
 // fps
 inline float FPS = 30.0f;
-
 
 // animation duration for cursor (seconds)
 inline float ANIM_CURSOR = 0.5f;
 
+// how often to do a more expensive analysis frame
+inline int ANALYSIS_FREQUENCY = 10; 
+
+
+// border color
+inline std::string BORDER_COLOR = ANSI::bold;
+// key highlight color
+inline std::string KEY_COLOR = ANSI::bold;
 
 // screen width
-inline int SCREEN_WIDTH = 20;
+inline int SCREEN_WIDTH = 75;
 // screen height
-inline int SCREEN_HEIGHT = 8;
-
-// if true, ASCII art instead of ANSI art
-inline bool ART_IS_ASCII = false;
-
-// if true, use HJKL instead of UHJK for arrows, vim style
-inline bool VIM_ARROWS = false;
-
+inline int SCREEN_HEIGHT = 20;
 
 // size of side panel
-constexpr int PANEL_SIZE = 48;
+constexpr int PANEL_SIZE = 40;
 
 // size of bottom panel
 constexpr int BOTTOM_PANEL_SIZE = 2;
@@ -92,9 +104,15 @@ constexpr float COLOR_CATALOGUE_X = 32.0f;
 constexpr float COLOR_CATALOGUE_Y = 6.0f;
 
 
-// mode of operation
-// 0 = standard, 1 = ANSI
-inline int MODE = 0;
+// if true, using direct keyboard inputs
+inline bool DIRECT_KEY_INPUTS = false;
+
+// if true, use HJKL instead of UHJK for arrows, vim style
+inline bool VIM_ARROWS = false;
+
+// type of color
+// 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
+inline int COLOR_MODE = 0;
 
 inline std::string HOTKEY_CHAR_1 = "█";
 inline std::string HOTKEY_CHAR_2 = "▓";

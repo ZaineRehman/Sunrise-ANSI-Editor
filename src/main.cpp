@@ -1,16 +1,15 @@
 // Zaine Rehman, 6/19/2026
 
 #include <iostream>
-#include <atomic>
 #include <csignal>
 #include <thread>
 #include <cstring>
 #include <chrono>
-#include <cassert>
 
 #include "input.hpp"
 #include "output.hpp"
 #include "settings.hpp"
+#include "lib.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -20,139 +19,6 @@
 	#include <fcntl.h>
 	#include <termios.h>
 #endif
-
-
-std::unordered_map<Key,bool> keyStates;
-int keyChecker;
-
-
-std::atomic<bool> RUNNING(true);
-
-void signalHandler(int signal) {
-	switch (signal) {
-		case SIGINT: 
-		case SIGTERM: 
-		case SIGABRT: 
-			RUNNING = false;
-			break;
-	}
-}
-
-// inclusive
-template <typename T>
-inline void clamp(T& num, const T& lower, const T& upper) {
-	     if (num < lower) num = lower;
-	else if (num > upper) num = upper;
-}
-
-std::string concat(const std::string& str1, const char* str2) {
-	return str1 + str2;
-}
-
-class Art {
-public: 
-	std::vector<Cell> map;
-	int width, height;
-	Cell defCell;
-	int x, y;
-
-	Art() = default;
-	Art(int w, int h, const Cell& def) : width(w), height(h), defCell(def) {
-		map.resize(w*h, def);
-	}
-
-	void set(int x, int y, const Cell& cell) {
-		assert(x < width && y < height);
-
-		map[y*width + x] = cell;
-	}
-
-	// col = 0: edit foreground color,  col = 1: edit background color,  col = 2: edit character
-	void edit(int _x, int _y, const std::string& str, char col) {
-		//assert(x < width && y < height);
-
-		if (_x < 0 || _y < 0 || _x >= width || _y >= height) {
-			// out of bounds, resize art
-
-			int left = _x < 0 ? -_x : 0;
-			int right = _x >= width ? _x-width+1 : 0;
-			int up = _y < 0 ? -_y : 0;
-			int down = _y >= width ? _y-height+1 : 0;
-
-			std::cout << _x << "," << _y << ": " << left << '.' << right << '.' << up << '.' << down << std::endl;
-			resize(left, right, up, down);
-
-			// change coordinates to match
-			_x = _x - left + right;
-			_y = _y - up + down;
-
-			std::cout << "New: " << _x << ',' << _y << std::endl;
-
-			return;
-		}
-
-		     if (!col)     map[_y*width + _x].color_fore = str;
-		else if (col == 1) map[_y*width + _x].color_back = str;
-		else               map[_y*width + _x].ch = str;
-	}
-
-	inline constexpr bool inBounds(int _x, int _y) {
-		return (
-			_x >= x && _x < x+width &&
-			_y >= y && _y < y+height
-		);
-	}
-
-	// global space -> art space
-	inline constexpr std::pair<int,int> toArtSpace(int _x, int _y) {
-		//assert(inBounds(x, y));
-		return std::make_pair<int,int>(_x - x, _y - y);
-	}
-
-	void resize(int wLeft, int wRight, int hUp, int hDown) {
-		for (int i = 0; i < hUp; ++i) {
-			for (int e = 0; e < width; ++e) map.insert(map.begin(), defCell);
-		}
-		height += hUp; y -= hUp;
-
-		for (int i = 0; i < hDown; ++i) {
-			for (int e = 0; e < width; ++e) map.push_back(defCell);
-		}
-		height += hDown;
-
-		for (int i = 0; i < wLeft; ++i) {
-			for (int e = 0; e < height; ++e) {
-				map.insert(map.begin()+e*width + e, defCell);
-			}
-			width++; x--;
-		}
-
-		for (int i = 0; i < wRight; ++i) {
-			for (int e = 0; e < height; ++e) {
-				map.insert(map.begin()+e*width + width + e, defCell);
-			}
-			width++;
-		}
-	}
-};
-
-
-Art ART (20, 5, Cell{"@", "", ""});
-int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
-
-std::string colorForePalette[PALETTE_SIZE] = {
-	ANSI::red, ANSI::green, ANSI::blue, ANSI::yellow, 
-	ANSI::magenta, ANSI::cyan, ANSI::white, ANSI::black, 
-	ANSI::red_bright, ANSI::green_bright, ANSI::blue_bright, ANSI::yellow_bright, 
-	ANSI::magenta_bright, ANSI::cyan_bright, ANSI::white_bright, ANSI::black_bright
-};
-std::string colorBackPalette[PALETTE_SIZE] = {
-	ANSI::red_back, ANSI::green_back, ANSI::blue_back, ANSI::yellow_back, 
-	ANSI::magenta_back, ANSI::cyan_back, ANSI::white_back, ANSI::black_back, 
-	ANSI::red_back_bright, ANSI::green_back_bright, ANSI::blue_back_bright, ANSI::yellow_back_bright, 
-	ANSI::magenta_back_bright, ANSI::cyan_back_bright, ANSI::white_back_bright, ANSI::black_back_bright
-};
-int colorForeIndex = 0, colorBackIndex = 0;
 
 
 int main() {
@@ -166,10 +32,31 @@ int main() {
 	std::signal(SIGTERM, signalHandler);
 	std::signal(SIGABRT, signalHandler);
 
+	std::unordered_map<Key,bool> keyStates;
+	int keyChecker;
+
+
+	Art ART (20, 5, Cell{DEFAULT_BACK, "", ""});
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
+	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
+
+	std::string colorForePalette[PALETTE_SIZE] = {
+		ANSI::red,     ANSI::green, ANSI::blue,  ANSI::yellow, 
+		ANSI::magenta, ANSI::cyan,  ANSI::white, ANSI::black, 
+		ANSI::red_bright,     ANSI::green_bright, ANSI::blue_bright,  ANSI::yellow_bright, 
+		ANSI::magenta_bright, ANSI::cyan_bright,  ANSI::white_bright, ANSI::black_bright
+	};
+	std::string colorBackPalette[PALETTE_SIZE] = {
+		ANSI::red_back,     ANSI::green_back, ANSI::blue_back,  ANSI::yellow_back, 
+		ANSI::magenta_back, ANSI::cyan_back,  ANSI::white_back, ANSI::black_back, 
+		ANSI::red_back_bright,     ANSI::green_back_bright, ANSI::blue_back_bright,  ANSI::yellow_back_bright, 
+		ANSI::magenta_back_bright, ANSI::cyan_back_bright,  ANSI::white_back_bright, ANSI::black_back_bright
+	};
+	int colorForeIndex = 0, colorBackIndex = 0;
 
 	// terminal raw mode
 	#ifdef _WIN32
+		// files are saved as UTF-8 so dont do this
 		//SetConsoleCP(437);
 		//SetConsoleOutputCP(437);
 		SetConsoleCP(65001);       
@@ -227,17 +114,17 @@ int main() {
 
 	float r = 255.0f, g = 200.0f, b = 0.0f;
 	for (size_t i = 0; i < sunriseAnsi.size(); ++i) {
-		// start = 255, 230, 0
-		// end   = 145, 225, 255
+		// start = 255, 230, 10
+		// end   = 135, 205, 255
 		sunriseAnsi.internal[i].color_fore = ANSI::Color_24bit::makeColor(
 			static_cast<uint8_t>(r), 
 			static_cast<uint8_t>(g), 
 			static_cast<uint8_t>(b), 
 			false
 		);
-		r -= (255.0f - 145.0f) / static_cast<float>(sunriseAnsi.size());
-		g -= (200.0f - 225.0f) / static_cast<float>(sunriseAnsi.size());
-		b -=   (0.0f - 255.0f) / static_cast<float>(sunriseAnsi.size());
+		r -= (255.0f - 135.0f) / static_cast<float>(sunriseAnsi.size());
+		g -= (200.0f - 205.0f) / static_cast<float>(sunriseAnsi.size());
+		b -=  (10.0f - 255.0f) / static_cast<float>(sunriseAnsi.size());
 	}
 
 	CellString catalogueAnsi;
@@ -282,6 +169,8 @@ int main() {
 
 	int frame = 0;
 	int cursorAnim = 0;
+	// 0 = no, 1 = colors, 2 = chars
+	char showingCatalogue = 0;
 
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
@@ -298,8 +187,8 @@ int main() {
 		* 
 		* arrows OR [UHJK]: cursor
 		* 
-		* [Z]: open character catalogue
-		* [X]: open color catalogue
+		* [[]: open character catalogue
+		* []]: open color catalogue
 		**/
 
 		setKeyStatesOff(keyStates);
@@ -326,19 +215,28 @@ int main() {
 		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2); }
 		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2); }
 
-		if (keyStates[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE; }
-		if (keyStates[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE) colorForeIndex = 0; }
+		if (keyStates[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+		if (keyStates[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
 		if (keyStates[Key::W]) {
 			std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
 			ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 			cursorAnim = 1;
 		}
 
-		if (keyStates[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE; }
-		if (keyStates[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE) colorBackIndex = 0; }
+		if (keyStates[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+		if (keyStates[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
 			ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 			cursorAnim = 1;
+		}
+
+		if (keyStates[Key::LBRACKET]) {
+			if (showingCatalogue == 1) showingCatalogue = 0;
+			else showingCatalogue = 1;
+		}
+		if (keyStates[Key::RBRACKET]) {
+			if (showingCatalogue == 2) showingCatalogue = 0;
+			else showingCatalogue = 2;
 		}
 
 		if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
@@ -351,6 +249,10 @@ int main() {
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
 
 		//  -- RENDER --
+
+		if (!((frame+1) % ANALYSIS_FREQUENCY)) {
+			COLOR_MODE = findHighestColorCode(CellString{ART.map});
+		}
 
 		render.clear();
 
@@ -396,32 +298,32 @@ int main() {
 				// screen borders
 
 				if (y == 0) {
-					if (x == 0) render.put(0, 0, Cell{"╔", ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", ANSI::bold, ""});
-					else render.put(x, 0, Cell{"═", ANSI::bold, ""});
+					if (x == 0) render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
+					else render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
 				}
 				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-					if (x == 0) render.put(0, y, Cell{"╠",ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",ANSI::bold, ""});
-					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"║",ANSI::bold, ""});
+					if (x == 0) render.put(0, y, Cell{"╠",BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",BORDER_COLOR, ""});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"║",BORDER_COLOR, ""});
 				}
 				else if (y == SCREEN_HEIGHT-1) {
-					if (x == 0) render.put(0, y, Cell{"╚", ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", ANSI::bold, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", ANSI::bold, ""});
-					else render.put(x, y, Cell{"═", ANSI::bold, ""});
+					if (x == 0) render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
+					else render.put(x, y, Cell{"═", BORDER_COLOR, ""});
 				}
 				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
-					render.put(x, y, Cell{"║", ANSI::bold, ""});
+					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
 				}
 				
 				// art
 				else {
-					if (ART.inBounds(x, y)) {
+					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE ) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
 						// in bounds of art
-						render.put(x, y, (x == ART.x && y == ART.y) ? Cell{"!", "", ANSI::cyan_back_bright} : ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
+						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
 				}
@@ -438,11 +340,70 @@ int main() {
 				//  -- TEXT --
 
 				// side panel
+				/*
+				 * [x] sunrise text
+				 * [x] char hotkeys
+				 * [ ] settings button
+				 * 		[ ] vim keys
+				 * 		[ ] music volume
+				 * 		[ ] input safe modefps
+				 * 		[ ] cursor animation
+				 * 		[ ] border color
+				 * 		[ ] key color
+				 * 		[ ] side panel size
+				 * 		[ ] bottom panel size
+				 * [ ] song name
+				 * [ ] art size
+				 * [ ] export button
+				 * [ ] copy/paste button
+				 * [ ] load from file button
+				 * [ ] animation buttons
+				 * [ ] color mode
+				 * [ ] direct key input mode
+				 * 
+				 * [ ] color catalogue
+				 * 		[ ] color mode changer
+				 * 		[ ] 4-bit code table
+				 * 		[ ] 8-bit code table
+				 * 		[ ] 8-bit code RGB picker
+				 * 		[ ] 24-bit code table
+				 * 		[ ] 24-bit code RGB picker
+				 * 
+				 * [ ] char catalogue
+				 * 		[ ] 16x16 grid
+				 * 		[ ] hotkey swapper
+				**/
 				if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
-					if (y == 1) {
-						render.putString(x, y, sunriseAnsi);
-					} else if (y == 3) {
-						
+					if (y == 1) render.putString(x, y, sunriseAnsi);
+					if (showingCatalogue == 0) {
+						if (y == 4) {
+							// this looks like shit
+							CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
+							render.putString(x, y, nums);
+						} else if (y == 5) {
+							CellString hotkeys {" "};
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
+							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
+							render.putString(x, y, hotkeys);
+						} else if (y == 7) {
+							CellString cmode {"Color mode: "};
+							     if (COLOR_MODE == 0) cmode += "NONE";
+							else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", ANSI::green , ""};
+							else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", ANSI::Color_8bit::makeColor(154) , ""};
+							else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", ANSI::Color_24bit::makeColor(45, 214, 183) , ""};
+							render.putString(x, y, cmode);
+						}
+					}
+					else if (showingCatalogue == 1) {
+						catalogueAnsi;
 					}
 				}
 
@@ -451,17 +412,34 @@ int main() {
 					if (x == 2) {
 						CellString colors;
 
-						colors += "Fore: ";
+						colors += "[";
+						colors += Cell{"Q", KEY_COLOR, ""};
+						colors += Cell{"E", KEY_COLOR, ""};
+						colors += "/";
+						colors += Cell{"W", KEY_COLOR, ""};
+						colors += "]: ";
 						for (int c = 0; c < PALETTE_SIZE; ++c) {
 							colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
-						} colors += Cell{" ", ANSI::reset, ""};
+						} colors += Cell{" ", ANSI::reset, ""};  colors += "   ";
 
-						colors += "Back: ";
+						colors += "[";
+						colors += Cell{"A", KEY_COLOR, ""};
+						colors += Cell{"D", KEY_COLOR, ""};
+						colors += "/";
+						colors += Cell{"S", KEY_COLOR, ""};
+						colors += "]: ";
 						for (int c = 0; c < PALETTE_SIZE; ++c) {
 							colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
-						} colors += Cell{" ", ANSI::reset, ""};
+						} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
 
-						for (int b = 0; b < DEBUG_STR.size(); ++b) colors += Cell{std::string(1, DEBUG_STR[b]), "", ""};
+						colors += "        [";
+						colors += Cell{"{", KEY_COLOR, ""}; 
+						colors += "]: color catalogue    [";
+						colors += Cell{"}", KEY_COLOR, ""};
+						colors += "]: char catalogue";
+
+						// TODO
+						colors += DEBUG_STR;
 
 						render.putString(2, y, colors);
 					}
@@ -489,18 +467,15 @@ int main() {
 	//clear()
 
 	#ifdef _WIN32
-		#ifdef INPUT_SAFE_MODE
-			
-		#endif
+
 	#else
-		#ifdef INPUT_SAFE_MODE
-			
-		#endif
 		system("setterm -cursor on");
 		system("stty sane");
 
 		close(keyChecker);
 	#endif
+
+	if (INPUT_SAFE_MODE) {}
 
 	return 0;
 }
