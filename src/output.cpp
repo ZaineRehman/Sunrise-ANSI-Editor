@@ -100,7 +100,7 @@ void Renderer::clear(const Cell& replacement) {
 void Renderer::resize(int _width, int _height) {
 	width = _width;
 	height = _height;
-	buffer.resize(width*height, Cell{".","", ""});
+	buffer.resize(width*height, Cell{DEFAULT_BACK,"", ""});
 }
 
 

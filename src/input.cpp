@@ -7,6 +7,7 @@
 #include "settings.hpp"
 
 #ifdef _WIN32
+	#include <windows.h>
 #else
 	#include <unistd.h>
 	#include <linux/input.h>
@@ -171,7 +172,76 @@ void setKeyStatesOff(std::unordered_map<Key,bool>& keyStates) {
 
 void updateKeyStates(std::unordered_map<Key,bool>& keyStates, int keyChecker) {
 	#ifdef _WIN32
+		if (GetAsyncKeyState('A') & 0x8000) keyStates[Key::A] = true;
+		if (GetAsyncKeyState('B') & 0x8000) keyStates[Key::B] = true;
+		if (GetAsyncKeyState('C') & 0x8000) keyStates[Key::C] = true;
+		if (GetAsyncKeyState('D') & 0x8000) keyStates[Key::D] = true;
+		if (GetAsyncKeyState('E') & 0x8000) keyStates[Key::E] = true;
+		if (GetAsyncKeyState('F') & 0x8000) keyStates[Key::F] = true;
+		if (GetAsyncKeyState('G') & 0x8000) keyStates[Key::G] = true;
+		if (GetAsyncKeyState('H') & 0x8000) keyStates[Key::H] = true;
+		if (GetAsyncKeyState('I') & 0x8000) keyStates[Key::I] = true;
+		if (GetAsyncKeyState('J') & 0x8000) keyStates[Key::J] = true;
+		if (GetAsyncKeyState('K') & 0x8000) keyStates[Key::K] = true;
+		if (GetAsyncKeyState('L') & 0x8000) keyStates[Key::L] = true;
+		if (GetAsyncKeyState('M') & 0x8000) keyStates[Key::M] = true;
+		if (GetAsyncKeyState('N') & 0x8000) keyStates[Key::N] = true;
+		if (GetAsyncKeyState('O') & 0x8000) keyStates[Key::O] = true;
+		if (GetAsyncKeyState('P') & 0x8000) keyStates[Key::P] = true;
+		if (GetAsyncKeyState('Q') & 0x8000) keyStates[Key::Q] = true;
+		if (GetAsyncKeyState('R') & 0x8000) keyStates[Key::R] = true;
+		if (GetAsyncKeyState('S') & 0x8000) keyStates[Key::S] = true;
+		if (GetAsyncKeyState('T') & 0x8000) keyStates[Key::T] = true;
+		if (GetAsyncKeyState('U') & 0x8000) keyStates[Key::U] = true;
+		if (GetAsyncKeyState('V') & 0x8000) keyStates[Key::V] = true;
+		if (GetAsyncKeyState('W') & 0x8000) keyStates[Key::W] = true;
+		if (GetAsyncKeyState('X') & 0x8000) keyStates[Key::X] = true;
+		if (GetAsyncKeyState('Y') & 0x8000) keyStates[Key::Y] = true;
+		if (GetAsyncKeyState('Z') & 0x8000) keyStates[Key::Z] = true;
 		
+		if (GetAsyncKeyState('1') & 0x8000) keyStates[Key::_1] = true;
+		if (GetAsyncKeyState('2') & 0x8000) keyStates[Key::_2] = true;
+		if (GetAsyncKeyState('3') & 0x8000) keyStates[Key::_3] = true;
+		if (GetAsyncKeyState('4') & 0x8000) keyStates[Key::_4] = true;
+		if (GetAsyncKeyState('5') & 0x8000) keyStates[Key::_5] = true;
+		if (GetAsyncKeyState('6') & 0x8000) keyStates[Key::_6] = true;
+		if (GetAsyncKeyState('7') & 0x8000) keyStates[Key::_7] = true;
+		if (GetAsyncKeyState('8') & 0x8000) keyStates[Key::_8] = true;
+		if (GetAsyncKeyState('9') & 0x8000) keyStates[Key::_9] = true;
+		if (GetAsyncKeyState('0') & 0x8000) keyStates[Key::_0] = true;
+
+		if (GetAsyncKeyState(VK_CONTROL) < 0) keyStates[Key::CTRL] = true;
+
+		if (GetAsyncKeyState(VK_NUMPAD0) < 0) keyStates[Key::KP_0] = true;
+		if (GetAsyncKeyState(VK_NUMPAD1) < 0) keyStates[Key::KP_1] = true;
+		if (GetAsyncKeyState(VK_NUMPAD2) < 0) keyStates[Key::KP_2] = true;
+		if (GetAsyncKeyState(VK_NUMPAD3) < 0) keyStates[Key::KP_3] = true;
+		if (GetAsyncKeyState(VK_NUMPAD4) < 0) keyStates[Key::KP_4] = true;
+		if (GetAsyncKeyState(VK_NUMPAD5) < 0) keyStates[Key::KP_5] = true;
+		if (GetAsyncKeyState(VK_NUMPAD6) < 0) keyStates[Key::KP_6] = true;
+		if (GetAsyncKeyState(VK_NUMPAD7) < 0) keyStates[Key::KP_7] = true;
+		if (GetAsyncKeyState(VK_NUMPAD8) < 0) keyStates[Key::KP_8] = true;
+		if (GetAsyncKeyState(VK_NUMPAD9) < 0) keyStates[Key::KP_9] = true;
+
+		if (GetAsyncKeyState(VK_MULTIPLY)  < 0) keyStates[Key::KP_MUL]  = true;
+		if (GetAsyncKeyState(VK_ADD)       < 0) keyStates[Key::KP_PLUS] = true;
+		//if (GetAsyncKeyState(VK_SEPARATOR) < 0) keyStates[Key::] = true;
+		if (GetAsyncKeyState(VK_SUBTRACT)  < 0) keyStates[Key::KP_MIN] = true;
+		if (GetAsyncKeyState(VK_DECIMAL)   < 0) keyStates[Key::KP_PER] = true;
+		if (GetAsyncKeyState(VK_DIVIDE)    < 0) keyStates[Key::KP_DIV] = true;
+
+		if (GetAsyncKeyState(VK_F1)  < 0) keyStates[Key::F1] = true;
+		if (GetAsyncKeyState(VK_F2)  < 0) keyStates[Key::F2] = true;
+		if (GetAsyncKeyState(VK_F3)  < 0) keyStates[Key::F3] = true;
+		if (GetAsyncKeyState(VK_F4)  < 0) keyStates[Key::F4] = true;
+		if (GetAsyncKeyState(VK_F5)  < 0) keyStates[Key::F5] = true;
+		if (GetAsyncKeyState(VK_F6)  < 0) keyStates[Key::F6] = true;
+		if (GetAsyncKeyState(VK_F7)  < 0) keyStates[Key::F7] = true;
+		if (GetAsyncKeyState(VK_F8)  < 0) keyStates[Key::F8] = true;
+		if (GetAsyncKeyState(VK_F9)  < 0) keyStates[Key::F9] = true;
+		if (GetAsyncKeyState(VK_F10) < 0) keyStates[Key::F10] = true;
+		if (GetAsyncKeyState(VK_F11) < 0) keyStates[Key::F11] = true;
+		if (GetAsyncKeyState(VK_F12) < 0) keyStates[Key::F12] = true;
 	#else
 		struct input_event event;
 		while (read(keyChecker, &event, sizeof(struct input_event)) > 0) {

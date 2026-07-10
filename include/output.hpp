@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "settings.hpp"
+
 
 // returns the width and height of the terminal (width, height)
 std::pair<int,int> getTerminalDimensions();
@@ -74,7 +76,7 @@ private:
 public: 
 	std::vector<Cell> buffer {};
 
-	Renderer(uint32_t width, uint32_t height) : width(width), height(height), buffer(width*height, Cell{".", "", ""}) {}
+	Renderer(uint32_t width, uint32_t height) : width(width), height(height), buffer(width*height, Cell{DEFAULT_BACK, "", ""}) {}
 
 	// puts a cell onto the buffer
 	void put(uint32_t x, uint32_t y, const Cell& cell);
@@ -91,7 +93,7 @@ public:
 	void render() const;
 
 	// sets all cells to value of 'replacement'
-	void clear(const Cell& replacement = Cell{" ","", ""});
+	void clear(const Cell& replacement = Cell{DEFAULT_BACK,"", ""});
 
 	// resizes the cell bounds
 	void resize(int width, int height);
