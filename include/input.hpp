@@ -85,7 +85,9 @@ extern std::atomic<bool> INPUT_THREAD_RUNNING;
 
 // input function for when INPUT_SAFE_MODE is true
 // supposed to be threaded but ig you dont have to
-void inputHelper();
+void safeModeInputHelper();
+
+
 
 // you will never fucking guess what this does
 void setKeyStatesOff(KeyStates& keyStates);
@@ -94,6 +96,8 @@ void setKeyStatesOff(KeyStates& keyStates);
 void updateKeyStates_SAFE(KeyStates& keyStates);
 
 
+// loops updateKeyStates
+void thread_doKeyStates(KeyStates& keyStates, int keyChecker);
 
 // updates the key states, $0.34 is charged to your bank account for each function call
 void updateKeyStates(KeyStates& keyStates, int keyChecker);

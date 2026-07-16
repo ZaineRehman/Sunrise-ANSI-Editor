@@ -84,7 +84,7 @@ std::atomic<int> KEY2(-1);
 std::atomic<int> KEY3(-1);
 std::atomic<bool> INPUT_THREAD_RUNNING(true);
 
-void inputHelper() {
+void safeModeInputHelper() {
 	while (INPUT_THREAD_RUNNING) {
 		int key = getchar();
 		// do i even need this check though
@@ -196,213 +196,68 @@ void setKeyStatesOff(KeyStates& keyStates) {
 	}
 }
 
+
+struct KeyMap {
+	int code;
+	Key key;
+};
+
+static constexpr KeyMap keyMappings[] = {
+	{'A', Key::A},  {'B', Key::B},  {'C', Key::C},  {'D', Key::D},  {'E', Key::E},  {'F', Key::F}, 
+	{'G', Key::G},  {'H', Key::H},  {'I', Key::I},  {'J', Key::J},  {'K', Key::K},  {'L', Key::L}, 
+	{'M', Key::M},  {'N', Key::N},  {'O', Key::O},  {'P', Key::P},  {'Q', Key::Q},  {'R', Key::R}, 
+	{'S', Key::S},  {'T', Key::T},  {'U', Key::U},  {'V', Key::V},  {'W', Key::W},  {'X', Key::X}, 
+	{'Y', Key::Y},  {'Z', Key::Z},  {'1', Key::_1}, {'2', Key::_2}, {'3', Key::_3}, {'4', Key::_4}, 
+	{'5', Key::_5}, {'6', Key::_6}, {'7', Key::_7}, {'8', Key::_8}, {'9', Key::_9}, {'0', Key::_0}, 
+	{VK_LBUTTON , Key::L_MOUSE}, {VK_RBUTTON , Key::R_MOUSE},  {VK_MBUTTON , Key::M_MOUSE},  {VK_XBUTTON1, Key::B1_MOUSE}, {VK_XBUTTON2, Key::B2_MOUSE}, {VK_SPACE, Key::SPACE}, 
+	{VK_LSHIFT  , Key::SHIFT},   {VK_LCONTROL, Key::CTRL},     {VK_LMENU   , Key::ALT},      {VK_RSHIFT  , Key::R_SHIFT},  {VK_RCONTROL, Key::R_CTRL},   {VK_RMENU, Key::R_ALT}, 
+	{VK_TAB     , Key::TAB},     {VK_BACK    , Key::BACKSP},   {VK_CAPITAL , Key::CAPSLOCK}, {VK_ESCAPE  , Key::ESC},      {VK_LWIN    , Key::META},     {VK_PAUSE, Key::PAUSE}, 
+	{VK_PRINT   , Key::PRINT},   {VK_SNAPSHOT, Key::PRINTSCR}, {VK_PRIOR   , Key::PGUP},     {VK_NEXT    , Key::PGDOWN},   {VK_END     , Key::END},      {VK_HOME, Key::HOME}, 
+	{VK_INSERT  , Key::INSERT},  {VK_DELETE  , Key::DEL},      {VK_UP      , Key::UP},       {VK_DOWN    , Key::DOWN},     {VK_LEFT    , Key::LEFT},     {VK_RIGHT, Key::RIGHT}, 
+	{VK_NUMPAD0 , Key::KP_0},    {VK_NUMPAD1 , Key::KP_1},     {VK_NUMPAD2 , Key::KP_2},     {VK_NUMPAD3 , Key::KP_3},     {VK_NUMPAD4 , Key::KP_4}, 
+	{VK_NUMPAD5 , Key::KP_5},    {VK_NUMPAD6 , Key::KP_6},     {VK_NUMPAD7 , Key::KP_7},     {VK_NUMPAD8 , Key::KP_8},     {VK_NUMPAD9 , Key::KP_9}, 
+	{VK_MULTIPLY, Key::KP_MUL},  {VK_ADD     , Key::KP_PLUS},  {VK_SUBTRACT, Key::KP_MIN},   {VK_DECIMAL , Key::KP_PER},   {VK_DIVIDE  , Key::KP_DIV}, 
+	{VK_NUMLOCK , Key::NUMLOCK}, {VK_SCROLL  , Key::SCRLOCK}, 
+	{VK_F1, Key::F1}, {VK_F2, Key::F2}, {VK_F3, Key::F3}, {VK_F4 , Key::F4},  {VK_F5 , Key::F5},  {VK_F6 , Key::F6}, 
+	{VK_F7, Key::F7}, {VK_F8, Key::F8}, {VK_F9, Key::F9}, {VK_F10, Key::F10}, {VK_F11, Key::F11}, {VK_F12, Key::F12}
+};
+
+void thread_doKeyStates(KeyStates& keyStates, int keyChecker) {
+	while (1) updateKeyStates(keyStates, keyChecker);
+}
+
 void updateKeyStates(KeyStates& keyStates, int keyChecker) {
 	#ifdef _WIN32
-		if (GetAsyncKeyState('A') & 0x8000) keyStates[Key::A] = true;
-		if (GetAsyncKeyState('B') & 0x8000) keyStates[Key::B] = true;
-		if (GetAsyncKeyState('C') & 0x8000) keyStates[Key::C] = true;
-		if (GetAsyncKeyState('D') & 0x8000) keyStates[Key::D] = true;
-		if (GetAsyncKeyState('E') & 0x8000) keyStates[Key::E] = true;
-		if (GetAsyncKeyState('F') & 0x8000) keyStates[Key::F] = true;
-		if (GetAsyncKeyState('G') & 0x8000) keyStates[Key::G] = true;
-		if (GetAsyncKeyState('H') & 0x8000) keyStates[Key::H] = true;
-		if (GetAsyncKeyState('I') & 0x8000) keyStates[Key::I] = true;
-		if (GetAsyncKeyState('J') & 0x8000) keyStates[Key::J] = true;
-		if (GetAsyncKeyState('K') & 0x8000) keyStates[Key::K] = true;
-		if (GetAsyncKeyState('L') & 0x8000) keyStates[Key::L] = true;
-		if (GetAsyncKeyState('M') & 0x8000) keyStates[Key::M] = true;
-		if (GetAsyncKeyState('N') & 0x8000) keyStates[Key::N] = true;
-		if (GetAsyncKeyState('O') & 0x8000) keyStates[Key::O] = true;
-		if (GetAsyncKeyState('P') & 0x8000) keyStates[Key::P] = true;
-		if (GetAsyncKeyState('Q') & 0x8000) keyStates[Key::Q] = true;
-		if (GetAsyncKeyState('R') & 0x8000) keyStates[Key::R] = true;
-		if (GetAsyncKeyState('S') & 0x8000) keyStates[Key::S] = true;
-		if (GetAsyncKeyState('T') & 0x8000) keyStates[Key::T] = true;
-		if (GetAsyncKeyState('U') & 0x8000) keyStates[Key::U] = true;
-		if (GetAsyncKeyState('V') & 0x8000) keyStates[Key::V] = true;
-		if (GetAsyncKeyState('W') & 0x8000) keyStates[Key::W] = true;
-		if (GetAsyncKeyState('X') & 0x8000) keyStates[Key::X] = true;
-		if (GetAsyncKeyState('Y') & 0x8000) keyStates[Key::Y] = true;
-		if (GetAsyncKeyState('Z') & 0x8000) keyStates[Key::Z] = true;
-		
-		if (GetAsyncKeyState('1') & 0x8000) keyStates[Key::_1] = true;
-		if (GetAsyncKeyState('2') & 0x8000) keyStates[Key::_2] = true;
-		if (GetAsyncKeyState('3') & 0x8000) keyStates[Key::_3] = true;
-		if (GetAsyncKeyState('4') & 0x8000) keyStates[Key::_4] = true;
-		if (GetAsyncKeyState('5') & 0x8000) keyStates[Key::_5] = true;
-		if (GetAsyncKeyState('6') & 0x8000) keyStates[Key::_6] = true;
-		if (GetAsyncKeyState('7') & 0x8000) keyStates[Key::_7] = true;
-		if (GetAsyncKeyState('8') & 0x8000) keyStates[Key::_8] = true;
-		if (GetAsyncKeyState('9') & 0x8000) keyStates[Key::_9] = true;
-		if (GetAsyncKeyState('0') & 0x8000) keyStates[Key::_0] = true;
+		BYTE keyboardState[256];
 
-		if (GetAsyncKeyState(VK_LBUTTON)  & 0x8000) keyStates[Key::L_MOUSE]  = true;
-		if (GetAsyncKeyState(VK_RBUTTON)  & 0x8000) keyStates[Key::R_MOUSE]  = true;
-		if (GetAsyncKeyState(VK_MBUTTON)  & 0x8000) keyStates[Key::M_MOUSE]  = true;
-		if (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) keyStates[Key::B1_MOUSE] = true;
-		if (GetAsyncKeyState(VK_XBUTTON2) & 0x8000) keyStates[Key::B2_MOUSE] = true;
-
-		if (GetAsyncKeyState(VK_BACK)     & 0x8000) keyStates[Key::BACKSP]   = true;
-		if (GetAsyncKeyState(VK_TAB)      & 0x8000) keyStates[Key::TAB]      = true;
-		if (GetAsyncKeyState(VK_LSHIFT)   & 0x8000) keyStates[Key::SHIFT]    = true;
-		if (GetAsyncKeyState(VK_LCONTROL) & 0x8000) keyStates[Key::CTRL]     = true;
-		if (GetAsyncKeyState(VK_LMENU)    & 0x8000) keyStates[Key::ALT]      = true;
-		if (GetAsyncKeyState(VK_RSHIFT)   & 0x8000) keyStates[Key::R_SHIFT]  = true;
-		if (GetAsyncKeyState(VK_RCONTROL) & 0x8000) keyStates[Key::R_CTRL]   = true;
-		if (GetAsyncKeyState(VK_RMENU)    & 0x8000) keyStates[Key::R_ALT]    = true;
-		if (GetAsyncKeyState(VK_CAPITAL)  & 0x8000) keyStates[Key::CAPSLOCK] = true;
-		if (GetAsyncKeyState(VK_ESCAPE)   & 0x8000) keyStates[Key::ESC]      = true;
-		if (GetAsyncKeyState(VK_SPACE)    & 0x8000) keyStates[Key::SPACE]    = true;
-		if (GetAsyncKeyState(VK_LWIN)     & 0x8000) keyStates[Key::META]     = true;
-
-		if (GetAsyncKeyState(VK_PAUSE)    & 0x8000) keyStates[Key::PAUSE]    = true;
-		if (GetAsyncKeyState(VK_PRINT)    & 0x8000) keyStates[Key::PRINT]    = true;
-		if (GetAsyncKeyState(VK_SNAPSHOT) & 0x8000) keyStates[Key::PRINTSCR] = true;
-		
-		if (GetAsyncKeyState(VK_PRIOR)  & 0x8000) keyStates[Key::PGUP]   = true;
-		if (GetAsyncKeyState(VK_NEXT)   & 0x8000) keyStates[Key::PGDOWN] = true;
-		if (GetAsyncKeyState(VK_END)    & 0x8000) keyStates[Key::END]    = true;
-		if (GetAsyncKeyState(VK_HOME)   & 0x8000) keyStates[Key::HOME]   = true;
-		if (GetAsyncKeyState(VK_INSERT) & 0x8000) keyStates[Key::INSERT] = true;
-		if (GetAsyncKeyState(VK_DELETE) & 0x8000) keyStates[Key::DEL]    = true;
-
-		if (GetAsyncKeyState(VK_UP)    & 0x8000) keyStates[Key::UP]    = true;
-		if (GetAsyncKeyState(VK_DOWN)  & 0x8000) keyStates[Key::DOWN]  = true;
-		if (GetAsyncKeyState(VK_LEFT)  & 0x8000) keyStates[Key::LEFT]  = true;
-		if (GetAsyncKeyState(VK_RIGHT) & 0x8000) keyStates[Key::RIGHT] = true;
-
-		if (GetAsyncKeyState(VK_NUMPAD0) & 0x8000) keyStates[Key::KP_0] = true;
-		if (GetAsyncKeyState(VK_NUMPAD1) & 0x8000) keyStates[Key::KP_1] = true;
-		if (GetAsyncKeyState(VK_NUMPAD2) & 0x8000) keyStates[Key::KP_2] = true;
-		if (GetAsyncKeyState(VK_NUMPAD3) & 0x8000) keyStates[Key::KP_3] = true;
-		if (GetAsyncKeyState(VK_NUMPAD4) & 0x8000) keyStates[Key::KP_4] = true;
-		if (GetAsyncKeyState(VK_NUMPAD5) & 0x8000) keyStates[Key::KP_5] = true;
-		if (GetAsyncKeyState(VK_NUMPAD6) & 0x8000) keyStates[Key::KP_6] = true;
-		if (GetAsyncKeyState(VK_NUMPAD7) & 0x8000) keyStates[Key::KP_7] = true;
-		if (GetAsyncKeyState(VK_NUMPAD8) & 0x8000) keyStates[Key::KP_8] = true;
-		if (GetAsyncKeyState(VK_NUMPAD9) & 0x8000) keyStates[Key::KP_9] = true;
-
-		if (GetAsyncKeyState(VK_MULTIPLY)  & 0x8000) keyStates[Key::KP_MUL]  = true;
-		if (GetAsyncKeyState(VK_ADD)       & 0x8000) keyStates[Key::KP_PLUS] = true;
-		if (GetAsyncKeyState(VK_SUBTRACT)  & 0x8000) keyStates[Key::KP_MIN]  = true;
-		if (GetAsyncKeyState(VK_DECIMAL)   & 0x8000) keyStates[Key::KP_PER]  = true;
-		if (GetAsyncKeyState(VK_DIVIDE)    & 0x8000) keyStates[Key::KP_DIV]  = true;
-		
-		if (GetAsyncKeyState(VK_F1)  & 0x8000) keyStates[Key::F1]  = true;
-		if (GetAsyncKeyState(VK_F2)  & 0x8000) keyStates[Key::F2]  = true;
-		if (GetAsyncKeyState(VK_F3)  & 0x8000) keyStates[Key::F3]  = true;
-		if (GetAsyncKeyState(VK_F4)  & 0x8000) keyStates[Key::F4]  = true;
-		if (GetAsyncKeyState(VK_F5)  & 0x8000) keyStates[Key::F5]  = true;
-		if (GetAsyncKeyState(VK_F6)  & 0x8000) keyStates[Key::F6]  = true;
-		if (GetAsyncKeyState(VK_F7)  & 0x8000) keyStates[Key::F7]  = true;
-		if (GetAsyncKeyState(VK_F8)  & 0x8000) keyStates[Key::F8]  = true;
-		if (GetAsyncKeyState(VK_F9)  & 0x8000) keyStates[Key::F9]  = true;
-		if (GetAsyncKeyState(VK_F10) & 0x8000) keyStates[Key::F10] = true;
-		if (GetAsyncKeyState(VK_F11) & 0x8000) keyStates[Key::F11] = true;
-		if (GetAsyncKeyState(VK_F12) & 0x8000) keyStates[Key::F12] = true;
-		
-		if (GetAsyncKeyState(VK_NUMLOCK) & 0x8000) keyStates[Key::NUMLOCK] = true;
-		if (GetAsyncKeyState(VK_SCROLL)  & 0x8000) keyStates[Key::SCRLOCK] = true;
+		if (GetKeyboardState(keyboardState)) {
+			for (int i = 0; i < 256; ++i) {
+				std::cout << (int)keyboardState[i] << " ";
+			} std::cout << "[done]" << std::endl;
+			for (const KeyMap& m : keyMappings) {
+				keyStates.set(m.key, (keyboardState[m.code] & 0x80) != 0);
+			}
+		}
 
 		// (most!) legacy keys
 		//  ^^^^^ because i still check for some for some reason
-		//if (GetAsyncKeyState(VK_SELECT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_SEPARATOR) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_EXECUTE) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_HELP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_SLEEP)  & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_KANA) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_HANGUL) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_IME_ON) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_JUNJA) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_FINAL) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_HANJA) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_KANJI) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_IME_OFF) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_CONVERT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_NONCONVERT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_ACCEPT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_MODECHANGE) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_LWIN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_APPS) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F13) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F14) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F15) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F16) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F17) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F18) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F19) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F20) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F21) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F22) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F23) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_F24) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_BACK) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_FORWARD) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_REFRESH) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_STOP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_SEARCH) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_FAVORITES) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_BROWSER_HOME) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_VOLUME_MUTE) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_VOLUME_DOWN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_VOLUME_UP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_MEDIA_NEXT_TRACK) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_MEDIA_PREV_TRACK) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_MEDIA_STOP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_MEDIA_PLAY_PAUSE) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_LAUNCH_MAIL) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_LAUNCH_MEDIA_SELECT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_LAUNCH_APP1) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_LAUNCH_APP2) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_1) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_PLUS) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_COMMA) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_PERIOD) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_2) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_3) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_A) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_B) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_X) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_Y) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_SHOULDER) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_SHOULDER) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_TRIGGER) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_TRIGGER) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_DPAD_UP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_DPAD_DOWN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_DPAD_LEFT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_DPAD_RIGHT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_MENU) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_VIEW) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_THUMBSTICK_UP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_THUMBSTICK_DOWN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_LEFT_THUMBSTICK_LEFT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_THUMBSTICK_UP) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_4) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_5) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_6) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_7) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_8) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_102) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_PROCESSKEY) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_PACKET) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_ATTN) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_CRSEL) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_EXSEL) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_EREOF) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_PLAY) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_ZOOM) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_NONAME) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_PA1) & 0x8000) keyStates[Key::] = true;
-		//if (GetAsyncKeyState(VK_OEM_CLEAR) & 0x8000) keyStates[Key::] = true;
+		//   VK_SELECT  VK_SEPARATOR  VK_EXECUTE  VK_HELP  VK_SLEEP  VK_KANA
+		//   VK_HANGUL  VK_IME_ON  VK_JUNJA  VK_FINAL  VK_HANJA  VK_KANJI
+		//   VK_IME_OFF  VK_CONVERT  VK_NONCONVERT  VK_ACCEPT  VK_MODECHANGE  VK_LWIN
+		//   VK_APPS  VK_F13  VK_F14  VK_F15  VK_F16  VK_F17
+		//   VK_F18  VK_F19  VK_F20  VK_F21  VK_F22  VK_F23
+		//   VK_F24  VK_BROWSER_BACK  VK_BROWSER_FORWARD  VK_BROWSER_REFRESH  VK_BROWSER_STOP  VK_BROWSER_SEARCH
+		//   VK_BROWSER_FAVORITES  VK_BROWSER_HOME  VK_VOLUME_MUTE  VK_VOLUME_DOWN  VK_VOLUME_UP  VK_MEDIA_NEXT_TRACK
+		//   VK_MEDIA_PREV_TRACK  VK_MEDIA_STOP  VK_MEDIA_PLAY_PAUSE  VK_LAUNCH_MAIL  VK_LAUNCH_MEDIA_SELECT  VK_LAUNCH_APP1
+		//   VK_LAUNCH_APP2  VK_OEM_1  VK_OEM_PLUS  VK_OEM_COMMA  VK_OEM_MINUS  VK_OEM_PERIOD
+		//   VK_OEM_2  VK_OEM_3  VK_GAMEPAD_A  VK_GAMEPAD_B  VK_GAMEPAD_X  VK_GAMEPAD_Y
+		//   VK_GAMEPAD_RIGHT_SHOULDER  VK_GAMEPAD_LEFT_SHOULDER  VK_GAMEPAD_LEFT_TRIGGER  VK_GAMEPAD_RIGHT_TRIGGER  VK_GAMEPAD_DPAD_UP  VK_GAMEPAD_DPAD_DOWN
+		//   VK_GAMEPAD_DPAD_LEFT  VK_GAMEPAD_DPAD_RIGHT  VK_GAMEPAD_MENU  VK_GAMEPAD_VIEW  VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON  VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON
+		//   VK_GAMEPAD_LEFT_THUMBSTICK_UP  VK_GAMEPAD_LEFT_THUMBSTICK_DOWN  VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT  
+		//   VK_GAMEPAD_LEFT_THUMBSTICK_LEFT  VK_GAMEPAD_RIGHT_THUMBSTICK_UP  VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN
+		//   VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT  VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT  VK_OEM_4  VK_OEM_5  VK_OEM_6  VK_OEM_7
+		//   VK_OEM_8  VK_OEM_102  VK_PROCESSKEY  VK_PACKET  VK_ATTN  VK_CRSEL
+		//   VK_EXSEL  VK_EREOF  VK_PLAY  VK_ZOOM  VK_NONAME  VK_PA1  VK_OEM_CLEAR
 
 	#else
 		struct input_event event;

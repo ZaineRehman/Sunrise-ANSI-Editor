@@ -5,8 +5,8 @@
  *  == TODO ==
  * [x] extend art bounds when inserting outside of range
  * [x] clean up main.cpp
- * [ ] proper windows support
- * [ ] proper linux support
+ * [ ] proper windows input support
+ * [ ] proper linux input support
  * [ ] color catalogue picker
  * [ ] character catalogue picker
  * [ ] stop re-calculating some things every single frame
@@ -58,7 +58,7 @@ inline constexpr const char* VERSION = "v07261-UA";
 
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
-inline bool INPUT_SAFE_MODE = true;
+inline bool INPUT_SAFE_MODE = false;
 
 // path to search for input devices
 inline constexpr const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";

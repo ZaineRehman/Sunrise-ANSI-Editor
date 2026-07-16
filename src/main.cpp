@@ -37,6 +37,15 @@ int main() {
 	KeyStates keyStates {};
 	int keyChecker;
 
+	while (1) {
+		setKeyStatesOff(keyStates);
+		updateKeyStates(keyStates, keyChecker);
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+
+	return 0;
+
 
 	Art ART (20, 5, Cell{DEFAULT_BACK, "", ""});
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
@@ -104,7 +113,9 @@ int main() {
 		}
 	#endif
 	if (INPUT_SAFE_MODE) {
-		std::thread(inputHelper).detach();
+		std::jthread(safeModeInputHelper).detach();
+	} else {
+		//std::jthread(thread_doKeyStates, std::ref(keyStates), keyChecker).detach();
 	}
 
 	clear();
@@ -189,8 +200,8 @@ int main() {
 		* 
 		* arrows OR [UHJK]: cursor
 		* 
-		* [[]: open character catalogue
-		* []]: open color catalogue
+		* [{]: open character catalogue
+		* [}]: open color catalogue
 		**/
 
 		setKeyStatesOff(keyStates);
