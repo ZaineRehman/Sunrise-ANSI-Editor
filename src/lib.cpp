@@ -1,4 +1,4 @@
-// things i dont want cluttering main.cpp
+// things i dont want cluttering main
 
 #include <atomic>
 #include <csignal>

@@ -4,6 +4,172 @@
 #include <cstdint>
 #include <vector>
 
+
+// ANSI escape codes
+namespace ANSI {
+	extern const std::string reset;
+	extern const std::string bold;
+	extern const std::string dim;
+	extern const std::string italic;
+	extern const std::string underline;
+	extern const std::string blink_slow;
+	extern const std::string blink_fast;
+	extern const std::string invert;
+	extern const std::string hide;
+	extern const std::string strike;
+	extern const std::string primary;
+	extern const std::string alternate1;
+	extern const std::string alternate2;
+	extern const std::string alternate3;
+	extern const std::string alternate4;
+	extern const std::string alternate5;
+	extern const std::string alternate6;
+	extern const std::string alternate7;
+	extern const std::string alternate8;
+	extern const std::string alternate9;
+	extern const std::string fraktur;
+	extern const std::string doubleUnder;
+	extern const std::string noBold;
+	extern const std::string noItalic;
+	extern const std::string noUnder;
+	extern const std::string noBlink;
+	extern const std::string propSpacing;
+	extern const std::string noReverse;
+	extern const std::string reveal;
+	extern const std::string noStrike;
+	extern const std::string noPropSpacing;
+	extern const std::string framed;
+	extern const std::string encircled;
+	extern const std::string overlined;
+
+	extern const std::string ideogramUnderline;
+	extern const std::string ideogramDoubleUnderline;
+	extern const std::string ideogramOverline;
+	extern const std::string ideogramDoubleOverline;
+	extern const std::string ideogramStress;
+	extern const std::string ideogramReset;
+
+	extern const std::string superscript;
+	extern const std::string subscript;
+	extern const std::string normalscript;
+
+	// tests general ANSI codes (most of 0-75, no colors)
+	//void generalCodesTest();
+	void generalCodesTest();
+
+	// standard 4-bit color codes
+
+	extern const std::string black;
+	extern const std::string red;
+	extern const std::string green;
+	extern const std::string yellow;
+	extern const std::string blue;
+	extern const std::string magenta;
+	extern const std::string cyan;
+	extern const std::string white;
+	
+	extern const std::string black_back;
+	extern const std::string red_back;
+	extern const std::string green_back;
+	extern const std::string yellow_back;
+	extern const std::string blue_back;
+	extern const std::string magenta_back;
+	extern const std::string cyan_back;
+	extern const std::string white_back;
+
+	extern const std::string black_bright;
+	extern const std::string red_bright;
+	extern const std::string green_bright;
+	extern const std::string yellow_bright;
+	extern const std::string blue_bright;
+	extern const std::string magenta_bright;
+	extern const std::string cyan_bright;
+	extern const std::string white_bright;
+
+	extern const std::string black_back_bright;
+	extern const std::string red_back_bright;
+	extern const std::string green_back_bright;
+	extern const std::string yellow_back_bright;
+	extern const std::string blue_back_bright;
+	extern const std::string magenta_back_bright;
+	extern const std::string cyan_back_bright;
+	extern const std::string white_back_bright;
+
+	extern const std::string cursor_home;
+	extern const std::string cursor_visible;
+	extern const std::string cursor_invisible;
+	
+	extern const std::string clearToEnd;
+	extern const std::string clearFromStart;
+	extern const std::string clear;
+	extern const std::string clearScrollback;
+	extern const std::string clearLine;
+	extern const std::string clearLineToEnd;
+	extern const std::string clearLineFromStart;
+	
+	extern const std::string saveScreen;
+	extern const std::string restoreScreen;
+	
+	extern const std::string enableAltBuffer;
+	extern const std::string disableAltBuffer;
+	
+	extern const std::string enableLineWrapping;
+	extern const std::string disableLineWrapping;
+
+	extern const std::string enableMouseTracking;
+	extern const std::string disableMouseTracking;
+	
+	extern const std::string resetUnderlineColor;
+
+	// tests the standard ANSI 4-bit color codes
+	void colorTest();
+
+	// returns the type of color code given
+	// 4-bit: 0=foreground, 1=background, 2=foreground (bright), 3=background (bright)
+	// 8-bit: 4=foreground, 5=background
+	// 24-bit: 6=foreground, 7=background
+	int findColorType(const std::string& code);
+
+	// inverts a color-code string from foreground to background and vice versa
+	std::string invertColor(const std::string& code);
+
+	// selection from 8-bit color codes
+	namespace Color_8bit {
+		// creates a color code using the 8-bit ANSI code formula: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+		// values should be between 0-5 (inclusive)
+		std::string makeColor(int r, int g, int b, bool background = false);
+
+		// creates the color code from the actual code value
+		// https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit:~:text=hide-,256%2Dcolor%20mode,-Foreground%3A%20ESC%5B38%3B5
+		std::string makeColor(int n, bool background = false);
+
+		// creates a gray color using the 8-bit ANSI grayscale color table
+		// level value is between 1-24 (inclusive)
+		// higher = lighter
+		std::string makeGray(int level, bool background = false);
+
+		// sets underline color using 8-bit color
+		std::string underlineColor(int r, int g, int b);
+
+		void underlineColorTest();
+
+		void colorTest();
+	}
+	// 24-bit color codes
+	namespace Color_24bit {
+		// creates a color code with 24-bit color
+		std::string makeColor(uint8_t r, uint8_t g, uint8_t b, bool background = false);
+
+		// sets underline color using 24-bit color
+		std::string underlineColor(int r, int g, int b);
+
+		void underlineColorTest();
+
+		void colorTest();
+	}
+}
+
+
 #include "settings.hpp"
 
 
@@ -101,168 +267,3 @@ public:
 
 
 void clear();
-
-
-// ANSI escape codes
-namespace ANSI {
-	const inline std::string reset         = "\033[0m";
-	const inline std::string bold          = "\033[1m";
-	const inline std::string dim           = "\033[2m";
-	const inline std::string italic        = "\033[3m";
-	const inline std::string underline     = "\033[4m";
-	const inline std::string blink_slow    = "\033[5m";
-	const inline std::string blink_fast    = "\033[6m";
-	const inline std::string invert        = "\033[7m";
-	const inline std::string hide          = "\033[8m";
-	const inline std::string strike        = "\033[9m";
-	const inline std::string primary       = "\033[10m";
-	const inline std::string alternate1    = "\033[11m";
-	const inline std::string alternate2    = "\033[12m";
-	const inline std::string alternate3    = "\033[13m";
-	const inline std::string alternate4    = "\033[14m";
-	const inline std::string alternate5    = "\033[15m";
-	const inline std::string alternate6    = "\033[16m";
-	const inline std::string alternate7    = "\033[17m";
-	const inline std::string alternate8    = "\033[18m";
-	const inline std::string alternate9    = "\033[19m";
-	const inline std::string fraktur       = "\033[20m";
-	const inline std::string doubleUnder   = "\033[21m";
-	const inline std::string noBold        = "\033[22m";
-	const inline std::string noItalic      = "\033[23m";
-	const inline std::string noUnder       = "\033[24m";
-	const inline std::string noBlink       = "\033[25m";
-	const inline std::string propSpacing   = "\033[26m";
-	const inline std::string noReverse     = "\033[27m";
-	const inline std::string reveal        = "\033[28m";
-	const inline std::string noStrike      = "\033[29m";
-	const inline std::string noPropSpacing = "\033[50m";
-	const inline std::string framed        = "\033[51m";
-	const inline std::string encircled     = "\033[52m";
-	const inline std::string overlined     = "\033[53m";
-
-	const inline std::string ideogramUnderline       = "\033[60m";
-	const inline std::string ideogramDoubleUnderline = "\033[61m";
-	const inline std::string ideogramOverline        = "\033[62m";
-	const inline std::string ideogramDoubleOverline  = "\033[63m";
-	const inline std::string ideogramStress          = "\033[64m";
-	const inline std::string ideogramReset           = "\033[65m";
-
-	const inline std::string superscript  = "\033[73m";
-	const inline std::string subscript    = "\033[74m";
-	const inline std::string normalscript = "\033[75m";
-
-	// tests general ANSI codes (most of 0-75, no colors)
-	//void generalCodesTest();
-	void generalCodesTest();
-
-	// standard 4-bit color codes
-
-	const inline std::string black   = "\033[30m";
-	const inline std::string red     = "\033[31m";
-	const inline std::string green   = "\033[32m";
-	const inline std::string yellow  = "\033[33m";
-	const inline std::string blue    = "\033[34m";
-	const inline std::string magenta = "\033[35m";
-	const inline std::string cyan    = "\033[36m";
-	const inline std::string white   = "\033[37m";
-	
-	const inline std::string black_back   = "\033[40m";
-	const inline std::string red_back     = "\033[41m";
-	const inline std::string green_back   = "\033[42m";
-	const inline std::string yellow_back  = "\033[43m";
-	const inline std::string blue_back    = "\033[44m";
-	const inline std::string magenta_back = "\033[45m";
-	const inline std::string cyan_back    = "\033[46m";
-	const inline std::string white_back   = "\033[47m";
-
-	const inline std::string black_bright   = "\033[90m";
-	const inline std::string red_bright     = "\033[91m";
-	const inline std::string green_bright   = "\033[92m";
-	const inline std::string yellow_bright  = "\033[93m";
-	const inline std::string blue_bright    = "\033[94m";
-	const inline std::string magenta_bright = "\033[95m";
-	const inline std::string cyan_bright    = "\033[96m";
-	const inline std::string white_bright   = "\033[97m";
-
-	const inline std::string black_back_bright   = "\033[100m";
-	const inline std::string red_back_bright     = "\033[101m";
-	const inline std::string green_back_bright   = "\033[102m";
-	const inline std::string yellow_back_bright  = "\033[103m";
-	const inline std::string blue_back_bright    = "\033[104m";
-	const inline std::string magenta_back_bright = "\033[105m";
-	const inline std::string cyan_back_bright    = "\033[106m";
-	const inline std::string white_back_bright   = "\033[107m";
-
-	const inline std::string cursor_home      = "\033[H";
-	const inline std::string cursor_visible   = "\033[?25H";
-	const inline std::string cursor_invisible = "\033[?25l";
-	
-	const inline std::string clearToEnd      = "\033[0J";
-	const inline std::string clearFromStart  = "\033[1J";
-	const inline std::string clear           = "\033[2J";
-	const inline std::string clearScrollback = "\033[3J";
-	const inline std::string clearLine       = "\033[2K";
-	const inline std::string clearLineToEnd     = "\033[0K";
-	const inline std::string clearLineFromStart = "\033[1K";
-	
-	const inline std::string saveScreen    = "\033[?47h";
-	const inline std::string restoreScreen = "\033[?47l";
-	
-	const inline std::string enableAltBuffer  = "\033[?1049h";
-	const inline std::string disableAltBuffer = "\033[?1049l";
-	
-	const inline std::string enableLineWrapping  = "\033[=7h";
-	const inline std::string disableLineWrapping = "\033[=7l";
-
-	const inline std::string enableMouseTracking  = "\033[?1000h";
-	const inline std::string disableMouseTracking = "\033[?1000hl";
-
-	// tests the standard ANSI 4-bit color codes
-	void colorTest();
-
-	const inline std::string resetUnderlineColor = "\033[59m";
-
-	// returns the type of color code given
-	// 4-bit: 0=foreground, 1=background, 2=foreground (bright), 3=background (bright)
-	// 8-bit: 4=foreground, 5=background
-	// 24-bit: 6=foreground, 7=background
-	int findColorType(const std::string& code);
-
-	// inverts a color-code string from foreground to background and vice versa
-	std::string invertColor(const std::string& code);
-
-	// selection from 8-bit color codes
-	namespace Color_8bit {
-		// creates a color code using the 8-bit ANSI code formula: 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
-		// values should be between 0-5 (inclusive)
-		std::string makeColor(int r, int g, int b, bool background = false);
-
-		// creates the color code from the actual code value
-		// https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit:~:text=hide-,256%2Dcolor%20mode,-Foreground%3A%20ESC%5B38%3B5
-		std::string makeColor(int n, bool background = false);
-
-		// creates a gray color using the 8-bit ANSI grayscale color table
-		// level value is between 1-24 (inclusive)
-		// higher = lighter
-		std::string makeGray(int level, bool background = false);
-
-		// sets underline color using 8-bit color
-		std::string underlineColor(int r, int g, int b);
-
-		void underlineColorTest();
-
-		void colorTest();
-	}
-	// 24-bit color codes
-	namespace Color_24bit {
-		// creates a color code with 24-bit color
-		std::string makeColor(uint8_t r, uint8_t g, uint8_t b, bool background = false);
-
-		// sets underline color using 24-bit color
-		std::string underlineColor(int r, int g, int b);
-
-		void underlineColorTest();
-
-		void colorTest();
-	}
-}

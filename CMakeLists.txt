@@ -18,7 +18,8 @@ add_executable(Sunrise_ANSI_Editor
 
 target_include_directories(Sunrise_ANSI_Editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-install(TARGETS Sunrise_ANSI_Editor 
+install(
+	TARGETS Sunrise_ANSI_Editor 
 	RUNTIME_DEPENDENCY_SET program_deps
 	DESTINATION bin
 )

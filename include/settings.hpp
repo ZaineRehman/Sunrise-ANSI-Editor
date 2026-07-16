@@ -1,7 +1,5 @@
 #pragma once
 
-#include "output.hpp"
-
 
 /*
  *  == TODO ==
@@ -55,7 +53,7 @@ inline std::string DEBUG_STR = "";
  * 		B = beta (most/all features implemented, needs refining)
  * 		W = working (all planned features implemented and working well)
 **/
-constexpr const char* VERSION = "v07261-UA";
+inline constexpr const char* VERSION = "v07261-UA";
 
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
@@ -78,30 +76,25 @@ inline float ANIM_CURSOR = 0.5f;
 inline int ANALYSIS_FREQUENCY = 10; 
 
 
-// border color
-inline std::string BORDER_COLOR = ANSI::bold;
-// key highlight color
-inline std::string KEY_COLOR = ANSI::bold;
-
 // screen width
 inline int SCREEN_WIDTH = 75;
 // screen height
 inline int SCREEN_HEIGHT = 20;
 
 // size of side panel
-constexpr int PANEL_SIZE = 40;
+inline constexpr int PANEL_SIZE = 40;
 
 // size of bottom panel
-constexpr int BOTTOM_PANEL_SIZE = 2;
+inline constexpr int BOTTOM_PANEL_SIZE = 2;
 
 // colors in palette
-constexpr int PALETTE_SIZE = 16;
+inline constexpr int PALETTE_SIZE = 16;
 
 // color catalogue x
-constexpr float COLOR_CATALOGUE_X = 32.0f;
+inline constexpr float COLOR_CATALOGUE_X = 32.0f;
 
 // color catalogue y
-constexpr float COLOR_CATALOGUE_Y = 6.0f;
+inline constexpr float COLOR_CATALOGUE_Y = 6.0f;
 
 
 // if true, using direct keyboard inputs
@@ -113,6 +106,16 @@ inline bool VIM_ARROWS = false;
 // type of color
 // 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
 inline int COLOR_MODE = 0;
+
+
+#include "output.hpp"
+
+
+// border color
+inline std::string BORDER_COLOR = ANSI::bold;
+// key highlight color
+inline std::string KEY_COLOR = ANSI::bold;
+
 
 inline std::string HOTKEY_CHAR_1 = "█";
 inline std::string HOTKEY_CHAR_2 = "▓";
