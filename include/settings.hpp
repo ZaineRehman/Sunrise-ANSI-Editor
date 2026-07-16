@@ -28,6 +28,7 @@
  * [ ] trim empty spaces from art
  * [ ] downgrading color mode -> remove those codes from art
  * [ ] finalize window sizes
+ * [ ] make input checkers use separate thread (mutex?)
 **/
 
 

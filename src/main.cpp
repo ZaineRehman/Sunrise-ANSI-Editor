@@ -5,6 +5,8 @@
 #include <thread>
 #include <cstring>
 #include <chrono>
+#include <atomic>
+#include <array>
 
 #include "input.hpp"
 #include "output.hpp"
@@ -32,7 +34,7 @@ int main() {
 	std::signal(SIGTERM, signalHandler);
 	std::signal(SIGABRT, signalHandler);
 
-	std::unordered_map<Key,bool> keyStates;
+	KeyStates keyStates {};
 	int keyChecker;
 
 
