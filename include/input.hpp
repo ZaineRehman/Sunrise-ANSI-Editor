@@ -113,7 +113,7 @@ void safeModeInputHelper();
 void setKeyStatesOff(KeyStates& keyStates);
 
 // INPUT_SAFE_MODE version of updateKeyStates
-void updateKeyStates_SAFE(KeyStates& keyStates);
+void updateKeyStates_SAFE(KeyStates& keyStates, KeyStates& keyStates_safe);
 
 
 // loops updateKeyStates

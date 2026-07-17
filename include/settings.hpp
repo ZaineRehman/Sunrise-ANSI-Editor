@@ -5,7 +5,7 @@
  *  == TODO ==
  * [x] extend art bounds when inserting outside of range
  * [x] clean up main.cpp
- * [ ] proper windows input support
+ * [x] proper windows input support
  * [ ] proper linux input support
  * [ ] color catalogue picker
  * [ ] character catalogue picker
@@ -30,6 +30,9 @@
  * [ ] finalize window sizes
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] win terminal shift+arrow and ctrl+arrow
+ * [ ] clean up files
+ * [ ] add a support mode for only 4-bit color
+ * [ ] tutorial
  * 
  *  == CONSIDER ==
  * [ ] timeBeginPeriod() to change minimum sleep time
@@ -84,7 +87,7 @@ inline bool USE_THREADED_INPUT = false;
 // animation duration for cursor (seconds)
 inline float ANIM_CURSOR = 0.5f;
 
-// how often to do a more expensive analysis frame
+// how often (in frames) to do a more expensive analysis frame
 inline int ANALYSIS_FREQUENCY = 10; 
 
 
@@ -113,7 +116,7 @@ inline constexpr float COLOR_CATALOGUE_Y = 6.0f;
 inline bool DIRECT_KEY_INPUTS = false;
 
 // if true, use HJKL instead of UHJK for arrows, vim style
-inline bool VIM_ARROWS = false;
+//inline bool VIM_ARROWS = false;
 
 // type of color
 // 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
@@ -127,6 +130,8 @@ inline int COLOR_MODE = 0;
 inline std::string BORDER_COLOR = ANSI::bold;
 // key highlight color
 inline std::string KEY_COLOR = ANSI::bold;
+// cursor color
+inline std::string CURSOR_COLOR = ANSI::Color_8bit::makeColor(227, false);
 
 
 inline std::string HOTKEY_CHAR_1 = "█";

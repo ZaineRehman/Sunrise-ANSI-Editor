@@ -105,7 +105,7 @@ void safeModeInputHelper() {
 	return;
 }
 
-void updateKeyStates_SAFE(KeyStates& keyStates) {
+void updateKeyStates_SAFE(KeyStates& keyStates, KeyStates& keyStates_slow) {
 	if (KEY != -1) {
 		switch (KEY) {
 			case 32: keyStates[Key::SPACE]   = true; break;
@@ -188,6 +188,10 @@ void updateKeyStates_SAFE(KeyStates& keyStates) {
 		KEY = -1;
 		KEY2 = -1;
 		KEY3 = -1;
+	}
+
+	for (size_t k = 0; k < keyStates.internal.size(); ++k) {
+		keyStates_slow.set(Key{static_cast<int>(k)}, keyStates[k]);
 	}
 }
 

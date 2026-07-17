@@ -79,7 +79,7 @@ void Renderer::render() const {
 			if (c.color_fore.size() || c.color_back.size() /*&& prevColor != c.color*/) frame += ANSI::reset;
 			//prevColor = c.color;
 		}
-		frame += ANSI::reset + '\n';
+		frame += ANSI::reset + (y != height-1 ? '\n' : '\0');
 	}
 
 	#ifdef _WIN32

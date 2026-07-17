@@ -38,17 +38,21 @@ int main() {
 	KeyStates keyStates_slow {};
 	int keyChecker;
 
+	bool SCREEN_TOO_SMALL = false;
+
 
 	Art ART (20, 5, Cell{DEFAULT_BACK, "", ""});
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
 	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
+	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
 		ANSI::red,     ANSI::green, ANSI::blue,  ANSI::yellow, 
 		ANSI::magenta, ANSI::cyan,  ANSI::white, ANSI::black, 
 		ANSI::red_bright,     ANSI::green_bright, ANSI::blue_bright,  ANSI::yellow_bright, 
 		ANSI::magenta_bright, ANSI::cyan_bright,  ANSI::white_bright, ANSI::black_bright
 	};
+	// background color palette
 	std::string colorBackPalette[PALETTE_SIZE] = {
 		ANSI::red_back,     ANSI::green_back, ANSI::blue_back,  ANSI::yellow_back, 
 		ANSI::magenta_back, ANSI::cyan_back,  ANSI::white_back, ANSI::black_back, 
@@ -140,19 +144,20 @@ int main() {
 
 	CellString sunriseAnsi {concat("Sunrise ANSI Editor   ", VERSION)};
 
-	float r = 255.0f, g = 200.0f, b = 0.0f;
+	constexpr float r_start = 255.0f, g_start = 100.0f, b_start = 10.0f;
+	constexpr float r_end   = 135.0f, g_end   = 205.0f, b_end   = 255.0f;
+
+	float r = r_start, g = g_start, b = b_start;
 	for (size_t i = 0; i < sunriseAnsi.size(); ++i) {
-		// start = 255, 230, 10
-		// end   = 135, 205, 255
-		sunriseAnsi.internal[i].color_fore = ANSI::Color_24bit::makeColor(
+		sunriseAnsi.internal[i].color_fore = ANSI::bold + ANSI::Color_24bit::makeColor(
 			static_cast<uint8_t>(r), 
 			static_cast<uint8_t>(g), 
 			static_cast<uint8_t>(b), 
 			false
 		);
-		r -= (255.0f - 135.0f) / static_cast<float>(sunriseAnsi.size());
-		g -= (200.0f - 205.0f) / static_cast<float>(sunriseAnsi.size());
-		b -=  (10.0f - 255.0f) / static_cast<float>(sunriseAnsi.size());
+		r -= (r_start - r_end) / static_cast<float>(sunriseAnsi.size());
+		g -= (g_start - g_end) / static_cast<float>(sunriseAnsi.size());
+		b -= (b_start - b_end) / static_cast<float>(sunriseAnsi.size());
 	}
 
 	CellString catalogueAnsi;
@@ -211,9 +216,10 @@ int main() {
 		* [QE/W]: change/set background color
 		* [AD/S]: change/set foreground color
 		* 
+		* [C]: clear color
 		* 
 		* 
-		* arrows OR [UHJK]: cursor
+		* arrows OR [HJKL]: cursor
 		* holding [ALT]: fast cursor
 		* 
 		* [{]: open character catalogue
@@ -223,7 +229,7 @@ int main() {
 		//setKeyStatesOff(keyStates);
 		//setKeyStatesOff(keyStates_slow);
 		if (!USE_THREADED_INPUT) {
-			if (INPUT_SAFE_MODE) updateKeyStates_SAFE(keyStates);
+			if (INPUT_SAFE_MODE) updateKeyStates_SAFE(keyStates, keyStates_slow);
 			else updateKeyStates(keyStates, keyStates_slow, keyChecker);
 		}
 
@@ -231,10 +237,10 @@ int main() {
 
 		if (keyStates[Key::ESC]) RUNNING = false;
 
-		if (keyStates[Key::ALT] ? keyStates[Key::LEFT]  : keyStates_slow[Key::LEFT])  { cursorX--; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::RIGHT] : keyStates_slow[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::UP]    : keyStates_slow[Key::UP])    { cursorY--; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::DOWN]  : keyStates_slow[Key::DOWN])  { cursorY++; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  { cursorX--; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    { cursorY--; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  { cursorY++; cursorAnim = 3; }
 
 		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
 		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
@@ -254,11 +260,17 @@ int main() {
 			ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 			cursorAnim = 1;
 		}
-
+		
 		if (keyStates_slow[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
 		if (keyStates_slow[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
 			ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
+			cursorAnim = 1;
+		}
+
+		if (keyStates[Key::C]) {
+			ART.edit(upd.first, upd.second, ANSI::reset, 0);
+			ART.edit(upd.first, upd.second, ANSI::reset, 1);
 			cursorAnim = 1;
 		}
 
@@ -275,7 +287,6 @@ int main() {
 		//if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
 		//if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
 		//if (keyStates[Key::L]) { ART.resize(0, 0, 0, 1); }
-		if (keyStates[Key::C]) { DEBUG_STR = ""; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
@@ -283,7 +294,7 @@ int main() {
 
 		//  -- RENDER --
 
-		if (!((frame+1) % ANALYSIS_FREQUENCY)) {
+		if (!(frame % ANALYSIS_FREQUENCY)) {
 			COLOR_MODE = findHighestColorCode(CellString{ART.map});
 		}
 
@@ -296,18 +307,20 @@ int main() {
 		std::pair<int,int> check = getTerminalDimensions();
 		if (SCREEN_WIDTH != check.first || SCREEN_HEIGHT != check.second) {
 			// minuz 1
-			SCREEN_WIDTH = check.first - 1;
-			SCREEN_HEIGHT = check.second - 1;
+			SCREEN_WIDTH = check.first;
+			SCREEN_HEIGHT = check.second;
 			render.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 			// put art in center if first time
 			if (frame < 5) {  // no, this isnt right
-				ART.x = SCREEN_WIDTH/2 - ART.width;
-				ART.y = SCREEN_HEIGHT/2 - ART.height/2;
+				ART.x = SCREEN_WIDTH/2 - ART.width/2 - PANEL_SIZE/2;
+				ART.y = SCREEN_HEIGHT/2 - ART.height/2 - BOTTOM_PANEL_SIZE;
 				// cursor as well, only if program just opened
 				if (!frame) cursorX = ART.x + ART.width/2;
 				if (!frame) cursorY = ART.y + ART.height/2;
 			}
+
+			render.clear();
 		}
 
 		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
@@ -328,32 +341,10 @@ int main() {
 				bottom right: 8, 4 global  --  top left + (art dimensions - 1)
 							: 3, 2 local  --  art dimensions - 1
 				*/
-				// screen borders
-
-				if (y == 0) {
-					if (x == 0) render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
-					else render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
-				}
-				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-					if (x == 0) render.put(0, y, Cell{"╠",BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣",BORDER_COLOR, ""});
-					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"═", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"║",BORDER_COLOR, ""});
-				}
-				else if (y == SCREEN_HEIGHT-1) {
-					if (x == 0) render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1) render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
-					else render.put(x, y, Cell{"═", BORDER_COLOR, ""});
-				}
-				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
-					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
-				}
-				
+			
 				// art
-				else {
+
+				if (y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) && x < (SCREEN_WIDTH-1 - PANEL_SIZE + 1)) {
 					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE ) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
 						// in bounds of art
 						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
@@ -361,25 +352,40 @@ int main() {
 					}
 				}
 
-				// cursor
-				if (x == cursorX && y == cursorY) {
-					if (cursorAnim > 1) {
-						render.edit(x, y, ANSI::yellow_bright, 0);
-						render.edit(x, y, ANSI::yellow_back_bright, 1);
-					}
-					if (cursorAnim == 0) cursorAnim = 2;
+				// screen borders
+
+				if (y == 0) {
+					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
+					else                                       render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
 				}
-
+				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
+					if (x == 0)                                render.put(0, y, Cell{"╠", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣", BORDER_COLOR, ""});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE)  render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+				}
+				else if (y == SCREEN_HEIGHT-1) {
+					if (x == 0)                                render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
+					else                                       render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+				}
+				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
+					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+				}
+				
 				//  -- TEXT --
-
+				
 				// side panel
 				/*
 				 * [x] sunrise text
 				 * [x] char hotkeys
 				 * [ ] settings button
-				 * 		[ ] vim keys
 				 * 		[ ] music volume
-				 * 		[ ] input safe modefps
+				 * 		[ ] input safe mode
+				 * 		[ ] fps?
 				 * 		[ ] cursor animation
 				 * 		[ ] border color
 				 * 		[ ] key color
@@ -405,7 +411,8 @@ int main() {
 				 * [ ] char catalogue
 				 * 		[ ] 16x16 grid
 				 * 		[ ] hotkey swapper
-				**/
+				 * 		[ ] default background changer
+				 **/
 				if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
 					if (y == 1) render.putString(x, y, sunriseAnsi);
 					if (showingCatalogue == 0) {
@@ -428,60 +435,106 @@ int main() {
 							render.putString(x, y, hotkeys);
 						} else if (y == 7) {
 							CellString cmode {"Color mode: "};
-							     if (COLOR_MODE == 0) cmode += "NONE";
+							if (COLOR_MODE == 0) cmode += "NONE";
 							else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", ANSI::green , ""};
 							else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", ANSI::Color_8bit::makeColor(154) , ""};
 							else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", ANSI::Color_24bit::makeColor(45, 214, 183) , ""};
 							render.putString(x, y, cmode);
+						} else if (y == 9) {
+							CellString xy {"Size: "};
+							xy += std::to_string(SCREEN_WIDTH);
+							xy += ", ";
+							xy += std::to_string(SCREEN_HEIGHT);
+							render.putString(x, y, xy);
+						} else if (y == 11) {
+							render.putString(x, y, DEBUG_STR);
 						}
 					}
 					else if (showingCatalogue == 1) {
-						catalogueAnsi;
+						//catalogueAnsi;
 					}
 				}
-
+				
 				// bottom panel
 				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1) {
 					if (x == 2) {
+						// 0 = show everything (width >= 109)
+						// 1 = show everything, small palette keybinds (width >= 73)
+						// 2 = show palettes (width >= 54)
+						// 3 = show palettes no keybinds (width >= 37)
+						char mode = 0;
+						const int space = SCREEN_WIDTH - 2 - PANEL_SIZE;
+						if (space >= 109) ;
+						else if (space >= 73) mode = 1;
+						else if (space >= 54) mode = 2;
+						else if (space >= 37) mode = 3;
+						else {
+							SCREEN_TOO_SMALL = true;
+							mode = 4;
+						}
+
+						DEBUG_STR = std::to_string(space);
+
 						CellString colors;
 
-						colors += "[";
-						colors += Cell{"Q", KEY_COLOR, ""};
-						colors += Cell{"E", KEY_COLOR, ""};
-						colors += "/";
-						colors += Cell{"W", KEY_COLOR, ""};
-						colors += "]: ";
+						if (mode < 3) {
+							colors += "[";
+							colors += Cell{"Q", KEY_COLOR, ""};
+							colors += Cell{"E", KEY_COLOR, ""};
+							colors += "/";
+							colors += Cell{"W", KEY_COLOR, ""};
+							colors += "]: ";
+						}
 						for (int c = 0; c < PALETTE_SIZE; ++c) {
 							colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
-						} colors += Cell{" ", ANSI::reset, ""};  colors += "   ";
-
-						colors += "[";
-						colors += Cell{"A", KEY_COLOR, ""};
-						colors += Cell{"D", KEY_COLOR, ""};
-						colors += "/";
-						colors += Cell{"S", KEY_COLOR, ""};
-						colors += "]: ";
+						} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
+						
+						if (mode < 3) {
+							colors += "[";
+							colors += Cell{"A", KEY_COLOR, ""};
+							colors += Cell{"D", KEY_COLOR, ""};
+							colors += "/";
+							colors += Cell{"S", KEY_COLOR, ""};
+							colors += "]: ";
+						}
 						for (int c = 0; c < PALETTE_SIZE; ++c) {
 							colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
 						} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
 
-						colors += "        [";
-						colors += Cell{"{", KEY_COLOR, ""}; 
-						colors += "]: color catalogue    [";
-						colors += Cell{"}", KEY_COLOR, ""};
-						colors += "]: char catalogue";
 
-						// TODO
-						colors += DEBUG_STR;
-
+						if (mode < 1) {
+							colors += "        [";
+							colors += Cell{"{", KEY_COLOR, ""}; 
+							colors += "]: color catalogue    [";
+							colors += Cell{"}", KEY_COLOR, ""};
+							colors += "]: char catalogue";
+						} else if (mode < 2) {
+							colors += "        [";
+							colors += Cell{"{", KEY_COLOR, ""}; 
+							colors += "]  [";
+							colors += Cell{"}", KEY_COLOR, ""};
+							colors += "]";
+						}
+						
+						//colors += DEBUG_STR;
+						
 						render.putString(2, y, colors);
 					}
 				}
+
+				// cursor
+				if (x == cursorX && y == cursorY) {
+					if (cursorAnim > 1) {
+						render.edit(x, y, CURSOR_COLOR, 0);
+						render.edit(x, y, ANSI::invertColor(CURSOR_COLOR), 1);
+					}
+					if (cursorAnim == 0) cursorAnim = 2;
+				}
 			}
 		}
-
+		
 		render.render();
-
+		
 		frame++;
 		if (cursorAnim && !(frame % static_cast<int>(ANIM_CURSOR*FPS))) cursorAnim--;
 

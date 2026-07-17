@@ -259,7 +259,7 @@ public:
 	void render() const;
 
 	// sets all cells to value of 'replacement'
-	void clear(const Cell& replacement = Cell{DEFAULT_BACK,"", ""});
+	void clear(const Cell& replacement = Cell{" ","", ""});
 
 	// resizes the cell bounds
 	void resize(int width, int height);

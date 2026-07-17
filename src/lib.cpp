@@ -1,4 +1,5 @@
 // things i dont want cluttering main
+// (mostly Art class)
 
 #include <atomic>
 #include <csignal>

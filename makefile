@@ -36,7 +36,7 @@ debug: build
 
 release: CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
 release: BUILD_FLAGS += --config Release
-release: GCC_FLAGS += -O3 -march=x86-64 -DNDEBUG -s -flto -ffast-math -static-libgcc -static-libstdc++  # check on these last 2
+release: GCC_FLAGS += -O3 -march=x86-64 -DNDEBUG -s -flto -ffast-math -static-libgcc -static-libstdc++  # TODO: check on these last 2
 release: build
 ifeq ($(OS), Windows_NT)
 	cd build  &&  cpack -G ZIP
