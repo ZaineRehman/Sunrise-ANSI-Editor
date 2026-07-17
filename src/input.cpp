@@ -2,6 +2,8 @@
 #include <fstream>
 #include <atomic>
 #include <array>
+#include <chrono>
+#include <thread>
 
 #include "input.hpp"
 #include "settings.hpp"
@@ -110,7 +112,7 @@ void updateKeyStates_SAFE(KeyStates& keyStates) {
 			//case 42: keyStates[Key::KP_MUL]  = true; break;
 			//case 43: keyStates[Key::KP_PLUS] = true; break;
 			case 44: keyStates[Key::COMMA]   = true; break;
-			case 45: keyStates[Key::DASH]    = true; break;
+			case 45: keyStates[Key::MINUS]    = true; break;
 			case 46: keyStates[Key::PERIOD]  = true; break;
 			case 47: keyStates[Key::SLASH]   = true; break;
 
@@ -202,6 +204,7 @@ struct KeyMap {
 	Key key;
 };
 
+// US ANSI keyboard
 static constexpr KeyMap keyMappings[] = {
 	{'A', Key::A},  {'B', Key::B},  {'C', Key::C},  {'D', Key::D},  {'E', Key::E},  {'F', Key::F}, 
 	{'G', Key::G},  {'H', Key::H},  {'I', Key::I},  {'J', Key::J},  {'K', Key::K},  {'L', Key::L}, 
@@ -209,48 +212,93 @@ static constexpr KeyMap keyMappings[] = {
 	{'S', Key::S},  {'T', Key::T},  {'U', Key::U},  {'V', Key::V},  {'W', Key::W},  {'X', Key::X}, 
 	{'Y', Key::Y},  {'Z', Key::Z},  {'1', Key::_1}, {'2', Key::_2}, {'3', Key::_3}, {'4', Key::_4}, 
 	{'5', Key::_5}, {'6', Key::_6}, {'7', Key::_7}, {'8', Key::_8}, {'9', Key::_9}, {'0', Key::_0}, 
-	{VK_LBUTTON , Key::L_MOUSE}, {VK_RBUTTON , Key::R_MOUSE},  {VK_MBUTTON , Key::M_MOUSE},  {VK_XBUTTON1, Key::B1_MOUSE}, {VK_XBUTTON2, Key::B2_MOUSE}, {VK_SPACE, Key::SPACE}, 
-	{VK_LSHIFT  , Key::SHIFT},   {VK_LCONTROL, Key::CTRL},     {VK_LMENU   , Key::ALT},      {VK_RSHIFT  , Key::R_SHIFT},  {VK_RCONTROL, Key::R_CTRL},   {VK_RMENU, Key::R_ALT}, 
-	{VK_TAB     , Key::TAB},     {VK_BACK    , Key::BACKSP},   {VK_CAPITAL , Key::CAPSLOCK}, {VK_ESCAPE  , Key::ESC},      {VK_LWIN    , Key::META},     {VK_PAUSE, Key::PAUSE}, 
-	{VK_PRINT   , Key::PRINT},   {VK_SNAPSHOT, Key::PRINTSCR}, {VK_PRIOR   , Key::PGUP},     {VK_NEXT    , Key::PGDOWN},   {VK_END     , Key::END},      {VK_HOME, Key::HOME}, 
-	{VK_INSERT  , Key::INSERT},  {VK_DELETE  , Key::DEL},      {VK_UP      , Key::UP},       {VK_DOWN    , Key::DOWN},     {VK_LEFT    , Key::LEFT},     {VK_RIGHT, Key::RIGHT}, 
-	{VK_NUMPAD0 , Key::KP_0},    {VK_NUMPAD1 , Key::KP_1},     {VK_NUMPAD2 , Key::KP_2},     {VK_NUMPAD3 , Key::KP_3},     {VK_NUMPAD4 , Key::KP_4}, 
-	{VK_NUMPAD5 , Key::KP_5},    {VK_NUMPAD6 , Key::KP_6},     {VK_NUMPAD7 , Key::KP_7},     {VK_NUMPAD8 , Key::KP_8},     {VK_NUMPAD9 , Key::KP_9}, 
-	{VK_MULTIPLY, Key::KP_MUL},  {VK_ADD     , Key::KP_PLUS},  {VK_SUBTRACT, Key::KP_MIN},   {VK_DECIMAL , Key::KP_PER},   {VK_DIVIDE  , Key::KP_DIV}, 
-	{VK_NUMLOCK , Key::NUMLOCK}, {VK_SCROLL  , Key::SCRLOCK}, 
-	{VK_F1, Key::F1}, {VK_F2, Key::F2}, {VK_F3, Key::F3}, {VK_F4 , Key::F4},  {VK_F5 , Key::F5},  {VK_F6 , Key::F6}, 
-	{VK_F7, Key::F7}, {VK_F8, Key::F8}, {VK_F9, Key::F9}, {VK_F10, Key::F10}, {VK_F11, Key::F11}, {VK_F12, Key::F12}
+	
+	{VK_SPACE    , Key::SPACE},   {VK_RETURN    , Key::ENTER},     {VK_APPS   , Key::CONTEXTMENU}, 
+	{VK_LSHIFT   , Key::SHIFT},   {VK_LCONTROL  , Key::CTRL},      {VK_LMENU  , Key::ALT},         {VK_RSHIFT  , Key::R_SHIFT},  {VK_RCONTROL, Key::R_CTRL},   {VK_RMENU, Key::R_ALT}, 
+	{VK_TAB      , Key::TAB},     {VK_BACK      , Key::BACKSPACE}, {VK_CAPITAL, Key::CAPSLOCK},    {VK_ESCAPE  , Key::ESC},      {VK_LWIN    , Key::META},     {VK_PAUSE, Key::PAUSE}, 
+	{VK_OEM_MINUS, Key::MINUS},   {VK_SNAPSHOT  , Key::PRINTSCR},  {VK_PRIOR  , Key::PGUP},        {VK_NEXT    , Key::PGDOWN},   {VK_END     , Key::END},      {VK_HOME , Key::HOME}, 
+	{VK_INSERT   , Key::INSERT},  {VK_DELETE    , Key::DEL},       {VK_UP     , Key::UP},          {VK_DOWN    , Key::DOWN},     {VK_LEFT    , Key::LEFT},     {VK_RIGHT, Key::RIGHT}, 
+	{VK_OEM_COMMA, Key::COMMA},   {VK_OEM_PERIOD, Key::PERIOD},    {VK_NUMLOCK, Key::NUMLOCK},     {VK_SCROLL  , Key::SCRLOCK},  {VK_OEM_PLUS, Key::EQUALS},   {VK_OEM_1, Key::SEMICOLON}, 
+	{VK_OEM_2    , Key::SLASH},   {VK_OEM_3     , Key::TICK},      {VK_OEM_4  , Key::LBRACKET},    {VK_OEM_5   , Key::BSLASH},   {VK_OEM_6   , Key::RBRACKET}, {VK_OEM_7, Key::APOSTROPHE}, 
+	
+	{VK_LBUTTON , Key::L_MOUSE},  {VK_RBUTTON, Key::R_MOUSE},   {VK_MBUTTON, Key::M_MOUSE}, 
+	{VK_XBUTTON1, Key::B1_MOUSE}, {VK_XBUTTON2, Key::B2_MOUSE}, 
+
+	{VK_NUMPAD0  , Key::KP_0},    {VK_NUMPAD1 , Key::KP_1},    {VK_NUMPAD2 , Key::KP_2},     {VK_NUMPAD3 , Key::KP_3},      {VK_NUMPAD4 , Key::KP_4}, 
+	{VK_NUMPAD5  , Key::KP_5},    {VK_NUMPAD6 , Key::KP_6},    {VK_NUMPAD7 , Key::KP_7},     {VK_NUMPAD8 , Key::KP_8},      {VK_NUMPAD9 , Key::KP_9}, 
+	{VK_MULTIPLY , Key::KP_MUL},  {VK_ADD     , Key::KP_PLUS}, {VK_SUBTRACT, Key::KP_MINUS}, {VK_DECIMAL , Key::KP_PERIOD}, {VK_DIVIDE  , Key::KP_DIV}, 
+
+	{VK_BROWSER_BACK       , Key::BROWSER_BACK},        {VK_BROWSER_FORWARD , Key::BROWSER_FORWARD},  {VK_BROWSER_FAVORITES, Key::BROWSER_FAVORITES},  
+	{VK_BROWSER_STOP       , Key::BROWSER_STOP},        {VK_BROWSER_SEARCH  , Key::BROWSER_SEARCH},   {VK_BROWSER_REFRESH  , Key::BROWSER_REFRESH}, 
+	{VK_BROWSER_HOME       , Key::BROWSER_HOME},        {VK_VOLUME_MUTE     , Key::VOLUME_MUTE},      {VK_VOLUME_DOWN      , Key::VOLUME_DOWN}, 
+	{VK_VOLUME_UP          , Key::VOLUME_UP},           {VK_MEDIA_NEXT_TRACK, Key::MEDIA_NEXT_TRACK}, {VK_MEDIA_PREV_TRACK , Key::MEDIA_PREV_TRACK},    
+	{VK_MEDIA_STOP         , Key::MEDIA_STOP},          {VK_MEDIA_PLAY_PAUSE, Key::MEDIA_PLAY_PAUSE}, {VK_LAUNCH_MAIL      , Key::LAUNCH_MAIL},
+	{VK_LAUNCH_MEDIA_SELECT, Key::LAUNCH_MEDIA_SELECT}, {VK_LAUNCH_APP1     , Key::LAUNCH_APP1},      {VK_LAUNCH_APP2       , Key::LAUNCH_APP2}, 
+	{VK_SLEEP              , Key::SLEEP},               {VK_OEM_CLEAR       , Key::CLEAR}, 
+
+	{VK_F1 , Key::F1},  {VK_F2 , Key::F2},  {VK_F3 , Key::F3},  {VK_F4 , Key::F4},  {VK_F5 , Key::F5},  {VK_F6 , Key::F6}, 
+	{VK_F7 , Key::F7},  {VK_F8 , Key::F8},  {VK_F9 , Key::F9},  {VK_F10, Key::F10}, {VK_F11, Key::F11}, {VK_F12, Key::F12}, 
+	{VK_F13, Key::F13}, {VK_F14, Key::F14}, {VK_F15, Key::F15}, {VK_F16, Key::F16}, {VK_F17, Key::F17}, {VK_F18, Key::F18},  // legacy
+	{VK_F19, Key::F19}, {VK_F20, Key::F20}, {VK_F21, Key::F21}, {VK_F22, Key::F22}, {VK_F23, Key::F23}, {VK_F24, Key::F24},  // legacy
+
+	//  -- LEGACY KEYBINDS --
+
+	{VK_PRINT, Key::PRINT},     {VK_SELECT, Key::SELECT},        {VK_SEPARATOR, Key::SEPARATOR},     {VK_EXECUTE, Key::EXEC},           {VK_HELP, Key::HELP}, 
+	{VK_ATTN , Key::ATTENTION}, {VK_CRSEL , Key::CURSOR_SELECT}, {VK_EXSEL    , Key::EXTEND_SELECT}, {VK_EREOF  , Key::ERASE_TO_FIELD}, {VK_PLAY, Key::PLAY}, 
+	{VK_ZOOM , Key::ZOOM},      {VK_PA1   , Key::PROGRAM_ACTION_1}, 
+
+	//  -- CONTROLLER --
+
+	{VK_GAMEPAD_A                     , Key::GAMEPAD_A},                      {VK_GAMEPAD_B                      , Key::GAMEPAD_B}, 
+	{VK_GAMEPAD_X                     , Key::GAMEPAD_X},                      {VK_GAMEPAD_Y                      , Key::GAMEPAD_Y}, 
+	{VK_GAMEPAD_LEFT_SHOULDER         , Key::GAMEPAD_LEFT_SHOULDER},          {VK_GAMEPAD_RIGHT_SHOULDER         , Key::GAMEPAD_RIGHT_SHOULDER}, 
+	{VK_GAMEPAD_LEFT_TRIGGER          , Key::GAMEPAD_LEFT_TRIGGER},           {VK_GAMEPAD_RIGHT_TRIGGER          , Key::GAMEPAD_RIGHT_TRIGGER}, 
+	{VK_GAMEPAD_DPAD_UP               , Key::GAMEPAD_DPAD_UP},                {VK_GAMEPAD_DPAD_DOWN              , Key::GAMEPAD_DPAD_DOWN}, 
+	{VK_GAMEPAD_DPAD_LEFT             , Key::GAMEPAD_DPAD_LEFT},              {VK_GAMEPAD_DPAD_RIGHT             , Key::GAMEPAD_DPAD_RIGHT}, 
+	{VK_GAMEPAD_MENU                  , Key::GAMEPAD_MENU},                   {VK_GAMEPAD_VIEW                   , Key::GAMEPAD_VIEW}, 
+	{VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON, Key::GAMEPAD_LEFT_THUMBSTICK_BUTTON}, {VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON, Key::GAMEPAD_RIGHT_THUMBSTICK_BUTTON}, 
+	{VK_GAMEPAD_LEFT_THUMBSTICK_UP    , Key::GAMEPAD_LEFT_THUMBSTICK_UP},     {VK_GAMEPAD_LEFT_THUMBSTICK_DOWN   , Key::GAMEPAD_LEFT_THUMBSTICK_DOWN}, 
+	{VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT , Key::GAMEPAD_LEFT_THUMBSTICK_RIGHT},  {VK_GAMEPAD_LEFT_THUMBSTICK_LEFT   , Key::GAMEPAD_LEFT_THUMBSTICK_LEFT}, 
+	{VK_GAMEPAD_RIGHT_THUMBSTICK_UP   , Key::GAMEPAD_RIGHT_THUMBSTICK_UP},    {VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN  , Key::GAMEPAD_RIGHT_THUMBSTICK_DOWN}, 
+	{VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT, Key::GAMEPAD_RIGHT_THUMBSTICK_RIGHT}, {VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT  , Key::GAMEPAD_RIGHT_THUMBSTICK_LEFT}, 
+
+	//  -- IME --
+
+	{VK_KANA  , Key::IME_KANA},   {VK_HANGUL, Key::IME_HANGUL}, {VK_IME_ON    , Key::IME_ON},         {VK_JUNJA     , Key::IME_JUNJA}, 
+	{VK_HANJA , Key::IME_HANJA},  {VK_KANJI , Key::IME_KANJI},  {VK_IME_OFF   , Key::IME_OFF},        {VK_CONVERT   , Key::IME_CONVERT}, 
+	{VK_ACCEPT, Key::IME_ACCEPT}, {VK_FINAL , Key::IME_FINAL},  {VK_MODECHANGE, Key::IME_MODECHANGE}, {VK_NONCONVERT, Key::IME_NONCONVERT}, 
+
+	//  -- MISC -- 
+	{VK_OEM_8, Key::MISC_1}, {VK_OEM_102, Key::MISC_2}
+
+	//  -- NOT INCLUDED (probably for good reason) --
+	// VK_PROCESSKEY
+	// VK_PACKET
 };
 
-void thread_doKeyStates(KeyStates& keyStates, int keyChecker) {
-	while (1) updateKeyStates(keyStates, keyChecker);
+
+void thread_doKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChecker) {
+	while (1) {
+		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
+
+		updateKeyStates(keyStates, keyStates_slow, keyChecker);
+
+		double delta = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timeStart).count())/1e6;
+		if (delta < static_cast<double>(1.0f/(IPS))) {
+			std::this_thread::sleep_for(std::chrono::microseconds(
+				static_cast<int>(1e6*(static_cast<double>((1.0f/(IPS))) - delta))
+			));
+		}
+	}
 }
 
-void updateKeyStates(KeyStates& keyStates, int keyChecker) {
+void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChecker) {
 	#ifdef _WIN32
 		for (const KeyMap& m : keyMappings) {
-			keyStates[m.key] = GetAsyncKeyState(m.code) & 0x8000;
+			SHORT code = GetAsyncKeyState(m.code);
+			keyStates[m.key]      = code & 0x8000;
+			keyStates_slow[m.key] = code & 0x0001;
 		}
-
-		// (most!) legacy keys
-		//  ^^^^^ because i still check for some for some reason
-		//   VK_SELECT  VK_SEPARATOR  VK_EXECUTE  VK_HELP  VK_SLEEP  VK_KANA
-		//   VK_HANGUL  VK_IME_ON  VK_JUNJA  VK_FINAL  VK_HANJA  VK_KANJI
-		//   VK_IME_OFF  VK_CONVERT  VK_NONCONVERT  VK_ACCEPT  VK_MODECHANGE  VK_LWIN
-		//   VK_APPS  VK_F13  VK_F14  VK_F15  VK_F16  VK_F17
-		//   VK_F18  VK_F19  VK_F20  VK_F21  VK_F22  VK_F23
-		//   VK_F24  VK_BROWSER_BACK  VK_BROWSER_FORWARD  VK_BROWSER_REFRESH  VK_BROWSER_STOP  VK_BROWSER_SEARCH
-		//   VK_BROWSER_FAVORITES  VK_BROWSER_HOME  VK_VOLUME_MUTE  VK_VOLUME_DOWN  VK_VOLUME_UP  VK_MEDIA_NEXT_TRACK
-		//   VK_MEDIA_PREV_TRACK  VK_MEDIA_STOP  VK_MEDIA_PLAY_PAUSE  VK_LAUNCH_MAIL  VK_LAUNCH_MEDIA_SELECT  VK_LAUNCH_APP1
-		//   VK_LAUNCH_APP2  VK_OEM_1  VK_OEM_PLUS  VK_OEM_COMMA  VK_OEM_MINUS  VK_OEM_PERIOD
-		//   VK_OEM_2  VK_OEM_3  VK_GAMEPAD_A  VK_GAMEPAD_B  VK_GAMEPAD_X  VK_GAMEPAD_Y
-		//   VK_GAMEPAD_RIGHT_SHOULDER  VK_GAMEPAD_LEFT_SHOULDER  VK_GAMEPAD_LEFT_TRIGGER  VK_GAMEPAD_RIGHT_TRIGGER  VK_GAMEPAD_DPAD_UP  VK_GAMEPAD_DPAD_DOWN
-		//   VK_GAMEPAD_DPAD_LEFT  VK_GAMEPAD_DPAD_RIGHT  VK_GAMEPAD_MENU  VK_GAMEPAD_VIEW  VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON  VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON
-		//   VK_GAMEPAD_LEFT_THUMBSTICK_UP  VK_GAMEPAD_LEFT_THUMBSTICK_DOWN  VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT  
-		//   VK_GAMEPAD_LEFT_THUMBSTICK_LEFT  VK_GAMEPAD_RIGHT_THUMBSTICK_UP  VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN
-		//   VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT  VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT  VK_OEM_4  VK_OEM_5  VK_OEM_6  VK_OEM_7
-		//   VK_OEM_8  VK_OEM_102  VK_PROCESSKEY  VK_PACKET  VK_ATTN  VK_CRSEL
-		//   VK_EXSEL  VK_EREOF  VK_PLAY  VK_ZOOM  VK_NONAME  VK_PA1  VK_OEM_CLEAR
 
 	#else
 		struct input_event event;

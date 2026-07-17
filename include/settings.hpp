@@ -30,6 +30,10 @@
  * [ ] finalize window sizes
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] win terminal shift+arrow and ctrl+arrow
+ * 
+ *  == CONSIDER ==
+ * [ ] timeBeginPeriod() to change minimum sleep time
+ * [ ] threaded inputs suck?
 **/
 
 
@@ -69,7 +73,13 @@ inline const std::string DEFAULT_BACK = ".";
 
 
 // fps
-inline float FPS = 15.0f;
+inline float FPS = 30.0f;
+
+// inputs per second
+// should not be lower than FPS
+inline float IPS = 60.0f;
+
+inline bool USE_THREADED_INPUT = false;
 
 // animation duration for cursor (seconds)
 inline float ANIM_CURSOR = 0.5f;

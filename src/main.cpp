@@ -35,6 +35,7 @@ int main() {
 	std::signal(SIGABRT, signalHandler);
 
 	KeyStates keyStates {};
+	KeyStates keyStates_slow {};
 	int keyChecker;
 
 
@@ -122,7 +123,7 @@ int main() {
 	if (INPUT_SAFE_MODE) {
 		std::jthread(safeModeInputHelper).detach();
 	} else {
-		//std::jthread(thread_doKeyStates, std::ref(keyStates), keyChecker).detach();
+		if (USE_THREADED_INPUT) std::jthread(thread_doKeyStates, std::ref(keyStates), std::ref(keyStates_slow), keyChecker).detach();
 	}
 
 	// TODO: needed?
@@ -213,23 +214,27 @@ int main() {
 		* 
 		* 
 		* arrows OR [UHJK]: cursor
+		* holding [ALT]: fast cursor
 		* 
 		* [{]: open character catalogue
 		* [}]: open color catalogue
 		**/
 
-		setKeyStatesOff(keyStates);
-		if (INPUT_SAFE_MODE) updateKeyStates_SAFE(keyStates);
-		else updateKeyStates(keyStates, keyChecker);
+		//setKeyStatesOff(keyStates);
+		//setKeyStatesOff(keyStates_slow);
+		if (!USE_THREADED_INPUT) {
+			if (INPUT_SAFE_MODE) updateKeyStates_SAFE(keyStates);
+			else updateKeyStates(keyStates, keyStates_slow, keyChecker);
+		}
 
 		std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
 
 		if (keyStates[Key::ESC]) RUNNING = false;
 
-		if (keyStates[Key::LEFT])  { cursorX--; cursorAnim = 3; }
-		if (keyStates[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
-		if (keyStates[Key::UP])    { cursorY--; cursorAnim = 3; }
-		if (keyStates[Key::DOWN])  { cursorY++; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::LEFT]  : keyStates_slow[Key::LEFT])  { cursorX--; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::RIGHT] : keyStates_slow[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::UP]    : keyStates_slow[Key::UP])    { cursorY--; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::DOWN]  : keyStates_slow[Key::DOWN])  { cursorY++; cursorAnim = 3; }
 
 		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
 		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
@@ -242,26 +247,26 @@ int main() {
 		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2); }
 		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2); }
 
-		if (keyStates[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
-		if (keyStates[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
+		if (keyStates_slow[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
 		if (keyStates[Key::W]) {
 			std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
 			ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 			cursorAnim = 1;
 		}
 
-		if (keyStates[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
-		if (keyStates[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
+		if (keyStates_slow[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
 			ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 			cursorAnim = 1;
 		}
 
-		if (keyStates[Key::LBRACKET]) {
+		if (keyStates_slow[Key::LBRACKET]) {
 			if (showingCatalogue == 1) showingCatalogue = 0;
 			else showingCatalogue = 1;
 		}
-		if (keyStates[Key::RBRACKET]) {
+		if (keyStates_slow[Key::RBRACKET]) {
 			if (showingCatalogue == 2) showingCatalogue = 0;
 			else showingCatalogue = 2;
 		}
