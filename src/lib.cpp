@@ -44,13 +44,13 @@ void Art::edit(int _x, int _y, const std::string& str, char col) {
         int up = _y < 0 ? -_y : 0;
         int down = _y >= height ? _y-height+1 : 0;
 
-        DEBUG_STR += std::to_string(left);
-        DEBUG_STR += ",";
-        DEBUG_STR += std::to_string(right);
-        DEBUG_STR += ",";
-        DEBUG_STR += std::to_string(up);
-        DEBUG_STR += ",";
-        DEBUG_STR += std::to_string(down);
+        //DEBUG_STR += std::to_string(left);
+        //DEBUG_STR += ",";
+        //DEBUG_STR += std::to_string(right);
+        //DEBUG_STR += ",";
+        //DEBUG_STR += std::to_string(up);
+        //DEBUG_STR += ",";
+        //DEBUG_STR += std::to_string(down);
 
         resize(left, right, up, down);
 

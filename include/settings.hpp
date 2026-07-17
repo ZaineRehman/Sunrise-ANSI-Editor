@@ -29,6 +29,7 @@
  * [ ] downgrading color mode -> remove those codes from art
  * [ ] finalize window sizes
  * [ ] make input checkers use separate thread (mutex?)
+ * [ ] win terminal shift+arrow and ctrl+arrow
 **/
 
 
@@ -68,7 +69,7 @@ inline const std::string DEFAULT_BACK = ".";
 
 
 // fps
-inline float FPS = 30.0f;
+inline float FPS = 15.0f;
 
 // animation duration for cursor (seconds)
 inline float ANIM_CURSOR = 0.5f;

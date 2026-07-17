@@ -55,6 +55,7 @@ void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
 	assert(x+cells.size()-1);  // what the fuck is this
 
 	for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
+		// (2, 34)
 		buffer[y*width + x + i] = cells[i];
 	}
 }
@@ -213,7 +214,7 @@ namespace ANSI {
 	const std::string white_back_bright   = "\033[107m";
 
 	const std::string cursor_home      = "\033[H";
-	const std::string cursor_visible   = "\033[?25H";
+	const std::string cursor_visible   = "\033[?25h";
 	const std::string cursor_invisible = "\033[?25l";
 	
 	const std::string clearToEnd      = "\033[0J";

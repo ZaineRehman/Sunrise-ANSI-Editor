@@ -228,15 +228,8 @@ void thread_doKeyStates(KeyStates& keyStates, int keyChecker) {
 
 void updateKeyStates(KeyStates& keyStates, int keyChecker) {
 	#ifdef _WIN32
-		BYTE keyboardState[256];
-
-		if (GetKeyboardState(keyboardState)) {
-			for (int i = 0; i < 256; ++i) {
-				std::cout << (int)keyboardState[i] << " ";
-			} std::cout << "[done]" << std::endl;
-			for (const KeyMap& m : keyMappings) {
-				keyStates.set(m.key, (keyboardState[m.code] & 0x80) != 0);
-			}
+		for (const KeyMap& m : keyMappings) {
+			keyStates[m.key] = GetAsyncKeyState(m.code) & 0x8000;
 		}
 
 		// (most!) legacy keys

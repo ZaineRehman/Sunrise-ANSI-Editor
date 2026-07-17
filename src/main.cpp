@@ -37,15 +37,6 @@ int main() {
 	KeyStates keyStates {};
 	int keyChecker;
 
-	while (1) {
-		setKeyStatesOff(keyStates);
-		updateKeyStates(keyStates, keyChecker);
-
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-
-	return 0;
-
 
 	Art ART (20, 5, Cell{DEFAULT_BACK, "", ""});
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
@@ -73,20 +64,36 @@ int main() {
 		SetConsoleCP(65001);       
 		SetConsoleOutputCP(65001); 
 
-		HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+		// raw output
+		
 		HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		if (hInput == INVALID_HANDLE_VALUE || hOutput == INVALID_HANDLE_VALUE) return -1;
-
+		
 		DWORD dwOutputMode = 0;
 		GetConsoleMode(hOutput, &dwOutputMode);
 		dwOutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 		SetConsoleMode(hOutput, dwOutputMode);
 
+		// raw input
+
+		HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+		DWORD originalMode;
+		GetConsoleMode(hInput, &originalMode);
+
 		DWORD dwInputMode = 0;
 		GetConsoleMode(hInput, &dwInputMode);
-		dwInputMode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+		dwInputMode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS);
+		dwInputMode |= ENABLE_VIRTUAL_TERMINAL_INPUT | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT;
 		SetConsoleMode(hInput, dwInputMode);
+
+		// hide cursor
+
+		CONSOLE_CURSOR_INFO cursorInfo;
+    
+		GetConsoleCursorInfo(hOutput, &cursorInfo);
+		cursorInfo.bVisible = FALSE;
+		SetConsoleCursorInfo(hOutput, &cursorInfo);
+
+		if (hInput == INVALID_HANDLE_VALUE || hOutput == INVALID_HANDLE_VALUE) return -1;
 	#else
 		system("setterm -cursor off");
 	
@@ -117,6 +124,13 @@ int main() {
 	} else {
 		//std::jthread(thread_doKeyStates, std::ref(keyStates), keyChecker).detach();
 	}
+
+	// TODO: needed?
+	//std::cout << "\x1b[>4;2m" << std::flush;
+	//std::cout << "\x1b[?9001h" << std::flush;
+	//system("Remove-PSReadLineKeyHandler -Chord 'Shift+LeftArrow'; Remove-PSReadLineKeyHandler -Chord 'Shift+RightArrow'");
+	//std::cout << "\x1b[?1000h\x1b[?1006h" << std::flush;
+	std::cout << ANSI::cursor_invisible << std::flush;
 
 	clear();
 	
@@ -252,14 +266,15 @@ int main() {
 			else showingCatalogue = 2;
 		}
 
-		if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
-		if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
-		if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
-		if (keyStates[Key::L]) { ART.resize(0, 0, 0, 1); }
+		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
+		//if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
+		//if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
+		//if (keyStates[Key::L]) { ART.resize(0, 0, 0, 1); }
 		if (keyStates[Key::C]) { DEBUG_STR = ""; }
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
+
 
 		//  -- RENDER --
 
@@ -476,11 +491,18 @@ int main() {
 
 	//  -- CLEAN -- 
 
-	std::cout << ANSI::reset << ANSI::cursor_visible << std::flush;
 	//clear()
+	// TODO: needed?
+	//std::cout << "\x1b[>4;m" << std::flush;
+	//std::cout << "\x1b[?9001l" << std::flush;
+	//system("Set-PSReadLineOption -EditMode Windows");
+	std::cout << ANSI::reset << ANSI::cursor_visible << std::flush;
 
 	#ifdef _WIN32
+		SetConsoleMode(hInput, originalMode);
 
+		cursorInfo.bVisible = TRUE;
+		SetConsoleCursorInfo(hOutput, &cursorInfo);
 	#else
 		system("setterm -cursor on");
 		system("stty sane");
