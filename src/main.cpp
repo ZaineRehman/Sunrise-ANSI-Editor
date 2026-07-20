@@ -45,17 +45,20 @@ int main() {
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
 	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
+	// color catalogue picker
+	int catalogueIndexX = 0, catalogueIndexY = 0;
+
 	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
-		ANSI::red,     ANSI::green, ANSI::blue,  ANSI::yellow, 
-		ANSI::magenta, ANSI::cyan,  ANSI::white, ANSI::black, 
+		ANSI::red,            ANSI::green,        ANSI::blue,         ANSI::yellow, 
+		ANSI::magenta,        ANSI::cyan,         ANSI::white,        ANSI::black, 
 		ANSI::red_bright,     ANSI::green_bright, ANSI::blue_bright,  ANSI::yellow_bright, 
 		ANSI::magenta_bright, ANSI::cyan_bright,  ANSI::white_bright, ANSI::black_bright
 	};
 	// background color palette
 	std::string colorBackPalette[PALETTE_SIZE] = {
-		ANSI::red_back,     ANSI::green_back, ANSI::blue_back,  ANSI::yellow_back, 
-		ANSI::magenta_back, ANSI::cyan_back,  ANSI::white_back, ANSI::black_back, 
+		ANSI::red_back,            ANSI::green_back,        ANSI::blue_back,         ANSI::yellow_back, 
+		ANSI::magenta_back,        ANSI::cyan_back,         ANSI::white_back,        ANSI::black_back, 
 		ANSI::red_back_bright,     ANSI::green_back_bright, ANSI::blue_back_bright,  ANSI::yellow_back_bright, 
 		ANSI::magenta_back_bright, ANSI::cyan_back_bright,  ANSI::white_back_bright, ANSI::black_back_bright
 	};
@@ -166,7 +169,7 @@ int main() {
 		float specialNumber = (q+1)*(255.0f/COLOR_CATALOGUE_Y);
 		//std::cout << specialNumber << '\n';
 
-		if (q == 0.0f) specialNumber += 20.0f;
+		if (q == 0.0f) specialNumber += 10.0f;
 
 		float r = specialNumber;
 		float g = 0.0f, b = 0.0f;
@@ -195,7 +198,7 @@ int main() {
 	for (int f = 0; f < COLOR_CATALOGUE_X; ++f) {
 		catalogueAnsi += Cell{" ", "", ANSI::Color_24bit::makeColor(f*(255/COLOR_CATALOGUE_X), f*(255/COLOR_CATALOGUE_X), f*(255/COLOR_CATALOGUE_X), true)};
 	}
-	std::cout << ANSI::reset << std::endl;
+	//std::cout << ANSI::reset << std::endl;
 
 
 	//  -- LOOP -- 
@@ -207,6 +210,8 @@ int main() {
 
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
+
+		SCREEN_TOO_SMALL = false;
 
 		//  -- INPUTS -- 
 
@@ -237,10 +242,38 @@ int main() {
 
 		if (keyStates[Key::ESC]) RUNNING = false;
 
-		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  { cursorX--; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) { cursorX++; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    { cursorY--; cursorAnim = 3; }
-		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  { cursorY++; cursorAnim = 3; }
+		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  {
+			if (showingCatalogue == 0) {
+				cursorX--; cursorAnim = 3;
+			} else if (showingCatalogue == 1) {
+				catalogueIndexX--;
+				if (catalogueIndexX < 0) catalogueIndexX = 0;
+			}
+		}
+		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) {
+			if (showingCatalogue == 0) {
+				cursorX++; cursorAnim = 3;
+			} else if (showingCatalogue == 1) {
+				catalogueIndexX++;
+				if (catalogueIndexX >= COLOR_CATALOGUE_X) catalogueIndexX = COLOR_CATALOGUE_X-1;
+			}
+		}
+		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    {
+			if (showingCatalogue == 0) {
+				cursorY--; cursorAnim = 3;
+			} else if (showingCatalogue == 1) {
+				catalogueIndexY--;
+				if (catalogueIndexY < 0) catalogueIndexY = 0;
+			}
+		}
+		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  {
+			if (showingCatalogue == 0) {
+				cursorY++; cursorAnim = 3;
+			} else if (showingCatalogue == 1) {
+				catalogueIndexY++;
+				if (catalogueIndexY >= COLOR_CATALOGUE_Y) catalogueIndexX = COLOR_CATALOGUE_Y-1;
+			}
+		}
 
 		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
 		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
@@ -451,7 +484,25 @@ int main() {
 						}
 					}
 					else if (showingCatalogue == 1) {
-						//catalogueAnsi;
+						{
+							// render Y arrow
+							render.put(x, y + catalogueIndexY, Cell{">", "", ""});
+						}
+						if (y == 4) {
+							// render X arrow
+							//CellString arrowX {};
+							//for (int n = 0; n < catalogueIndexX; ++n) arrowX += " ";
+							//arrowX += "v";
+							//render.putString(x, y, arrowX);
+							render.put(x + catalogueIndexX, y, Cell{"v", "", ""});
+						}
+						else if (y == 5) {
+							for (int yc = 0; yc < COLOR_CATALOGUE_Y; ++yc) {
+								for (int xc = 0; xc < COLOR_CATALOGUE_X; ++xc) {
+									render.put(xc+x, yc+y, catalogueAnsi[yc*COLOR_CATALOGUE_X + xc]);
+								}
+							}
+						}
 					}
 				}
 				
@@ -531,6 +582,12 @@ int main() {
 					if (cursorAnim == 0) cursorAnim = 2;
 				}
 			}
+		}
+
+		if (SCREEN_TOO_SMALL) {
+			render.fill(Cell{" ", "", ANSI::red_back_bright});
+			render.putString(0, 0, CellString{"SCREEN"});
+			render.putString(0, 1, CellString{"TOO SMALL"});
 		}
 		
 		render.render();

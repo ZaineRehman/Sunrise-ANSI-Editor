@@ -33,6 +33,7 @@
  * [ ] clean up files
  * [ ] add a support mode for only 4-bit color
  * [ ] tutorial
+ * [ ] only re-render when needed
  * 
  *  == CONSIDER ==
  * [ ] timeBeginPeriod() to change minimum sleep time
@@ -97,7 +98,7 @@ inline int SCREEN_WIDTH = 75;
 inline int SCREEN_HEIGHT = 20;
 
 // size of side panel
-inline constexpr int PANEL_SIZE = 40;
+inline constexpr int PANEL_SIZE = 35;
 
 // size of bottom panel
 inline constexpr int BOTTOM_PANEL_SIZE = 2;
