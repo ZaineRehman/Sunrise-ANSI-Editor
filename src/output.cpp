@@ -37,6 +37,7 @@ std::pair<int,int> getTerminalDimensions() {
 	#endif
 }
 
+
 void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
 	assert(x < width && y < height);
 
@@ -392,7 +393,8 @@ namespace ANSI {
 		}
 
 		// fallthrough
-		return ANSI::red_back_bright;
+		// TODO: idk
+		return ANSI::strike;
 	}
 
 	std::string Color_8bit::makeColor(int r, int g, int b, bool background) {

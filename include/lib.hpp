@@ -1,5 +1,10 @@
 #pragma once
 
+#define __LOOP_CONCAT_INTERNAL(a, b) a ## b
+#define __LOOP_CONCAT(a, b) __LOOP_CONCAT_INTERNAL(a, b)
+#define LOOP(n) for (int __LOOP_CONCAT(_loop_nvar_, __LINE__) = 0; __LOOP_CONCAT(_loop_nvar_, __LINE__) < n; ++__LOOP_CONCAT(_loop_nvar_, __LINE__))
+
+
 #include <atomic>
 #include <csignal>
 #include <string>

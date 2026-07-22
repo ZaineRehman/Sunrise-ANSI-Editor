@@ -6,12 +6,14 @@
  * [x] extend art bounds when inserting outside of range
  * [x] clean up main.cpp
  * [x] proper windows input support
+ * [ ] load palettes to/from file
  * [ ] proper linux input support
  * [ ] color catalogue picker
  * [ ] character catalogue picker
  * [ ] stop re-calculating some things every single frame
  * [ ] export art to .ans file
  * [ ] ANSI mode
+ * [ ] ANSI editor mode
  * [ ] minimum screen size
  * [ ] custom palettes
  * [ ] music
@@ -27,6 +29,7 @@
  * [ ] gradient maker
  * [ ] trim empty spaces from art
  * [ ] downgrading color mode -> remove those codes from art
+ *      [ ] recognize the colors and appropriately downgrade?
  * [ ] finalize window sizes
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] win terminal shift+arrow and ctrl+arrow
@@ -34,10 +37,45 @@
  * [ ] add a support mode for only 4-bit color
  * [ ] tutorial
  * [ ] only re-render when needed
+ * [ ] you dont need to loop through every cell on the screen
+ * SIDE PANEL: 
+ *   [x] sunrise text
+ *   [x] char hotkeys
+ *   [ ] settings button
+ *   		[ ] music volume
+ *   		[ ] input safe mode
+ *   		[ ] fps?
+ *   		[ ] cursor animation
+ *   		[ ] border color
+ *   		[ ] key color
+ *   		[ ] side panel size
+ *   		[ ] bottom panel size
+ *   [ ] song name
+ *   [ ] art size
+ *   [ ] export button
+ *   [ ] copy/paste button
+ *   [ ] load from file button
+ *   [ ] animation buttons
+ *   [x] color mode
+ *   [ ] direct key input mode
+ *   [x] color catalogue
+ *   		[ ] color mode changer
+ *   		[x] 4-bit code table
+ *   		[x] 8-bit code table
+ *   		[ ] 8-bit code RGB explicit picker
+ *   		[ ] 24-bit code table
+ *   		[ ] 24-bit code RGB explicit picker
+ *   
+ *   [ ] char catalogue
+ *   		[ ] 16x16 grid
+ *   		[ ] hotkey swapper
+ *   		[ ] default background changer
  * 
  *  == CONSIDER ==
  * [ ] timeBeginPeriod() to change minimum sleep time
  * [ ] threaded inputs suck?
+ * [ ] 8-bit color catalogue sucks
+ * [ ] in color picker, render a character onto the currently chosen color
 **/
 
 
@@ -106,11 +144,16 @@ inline constexpr int BOTTOM_PANEL_SIZE = 2;
 // colors in palette
 inline constexpr int PALETTE_SIZE = 16;
 
-// color catalogue x
-inline constexpr float COLOR_CATALOGUE_X = 32.0f;
+inline constexpr int COLOR_CATALOGUE_4B_X =  8;
+inline constexpr int COLOR_CATALOGUE_4B_Y =  2;
+inline constexpr int COLOR_CATALOGUE_8B_X = 18;
+inline constexpr int COLOR_CATALOGUE_8B_Y =  6;
+// these are all floats and thats dumb but it makes for less casts
+inline constexpr float COLOR_CATALOGUE_24B_X = 32.0f;
+inline constexpr float COLOR_CATALOGUE_24B_Y =  6.0f;
 
-// color catalogue y
-inline constexpr float COLOR_CATALOGUE_Y = 6.0f;
+// largest color catalogue Y size
+inline constexpr int COLOR_CATALOGUE_LARGEST_Y = 6;
 
 
 // if true, using direct keyboard inputs
@@ -132,8 +175,12 @@ inline std::string BORDER_COLOR = ANSI::bold;
 // key highlight color
 inline std::string KEY_COLOR = ANSI::bold;
 // cursor color
-inline std::string CURSOR_COLOR = ANSI::Color_8bit::makeColor(227, false);
+inline std::string CURSOR_COLOR = ANSI::Color_8bit::makeColor(230, true);
+inline std::string CURSOR_COLOR_BACK = ANSI::Color_8bit::makeColor(227, false);
 
+inline std::string DISPLAY_COLOR_4BIT = ANSI::green;
+inline std::string DISPLAY_COLOR_8BIT = ANSI::Color_8bit::makeColor(154);
+inline std::string DISPLAY_COLOR_24BIT = ANSI::Color_24bit::makeColor(45, 214, 183);
 
 inline std::string HOTKEY_CHAR_1 = "█";
 inline std::string HOTKEY_CHAR_2 = "▓";

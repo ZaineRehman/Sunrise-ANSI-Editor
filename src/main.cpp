@@ -46,7 +46,23 @@ int main() {
 	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
 	// color catalogue picker
-	int catalogueIndexX = 0, catalogueIndexY = 0;
+	int catalogue4bIndexX = 0, catalogue4bIndexY = 0;
+	int catalogue8bIndexX = 0, catalogue8bIndexY = 0;
+	int catalogue24bIndexX = 0, catalogue24bIndexY = 0;
+
+	// char catalogue picker
+	int charCatalogueIndexX = 0, charCatalogueIndexY = 0;
+
+	// which catalogue to show
+	// 0 = 4-bit, 1 = 8-bit, 2 = 24-bit
+	int catalogueShowing = 1;
+
+	// program frame number
+	int frame = 0;
+	// animation stage of the cursor
+	int cursorAnim = 0;
+	// 0 = no, 1 = colors, 2 = chars
+	char showingCatalogue = 0;
 
 	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
@@ -63,6 +79,7 @@ int main() {
 		ANSI::magenta_back_bright, ANSI::cyan_back_bright,  ANSI::white_back_bright, ANSI::black_back_bright
 	};
 	int colorForeIndex = 0, colorBackIndex = 0;
+
 
 	// terminal raw mode
 	#ifdef _WIN32
@@ -132,6 +149,7 @@ int main() {
 	} else {
 		if (USE_THREADED_INPUT) std::jthread(thread_doKeyStates, std::ref(keyStates), std::ref(keyStates_slow), keyChecker).detach();
 	}
+	
 
 	// TODO: needed?
 	//std::cout << "\x1b[>4;2m" << std::flush;
@@ -163,10 +181,34 @@ int main() {
 		b -= (b_start - b_end) / static_cast<float>(sunriseAnsi.size());
 	}
 
-	CellString catalogueAnsi;
+	std::vector<Cell> color4bitInits {
+		Cell{" ", "", ANSI::black_back}, 
+		Cell{" ", "", ANSI::red_back}, 
+		Cell{" ", "", ANSI::green_back}, 
+		Cell{" ", "", ANSI::yellow_back}, 
+		Cell{" ", "", ANSI::blue_back}, 
+		Cell{" ", "", ANSI::magenta_back}, 
+		Cell{" ", "", ANSI::cyan_back}, 
+		Cell{" ", "", ANSI::white_back}, 
+		Cell{" ", "", ANSI::black_back_bright}, 
+		Cell{" ", "", ANSI::red_back_bright}, 
+		Cell{" ", "", ANSI::green_back_bright}, 
+		Cell{" ", "", ANSI::yellow_back_bright}, 
+		Cell{" ", "", ANSI::blue_back_bright}, 
+		Cell{" ", "", ANSI::magenta_back_bright}, 
+		Cell{" ", "", ANSI::cyan_back_bright}, 
+		Cell{" ", "", ANSI::white_back_bright}, 
+	};
+	CellString colorCatalogue_4bit {color4bitInits};
 
-	for (float q = 0.0f; q < COLOR_CATALOGUE_Y; ++q) {
-		float specialNumber = (q+1)*(255.0f/COLOR_CATALOGUE_Y);
+	CellString colorCatalogue_8bit;
+	for (int q = 16; q <= 231; q+=2) {
+		colorCatalogue_8bit += Cell{" ", "", ANSI::Color_8bit::makeColor(q, true)};
+	}
+
+	CellString colorCatalogue_24bit;
+	for (float q = 0.0f; q < COLOR_CATALOGUE_24B_Y-1; ++q) {
+		float specialNumber = (q+1)*(255.0f/(COLOR_CATALOGUE_24B_Y-1));
 		//std::cout << specialNumber << '\n';
 
 		if (q == 0.0f) specialNumber += 10.0f;
@@ -174,39 +216,40 @@ int main() {
 		float r = specialNumber;
 		float g = 0.0f, b = 0.0f;
 
-		for (float i = 0.0f; i < COLOR_CATALOGUE_X; ++i) {
-			catalogueAnsi += Cell{" ", "", ANSI::Color_24bit::makeColor(static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), true)};
+		for (float i = 0.0f; i < COLOR_CATALOGUE_24B_X; ++i) {
+			colorCatalogue_24bit += Cell{" ", "", ANSI::Color_24bit::makeColor(static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), true)};
 
 			if (specialNumber == 0.0f) continue;
 
-			if (i < (COLOR_CATALOGUE_X/4.0f)) {
-				g += (specialNumber)/(COLOR_CATALOGUE_X/4.0f);
+			if (i < (COLOR_CATALOGUE_24B_X/4.0f)) {
+				g += (specialNumber)/(COLOR_CATALOGUE_24B_X/4.0f);
 			}
-			else if (i < 2.0f*(COLOR_CATALOGUE_X/4.0f)) {
-				r -= (specialNumber)/(COLOR_CATALOGUE_X/4.0f);
-				b += (specialNumber)/(COLOR_CATALOGUE_X/4.0f);
+			else if (i < 2.0f*(COLOR_CATALOGUE_24B_X/4.0f)) {
+				r -= (specialNumber)/(COLOR_CATALOGUE_24B_X/4.0f);
+				b += (specialNumber)/(COLOR_CATALOGUE_24B_X/4.0f);
 			}
-			else if (i < 3.0f*(COLOR_CATALOGUE_X/4.0f)) {
-				g -= (specialNumber)/(COLOR_CATALOGUE_X/4.0f);
+			else if (i < 3.0f*(COLOR_CATALOGUE_24B_X/4.0f)) {
+				g -= (specialNumber)/(COLOR_CATALOGUE_24B_X/4.0f);
 			}
 			else {
-				r += (specialNumber)/(COLOR_CATALOGUE_X/4.0f);
+				r += (specialNumber)/(COLOR_CATALOGUE_24B_X/4.0f);
 			}
 		}
 	}
 
-	for (int f = 0; f < COLOR_CATALOGUE_X; ++f) {
-		catalogueAnsi += Cell{" ", "", ANSI::Color_24bit::makeColor(f*(255/COLOR_CATALOGUE_X), f*(255/COLOR_CATALOGUE_X), f*(255/COLOR_CATALOGUE_X), true)};
+	for (int f = 0; f < COLOR_CATALOGUE_24B_X; ++f) {
+		colorCatalogue_24bit += Cell{" ", "", ANSI::Color_24bit::makeColor(f*(255/COLOR_CATALOGUE_24B_X), f*(255/COLOR_CATALOGUE_24B_X), f*(255/COLOR_CATALOGUE_24B_X), true)};
 	}
-	//std::cout << ANSI::reset << std::endl;
+	
+
+	CellString charCatalogue {};
+	for (int i = 0; i < 256; ++i) {
+		charCatalogue += " ";
+		charCatalogue += Cell{charLookupTable[i], "", ""};
+	}
 
 
 	//  -- LOOP -- 
-
-	int frame = 0;
-	int cursorAnim = 0;
-	// 0 = no, 1 = colors, 2 = chars
-	char showingCatalogue = 0;
 
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
@@ -246,59 +289,112 @@ int main() {
 			if (showingCatalogue == 0) {
 				cursorX--; cursorAnim = 3;
 			} else if (showingCatalogue == 1) {
-				catalogueIndexX--;
-				if (catalogueIndexX < 0) catalogueIndexX = 0;
-			}
+				if      (catalogueShowing == 0) catalogue4bIndexX--;
+				else if (catalogueShowing == 1) catalogue8bIndexX--;
+				else if (catalogueShowing == 2) catalogue24bIndexX--;
+			} else if (showingCatalogue == 2) charCatalogueIndexX-=2;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) {
 			if (showingCatalogue == 0) {
 				cursorX++; cursorAnim = 3;
 			} else if (showingCatalogue == 1) {
-				catalogueIndexX++;
-				if (catalogueIndexX >= COLOR_CATALOGUE_X) catalogueIndexX = COLOR_CATALOGUE_X-1;
-			}
+				if      (catalogueShowing == 0) catalogue4bIndexX++;
+				else if (catalogueShowing == 1) catalogue8bIndexX++;
+				else if (catalogueShowing == 2) catalogue24bIndexX++;
+			} else if (showingCatalogue == 2) charCatalogueIndexX+=2;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    {
 			if (showingCatalogue == 0) {
 				cursorY--; cursorAnim = 3;
 			} else if (showingCatalogue == 1) {
-				catalogueIndexY--;
-				if (catalogueIndexY < 0) catalogueIndexY = 0;
-			}
+				if      (catalogueShowing == 0) catalogue4bIndexY--;
+				else if (catalogueShowing == 1) catalogue8bIndexY--;
+				else if (catalogueShowing == 2) catalogue24bIndexY--;
+			} else if (showingCatalogue == 2) charCatalogueIndexY--;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  {
 			if (showingCatalogue == 0) {
 				cursorY++; cursorAnim = 3;
 			} else if (showingCatalogue == 1) {
-				catalogueIndexY++;
-				if (catalogueIndexY >= COLOR_CATALOGUE_Y) catalogueIndexX = COLOR_CATALOGUE_Y-1;
-			}
+				if      (catalogueShowing == 0) catalogue4bIndexY++;
+				else if (catalogueShowing == 1) catalogue8bIndexY++;
+				else if (catalogueShowing == 2) catalogue24bIndexY++;
+			} else if (showingCatalogue == 2) charCatalogueIndexY++;
 		}
 
-		if (keyStates[Key::_1] || keyStates[Key::KP_1]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2); }
-		if (keyStates[Key::_2] || keyStates[Key::KP_2]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2); }
-		if (keyStates[Key::_3] || keyStates[Key::KP_3]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2); }
-		if (keyStates[Key::_4] || keyStates[Key::KP_4]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2); }
-		if (keyStates[Key::_5] || keyStates[Key::KP_5]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2); }
-		if (keyStates[Key::_6] || keyStates[Key::KP_6]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2); }
-		if (keyStates[Key::_7] || keyStates[Key::KP_7]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2); }
-		if (keyStates[Key::_8] || keyStates[Key::KP_8]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2); }
-		if (keyStates[Key::_9] || keyStates[Key::KP_9]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2); }
-		if (keyStates[Key::_0] || keyStates[Key::KP_0]) { ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2); }
+		if (keyStates[Key::_1] || keyStates[Key::KP_1]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_1 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_2] || keyStates[Key::KP_2]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_2 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_3] || keyStates[Key::KP_3]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_3 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_4] || keyStates[Key::KP_4]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_4 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_5] || keyStates[Key::KP_5]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_5 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_6] || keyStates[Key::KP_6]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_6 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_7] || keyStates[Key::KP_7]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_7 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_8] || keyStates[Key::KP_8]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_8 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_9] || keyStates[Key::KP_9]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_9 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
+		if (keyStates[Key::_0] || keyStates[Key::KP_0]) {
+			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
+			else if (showingCatalogue == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+		}
 
 		if (keyStates_slow[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
 		if (keyStates_slow[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
 		if (keyStates[Key::W]) {
-			std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
-			ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
-			cursorAnim = 1;
+			if (showingCatalogue == 0) {
+				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
+				cursorAnim = 1;
+			} else if (showingCatalogue == 1) {
+				if (catalogueShowing == 0) {
+					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
+				} else if (catalogueShowing == 1) {
+					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back);
+				} else if (catalogueShowing == 2) {
+					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back);
+				}
+			}
 		}
 		
 		if (keyStates_slow[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
 		if (keyStates_slow[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
-			ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
-			cursorAnim = 1;
+			if (showingCatalogue == 0) {
+				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
+				cursorAnim = 1;
+			} else if (showingCatalogue == 1) {
+				if (catalogueShowing == 0) {
+					colorForePalette[colorForeIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
+				} else if (catalogueShowing == 1) {
+					colorForePalette[colorForeIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
+				} else if (catalogueShowing == 2) {
+					colorForePalette[colorForeIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
+				}
+			}
 		}
 
 		if (keyStates[Key::C]) {
@@ -316,6 +412,17 @@ int main() {
 			else showingCatalogue = 2;
 		}
 
+		if (keyStates_slow[Key::COMMA]) {
+			if (showingCatalogue == 1) {
+				catalogueShowing--;
+			}
+		}
+		if (keyStates_slow[Key::PERIOD]) {
+			if (showingCatalogue == 1) {
+				catalogueShowing++;
+			}
+		}
+
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
 		//if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
 		//if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
@@ -323,6 +430,18 @@ int main() {
 
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
+
+		clamp(catalogueShowing, 0, 2);
+
+		clamp(catalogue4bIndexX, 0, static_cast<int>(COLOR_CATALOGUE_4B_X)-1);
+		clamp(catalogue4bIndexY, 0, static_cast<int>(COLOR_CATALOGUE_4B_Y)-1);
+		clamp(catalogue8bIndexX, 0, static_cast<int>(COLOR_CATALOGUE_8B_X)-1);
+		clamp(catalogue8bIndexY, 0, static_cast<int>(COLOR_CATALOGUE_8B_Y)-1);
+		clamp(catalogue24bIndexX, 0, static_cast<int>(COLOR_CATALOGUE_24B_X)-1);
+		clamp(catalogue24bIndexY, 0, static_cast<int>(COLOR_CATALOGUE_24B_Y)-1);
+
+		clamp(charCatalogueIndexY, 0, 16-1);
+		clamp(charCatalogueIndexX, 1, 32-1);
 
 
 		//  -- RENDER --
@@ -408,182 +527,230 @@ int main() {
 				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
 					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
 				}
-				
-				//  -- TEXT --
-				
-				// side panel
-				/*
-				 * [x] sunrise text
-				 * [x] char hotkeys
-				 * [ ] settings button
-				 * 		[ ] music volume
-				 * 		[ ] input safe mode
-				 * 		[ ] fps?
-				 * 		[ ] cursor animation
-				 * 		[ ] border color
-				 * 		[ ] key color
-				 * 		[ ] side panel size
-				 * 		[ ] bottom panel size
-				 * [ ] song name
-				 * [ ] art size
-				 * [ ] export button
-				 * [ ] copy/paste button
-				 * [ ] load from file button
-				 * [ ] animation buttons
-				 * [ ] color mode
-				 * [ ] direct key input mode
-				 * 
-				 * [ ] color catalogue
-				 * 		[ ] color mode changer
-				 * 		[ ] 4-bit code table
-				 * 		[ ] 8-bit code table
-				 * 		[ ] 8-bit code RGB picker
-				 * 		[ ] 24-bit code table
-				 * 		[ ] 24-bit code RGB picker
-				 * 
-				 * [ ] char catalogue
-				 * 		[ ] 16x16 grid
-				 * 		[ ] hotkey swapper
-				 * 		[ ] default background changer
-				 **/
-				if (x == SCREEN_WIDTH-1 - PANEL_SIZE + 2) {
-					if (y == 1) render.putString(x, y, sunriseAnsi);
-					if (showingCatalogue == 0) {
-						if (y == 4) {
-							// this looks like shit
-							CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-							render.putString(x, y, nums);
-						} else if (y == 5) {
-							CellString hotkeys {" "};
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
-							hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
-							render.putString(x, y, hotkeys);
-						} else if (y == 7) {
-							CellString cmode {"Color mode: "};
-							if (COLOR_MODE == 0) cmode += "NONE";
-							else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", ANSI::green , ""};
-							else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", ANSI::Color_8bit::makeColor(154) , ""};
-							else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", ANSI::Color_24bit::makeColor(45, 214, 183) , ""};
-							render.putString(x, y, cmode);
-						} else if (y == 9) {
-							CellString xy {"Size: "};
-							xy += std::to_string(SCREEN_WIDTH);
-							xy += ", ";
-							xy += std::to_string(SCREEN_HEIGHT);
-							render.putString(x, y, xy);
-						} else if (y == 11) {
-							render.putString(x, y, DEBUG_STR);
-						}
-					}
-					else if (showingCatalogue == 1) {
-						{
-							// render Y arrow
-							render.put(x, y + catalogueIndexY, Cell{">", "", ""});
-						}
-						if (y == 4) {
-							// render X arrow
-							//CellString arrowX {};
-							//for (int n = 0; n < catalogueIndexX; ++n) arrowX += " ";
-							//arrowX += "v";
-							//render.putString(x, y, arrowX);
-							render.put(x + catalogueIndexX, y, Cell{"v", "", ""});
-						}
-						else if (y == 5) {
-							for (int yc = 0; yc < COLOR_CATALOGUE_Y; ++yc) {
-								for (int xc = 0; xc < COLOR_CATALOGUE_X; ++xc) {
-									render.put(xc+x, yc+y, catalogueAnsi[yc*COLOR_CATALOGUE_X + xc]);
-								}
-							}
-						}
-					}
-				}
-				
-				// bottom panel
-				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1) {
-					if (x == 2) {
-						// 0 = show everything (width >= 109)
-						// 1 = show everything, small palette keybinds (width >= 73)
-						// 2 = show palettes (width >= 54)
-						// 3 = show palettes no keybinds (width >= 37)
-						char mode = 0;
-						const int space = SCREEN_WIDTH - 2 - PANEL_SIZE;
-						if (space >= 109) ;
-						else if (space >= 73) mode = 1;
-						else if (space >= 54) mode = 2;
-						else if (space >= 37) mode = 3;
-						else {
-							SCREEN_TOO_SMALL = true;
-							mode = 4;
-						}
-
-						DEBUG_STR = std::to_string(space);
-
-						CellString colors;
-
-						if (mode < 3) {
-							colors += "[";
-							colors += Cell{"Q", KEY_COLOR, ""};
-							colors += Cell{"E", KEY_COLOR, ""};
-							colors += "/";
-							colors += Cell{"W", KEY_COLOR, ""};
-							colors += "]: ";
-						}
-						for (int c = 0; c < PALETTE_SIZE; ++c) {
-							colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
-						} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
-						
-						if (mode < 3) {
-							colors += "[";
-							colors += Cell{"A", KEY_COLOR, ""};
-							colors += Cell{"D", KEY_COLOR, ""};
-							colors += "/";
-							colors += Cell{"S", KEY_COLOR, ""};
-							colors += "]: ";
-						}
-						for (int c = 0; c < PALETTE_SIZE; ++c) {
-							colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
-						} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
-
-
-						if (mode < 1) {
-							colors += "        [";
-							colors += Cell{"{", KEY_COLOR, ""}; 
-							colors += "]: color catalogue    [";
-							colors += Cell{"}", KEY_COLOR, ""};
-							colors += "]: char catalogue";
-						} else if (mode < 2) {
-							colors += "        [";
-							colors += Cell{"{", KEY_COLOR, ""}; 
-							colors += "]  [";
-							colors += Cell{"}", KEY_COLOR, ""};
-							colors += "]";
-						}
-						
-						//colors += DEBUG_STR;
-						
-						render.putString(2, y, colors);
-					}
-				}
-
-				// cursor
-				if (x == cursorX && y == cursorY) {
-					if (cursorAnim > 1) {
-						render.edit(x, y, CURSOR_COLOR, 0);
-						render.edit(x, y, ANSI::invertColor(CURSOR_COLOR), 1);
-					}
-					if (cursorAnim == 0) cursorAnim = 2;
-				}
 			}
 		}
 
+		//  -- TEXT --
+				
+		// side panel
+
+		int thisX = SCREEN_WIDTH-1 - PANEL_SIZE + 2;
+
+		render.putString(thisX, 1, sunriseAnsi);
+		if (showingCatalogue == 0) {  // basic panel
+			// this looks like shit
+			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
+			render.putString(thisX, 4, nums);
+
+			CellString hotkeys {" "};
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
+			render.putString(thisX, 5, hotkeys);
+
+			CellString cmode {"Color mode: "};
+			if (COLOR_MODE == 0) cmode += "NONE";
+			else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
+			else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
+			else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
+			render.putString(thisX, 7, cmode);
+
+			CellString xy {"Size: "};
+			xy += std::to_string(SCREEN_WIDTH);
+			xy += ", ";
+			xy += std::to_string(SCREEN_HEIGHT);
+			render.putString(thisX, 9, xy);
+
+			render.putString(thisX, 11, DEBUG_STR);
+		} 
+		else if (showingCatalogue == 1) {  // color catalogue
+			#define colorCatalogueLineNo 6
+			int catIndexX, catIndexY;
+			float catSizeX, catSizeY;
+			CellString catStr;
+			CellString catName {"["};
+
+			if (catalogueShowing == 0) {
+				catIndexX = catalogue4bIndexX;
+				catIndexY = catalogue4bIndexY;
+				catSizeX = COLOR_CATALOGUE_4B_X;
+				catSizeY = COLOR_CATALOGUE_4B_Y;
+				catStr = colorCatalogue_4bit;
+				catName += CellString{"4-BIT", DISPLAY_COLOR_4BIT};
+			} else if (catalogueShowing == 1) {
+				catIndexX = catalogue8bIndexX;
+				catIndexY = catalogue8bIndexY;
+				catSizeX = COLOR_CATALOGUE_8B_X;
+				catSizeY = COLOR_CATALOGUE_8B_Y;
+				catStr = colorCatalogue_8bit;
+				catName += CellString{"8-BIT", DISPLAY_COLOR_8BIT};
+			} else if (catalogueShowing == 2) {
+				catIndexX = catalogue24bIndexX;
+				catIndexY = catalogue24bIndexY;
+				catSizeX = COLOR_CATALOGUE_24B_X;
+				catSizeY = COLOR_CATALOGUE_24B_Y;
+				catStr = colorCatalogue_24bit;
+				catName += CellString{"24-BIT", DISPLAY_COLOR_24BIT};
+			}
+			catName += "}";
+
+			CellString toChangeCatStr {"["};
+			toChangeCatStr += Cell{",", KEY_COLOR, ""};
+			toChangeCatStr += "] [";
+			toChangeCatStr += Cell{".", KEY_COLOR, ""};
+			toChangeCatStr += "] to change";
+
+			// current catalog type
+			render.putString(thisX, colorCatalogueLineNo-2, catName);
+			render.putString(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
+
+			// X arrows
+			render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});
+			render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold, ""});
+			// Y arrows
+			render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold, ""});
+			render.put(thisX+catSizeX, colorCatalogueLineNo + catIndexY, Cell{"◄", ANSI::bold, ""});
+
+			// render catalogue
+			for (int yc = 0; yc < catSizeY; ++yc) {
+				for (int xc = 0; xc < catSizeX; ++xc) {
+					render.put(xc+thisX, yc+colorCatalogueLineNo, catStr[yc*catSizeX + xc]);
+				}
+			}
+
+			// current color
+			CellString currentColorStr {"Current color: "};
+			LOOP(3) currentColorStr += Cell{" ", "", catStr[catIndexY*catSizeX + catIndexX].color_back};
+			render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
+
+			// to select
+			CellString toSelectStr {"["};
+			toSelectStr += Cell{"W", KEY_COLOR, ""};
+			toSelectStr += "] and [";
+			toSelectStr += Cell{"S", KEY_COLOR, ""};
+			toSelectStr += "] to apply to palette";
+			render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
+		} else if (showingCatalogue == 2) {  // characters
+			#define charCatalogueLineNo 7
+
+			// show hotkeys
+			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
+			render.putString(thisX, 4, nums);
+			
+			CellString hotkeys {" "};
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
+			render.putString(thisX, 5, hotkeys);
+
+			// character table
+			for (int yc = 0; yc < 16; ++yc) {
+				for (int xc = 0; xc < 32; ++xc) {
+					render.put(xc+thisX, yc+charCatalogueLineNo, charCatalogue[yc*32 + xc]);
+					// signify current character
+					if (xc == charCatalogueIndexX && yc == charCatalogueIndexY) {
+						render.edit(xc+thisX, yc+charCatalogueLineNo, ANSI::red_back, 1);
+					}
+				}
+			}
+
+			// select keys
+			CellString toSelectStr {"["};
+			toSelectStr += Cell{"0", KEY_COLOR, ""};
+			toSelectStr += "-";
+			toSelectStr += Cell{"9", KEY_COLOR, ""};
+			toSelectStr += "] to set char";
+			render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
+		}
+
+		
+		// bottom panel
+
+		int thisY = SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1;
+		// 0 = show everything (width >= 109)
+		// 1 = show everything, small palette keybinds (width >= 73)
+		// 2 = show palettes (width >= 54)
+		// 3 = show palettes no keybinds (width >= 37)
+		char mode = 0;
+		const int space = SCREEN_WIDTH - 2 - PANEL_SIZE;
+		if (space >= 109) ;
+		else if (space >= 73) mode = 1;
+		else if (space >= 54) mode = 2;
+		else if (space >= 37) mode = 3;
+		else {
+			SCREEN_TOO_SMALL = true;
+			mode = 4;
+		}
+
+		//DEBUG_STR = std::to_string(space);
+
+		CellString colors;
+
+		if (mode < 3) {
+			colors += "[";
+			colors += Cell{"Q", KEY_COLOR, ""};
+			colors += Cell{"E", KEY_COLOR, ""};
+			colors += "/";
+			colors += Cell{"W", KEY_COLOR, ""};
+			colors += "]: ";
+		}
+		for (int c = 0; c < PALETTE_SIZE; ++c) {
+			colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
+		} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
+		
+		if (mode < 3) {
+			colors += "[";
+			colors += Cell{"A", KEY_COLOR, ""};
+			colors += Cell{"D", KEY_COLOR, ""};
+			colors += "/";
+			colors += Cell{"S", KEY_COLOR, ""};
+			colors += "]: ";
+		}
+		for (int c = 0; c < PALETTE_SIZE; ++c) {
+			colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
+		} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
+
+
+		if (mode < 1) {
+			colors += "        [";
+			colors += Cell{"{", KEY_COLOR, ""}; 
+			colors += "]: color catalogue    [";
+			colors += Cell{"}", KEY_COLOR, ""};
+			colors += "]: char catalogue";
+		} else if (mode < 2) {
+			colors += "        [";
+			colors += Cell{"{", KEY_COLOR, ""}; 
+			colors += "]  [";
+			colors += Cell{"}", KEY_COLOR, ""};
+			colors += "]";
+		}
+		
+		render.putString(2, thisY, colors);
+
+
+		// cursor
+		if (cursorAnim > 1 && !showingCatalogue) {
+			render.edit(cursorX, cursorY, CURSOR_COLOR, 0);
+			render.edit(cursorX, cursorY, CURSOR_COLOR_BACK, 1);
+		}
+		if (cursorAnim == 0) cursorAnim = 2;
+
+
+		// screen is too small to properly render panels
 		if (SCREEN_TOO_SMALL) {
 			render.fill(Cell{" ", "", ANSI::red_back_bright});
 			render.putString(0, 0, CellString{"SCREEN"});
@@ -595,6 +762,7 @@ int main() {
 		frame++;
 		if (cursorAnim && !(frame % static_cast<int>(ANIM_CURSOR*FPS))) cursorAnim--;
 
+		// assure proper FPS
 		double delta = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timeStart).count())/1e6;
 		if (delta < static_cast<double>(1.0f/(FPS))) {
 			std::this_thread::sleep_for(std::chrono::microseconds(
