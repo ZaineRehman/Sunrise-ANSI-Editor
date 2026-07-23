@@ -1,3 +1,7 @@
+/* 
+ * ANSI codes and functions
+**/
+
 #include <iostream>
 #include <cstdint>
 #include <cassert>

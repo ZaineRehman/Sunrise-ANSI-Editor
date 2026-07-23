@@ -1,8 +1,12 @@
+/* 
+ * Pre-calculated things used in main.cpp
+**/
+
 #pragma once
 
 #include <cstdint>
 
-#include "lib.hpp"
+#include "art.hpp"
 #include "output.hpp"
 
 

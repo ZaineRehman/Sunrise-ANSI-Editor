@@ -1,3 +1,7 @@
+/* 
+ * ANSI codes and functions
+**/
+
 #pragma once
 
 #include <string>

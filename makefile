@@ -1,5 +1,3 @@
-# https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
-
 CONFIG_FLAGS := 
 GCC_FLAGS := 
 BUILD_FLAGS := --parallel 4

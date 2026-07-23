@@ -1,3 +1,7 @@
+/* 
+ * Settings for the program
+**/
+
 #pragma once
 
 
@@ -6,16 +10,16 @@
  * [x] extend art bounds when inserting outside of range
  * [x] clean up main.cpp
  * [x] proper windows input support
+ * [x] color catalogue picker
+ * [x] character catalogue picker
+ * [x] custom palettes
  * [ ] load palettes to/from file
  * [ ] proper linux input support
- * [ ] color catalogue picker
- * [ ] character catalogue picker
  * [ ] stop re-calculating some things every single frame
  * [ ] export art to .ans file
  * [ ] ANSI mode
  * [ ] ANSI editor mode
  * [ ] minimum screen size
- * [ ] custom palettes
  * [ ] music
  * [ ] mouse input
  * [ ] highlighting sections for copy/paste
@@ -38,6 +42,11 @@
  * [ ] tutorial
  * [ ] only re-render when needed
  * [ ] you dont need to loop through every cell on the screen
+ * [ ] export file location picker
+ * [ ] autosave
+ * [ ] screen scrolling
+ * [ ] more than just color codes?
+ * [ ] popups
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys

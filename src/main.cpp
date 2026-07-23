@@ -1,4 +1,6 @@
-// Zaine Rehman, 6/19/2026
+/* 
+ * Zaine Rehman, 6/19/2026
+**/
 
 #include <iostream>
 #include <csignal>
@@ -11,8 +13,10 @@
 #include "input.hpp"
 #include "output.hpp"
 #include "settings.hpp"
-#include "lib.hpp"
+#include "art.hpp"
 #include "precalculate.hpp"
+#include "lib.hpp"
+#include "file_io.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -22,6 +26,7 @@
 	#include <fcntl.h>
 	#include <termios.h>
 #endif
+
 
 
 int main() {
@@ -62,8 +67,14 @@ int main() {
 	int frame = 0;
 	// animation stage of the cursor
 	int cursorAnim = 0;
-	// 0 = no, 1 = colors, 2 = chars
-	char showingCatalogue = 0;
+	// 0 = no, 1 = colors, 2 = chars, 3 = exporting
+	char sidePanelMode = 0;
+
+	// double-check to make sure art isnt accidentally reset
+	bool killingArt = false;
+
+	// if true, failed on export, so say that
+	bool showExportFail = false;
 
 	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
@@ -176,6 +187,9 @@ int main() {
 
 	//  -- LOOP -- 
 
+	// get rid o this
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
 
@@ -190,6 +204,10 @@ int main() {
 		* [AD/S]: change/set foreground color
 		* 
 		* [C]: clear color
+		* 
+		* [Entr]: export
+		* [/]: import
+		* [Bksp]: reset
 		* 
 		* 
 		* arrows OR [HJKL]: cursor
@@ -211,90 +229,90 @@ int main() {
 		if (keyStates[Key::ESC]) RUNNING = false;
 
 		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				cursorX--; cursorAnim = 3;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if      (catalogueShowing == 0) catalogue4bIndexX--;
 				else if (catalogueShowing == 1) catalogue8bIndexX--;
 				else if (catalogueShowing == 2) catalogue24bIndexX--;
-			} else if (showingCatalogue == 2) charCatalogueIndexX-=2;
+			} else if (sidePanelMode == 2) charCatalogueIndexX-=2;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				cursorX++; cursorAnim = 3;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if      (catalogueShowing == 0) catalogue4bIndexX++;
 				else if (catalogueShowing == 1) catalogue8bIndexX++;
 				else if (catalogueShowing == 2) catalogue24bIndexX++;
-			} else if (showingCatalogue == 2) charCatalogueIndexX+=2;
+			} else if (sidePanelMode == 2) charCatalogueIndexX+=2;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				cursorY--; cursorAnim = 3;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if      (catalogueShowing == 0) catalogue4bIndexY--;
 				else if (catalogueShowing == 1) catalogue8bIndexY--;
 				else if (catalogueShowing == 2) catalogue24bIndexY--;
-			} else if (showingCatalogue == 2) charCatalogueIndexY--;
+			} else if (sidePanelMode == 2) charCatalogueIndexY--;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				cursorY++; cursorAnim = 3;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if      (catalogueShowing == 0) catalogue4bIndexY++;
 				else if (catalogueShowing == 1) catalogue8bIndexY++;
 				else if (catalogueShowing == 2) catalogue24bIndexY++;
-			} else if (showingCatalogue == 2) charCatalogueIndexY++;
+			} else if (sidePanelMode == 2) charCatalogueIndexY++;
 		}
 
 		if (keyStates[Key::_1] || keyStates[Key::KP_1]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_1 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_1 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_2] || keyStates[Key::KP_2]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_2 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_2 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_3] || keyStates[Key::KP_3]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_3 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_3 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_4] || keyStates[Key::KP_4]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_4 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_4 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_5] || keyStates[Key::KP_5]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_5 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_5 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_6] || keyStates[Key::KP_6]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_6 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_6 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_7] || keyStates[Key::KP_7]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_7 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_7 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_8] || keyStates[Key::KP_8]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_8 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_8 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_9] || keyStates[Key::KP_9]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_9 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_9 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 		if (keyStates[Key::_0] || keyStates[Key::KP_0]) {
-			if (showingCatalogue == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
-			else if (showingCatalogue == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
+			else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 
 		if (keyStates_slow[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
 		if (keyStates_slow[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
 		if (keyStates[Key::W]) {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 				cursorAnim = 1;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if (catalogueShowing == 0) {
 					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
 				} else if (catalogueShowing == 1) {
@@ -308,10 +326,10 @@ int main() {
 		if (keyStates_slow[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
 		if (keyStates_slow[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 		if (keyStates[Key::S]) {
-			if (showingCatalogue == 0) {
+			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 				cursorAnim = 1;
-			} else if (showingCatalogue == 1) {
+			} else if (sidePanelMode == 1) {
 				if (catalogueShowing == 0) {
 					colorForePalette[colorForeIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
 				} else if (catalogueShowing == 1) {
@@ -329,23 +347,80 @@ int main() {
 		}
 
 		if (keyStates_slow[Key::LBRACKET]) {
-			if (showingCatalogue == 1) showingCatalogue = 0;
-			else showingCatalogue = 1;
+			if (sidePanelMode == 1) sidePanelMode = 0;
+			else sidePanelMode = 1;
 		}
 		if (keyStates_slow[Key::RBRACKET]) {
-			if (showingCatalogue == 2) showingCatalogue = 0;
-			else showingCatalogue = 2;
+			if (sidePanelMode == 2) sidePanelMode = 0;
+			else sidePanelMode = 2;
 		}
 
 		if (keyStates_slow[Key::COMMA]) {
-			if (showingCatalogue == 1) {
+			if (sidePanelMode == 1) {
 				catalogueShowing--;
 			}
 		}
 		if (keyStates_slow[Key::PERIOD]) {
-			if (showingCatalogue == 1) {
+			if (sidePanelMode == 1) {
 				catalogueShowing++;
 			}
+		}
+
+		if (keyStates_slow[Key::BACKSPACE]) {
+			if (killingArt) {
+				// TODO center of screen instead?
+				ART.reset(cursorX, cursorY);
+				killingArt = false;
+			} else {
+				killingArt = true;
+			}
+		}
+		
+		if (keyStates_slow[Key::ESC]) {
+			if (killingArt) {
+				killingArt = false;
+			}
+		}
+
+		if (keyStates_slow[Key::ENTER]) {
+			#ifndef NDEBUG
+				if (frame > 10) {
+			#endif
+			if (sidePanelMode == 0) sidePanelMode = 3;
+
+			else if (sidePanelMode == 3) {
+				// export art
+				auto utcTimeNow = std::chrono::system_clock::now();
+				std::chrono::zoned_time localTimeZone{std::chrono::current_zone(), utcTimeNow};
+				auto localTime = localTimeZone.get_local_time();
+				
+				auto localTime_days = std::chrono::floor<std::chrono::days>(localTime);
+				std::chrono::year_month_day ymd{localTime_days};
+				std::chrono::hh_mm_ss hms{localTime - localTime_days};
+
+				std::string filename = "export/Exported_Art_";
+				filename += std::to_string(static_cast<int>(ymd.year()));
+				filename += '-';
+				filename += std::to_string(static_cast<unsigned int>(ymd.month()));
+				filename += '-';
+				filename += std::to_string(static_cast<unsigned int>(ymd.day()));
+				filename += '_';
+				filename += std::to_string(hms.hours().count());
+				filename += '-';
+				filename += std::to_string(hms.minutes().count());
+				filename += '-';
+				filename += std::to_string(hms.seconds().count());
+				filename += ".ans";
+				
+				if (!loadArtIntoFile(ART, filename)) {
+					showExportFail = true;
+				} else {
+					sidePanelMode = 0;
+				}
+			}
+			#ifndef NDEBUG
+				}
+			#endif
 		}
 
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
@@ -461,25 +536,31 @@ int main() {
 
 		int thisX = SCREEN_WIDTH-1 - PANEL_SIZE + 2;
 
-		render.putString(thisX, 1, sunriseAnsi);
-		if (showingCatalogue == 0) {  // basic panel
+		
+		if (sidePanelMode == 0) {  // basic panel
+			// sunrise text
+			render.putString(thisX, 1, sunriseAnsi);
+
 			// this looks like shit
+			// TODO only use 1 CellString for the whole thing
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
 			render.putString(thisX, 4, nums);
 
+			// char hotkeys
 			CellString hotkeys {" "};
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; hotkeys += " ";
+			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; hotkeys += " ";
 			render.putString(thisX, 5, hotkeys);
 
+			// color mode
 			CellString cmode {"Color mode: "};
 			if (COLOR_MODE == 0) cmode += "NONE";
 			else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
@@ -487,15 +568,26 @@ int main() {
 			else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
 			render.putString(thisX, 7, cmode);
 
+			// art dimensions
 			CellString xy {"Size: "};
 			xy += std::to_string(SCREEN_WIDTH);
-			xy += ", ";
+			xy += "x";
 			xy += std::to_string(SCREEN_HEIGHT);
 			render.putString(thisX, 9, xy);
 
-			render.putString(thisX, 11, DEBUG_STR);
+			// enter to export
+			CellString toExportStr {"["};
+			toExportStr.append("Entr", KEY_COLOR, "");
+			toExportStr += "] to export";
+			render.putString(thisX, 11, toExportStr);
+
+			// backspace to reset
+			CellString toResetStr {"["};
+			toResetStr.append("Bksp", KEY_COLOR, "");
+			toResetStr += "] to reset";
+			render.putString(thisX, 12, toResetStr);
 		} 
-		else if (showingCatalogue == 1) {  // color catalogue
+		else if (sidePanelMode == 1) {  // color catalogue
 			#define colorCatalogueLineNo 6
 			int catIndexX, catIndexY;
 			float catSizeX, catSizeY;
@@ -525,6 +617,8 @@ int main() {
 				catName += CellString{"24-BIT", DISPLAY_COLOR_24BIT};
 			}
 			catName += "}";
+
+			render.putString(thisX, 1, CellString{"== COLOR CATALOGUE =="});
 
 			CellString toChangeCatStr {"["};
 			toChangeCatStr += Cell{",", KEY_COLOR, ""};
@@ -562,8 +656,10 @@ int main() {
 			toSelectStr += Cell{"S", KEY_COLOR, ""};
 			toSelectStr += "] to apply to palette";
 			render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
-		} else if (showingCatalogue == 2) {  // characters
+		} else if (sidePanelMode == 2) {  // characters
 			#define charCatalogueLineNo 7
+
+			render.putString(thisX, 1, CellString{"== CHAR CATALOGUE =="});
 
 			// show hotkeys
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
@@ -600,6 +696,26 @@ int main() {
 			toSelectStr += Cell{"9", KEY_COLOR, ""};
 			toSelectStr += "] to set char";
 			render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
+		} else if (sidePanelMode == 3) {  // exporting
+			render.putString(thisX, 1, CellString{"== EXPORTING =="});
+
+			// art size
+			CellString artSize {"Dimensions: "};
+			artSize += std::to_string(SCREEN_WIDTH);
+			artSize += "x";
+			artSize += std::to_string(SCREEN_HEIGHT);
+			render.putString(thisX, 4, artSize);
+
+			// do it?
+			CellString doIt {"["};
+			doIt += CellString{"Entr", KEY_COLOR};
+			doIt += "] to export to .ans";
+			render.putString(thisX, 6, doIt);
+
+			// export failure
+			if (showExportFail) {
+				render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
+			}
 		}
 
 		
@@ -668,7 +784,7 @@ int main() {
 
 
 		// cursor
-		if (cursorAnim > 1 && !showingCatalogue) {
+		if (cursorAnim > 1 && !sidePanelMode) {
 			render.edit(cursorX, cursorY, CURSOR_COLOR, 0);
 			render.edit(cursorX, cursorY, CURSOR_COLOR_BACK, 1);
 		}

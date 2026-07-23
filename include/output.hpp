@@ -1,3 +1,7 @@
+/* 
+ * Output related things
+**/
+
 #pragma once
 
 #include <iostream>
@@ -46,6 +50,7 @@ struct CellString {
 	std::vector<Cell> internal;
 
 	CellString() = default;
+	CellString(const CellString& other) : internal(other.internal) {}
 	CellString(const std::string& str) {
 		append(str);
 	}

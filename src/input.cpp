@@ -1,3 +1,7 @@
+/* 
+ * Input related things
+**/
+
 #include <iostream>
 #include <fstream>
 #include <atomic>

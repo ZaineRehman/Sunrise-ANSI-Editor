@@ -1,3 +1,7 @@
+/* 
+ * Output related things
+**/
+
 #include <iostream>
 #include <cstdint>
 #include <cassert>
