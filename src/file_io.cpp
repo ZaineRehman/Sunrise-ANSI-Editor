@@ -1,12 +1,12 @@
 /* 
  * File I/O
 **/
+#include "file_io.hpp"
 
 #include <fstream>
 #include <string>
 #include <vector>
 
-#include "file_io.hpp"
 #include "output.hpp"
 #include "lib.hpp"
 
@@ -102,7 +102,7 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 			built += thisCell.color_fore + thisCell.color_back + thisCell.ch;
 			if (thisCell.color_fore.size() || thisCell.color_back.size()) built += ANSI::reset;
 		}
-		if (i != art.height-1) built += "\n";
+		if (i != static_cast<size_t>(art.height-1)) built += "\n";
 	}
 
 	file << built;

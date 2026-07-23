@@ -9,6 +9,7 @@
 #include <chrono>
 #include <atomic>
 #include <array>
+#include <filesystem>
 
 #include "input.hpp"
 #include "output.hpp"
@@ -17,6 +18,7 @@
 #include "precalculate.hpp"
 #include "lib.hpp"
 #include "file_io.hpp"
+#include "log.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -30,8 +32,20 @@
 
 
 int main() {
-
+	
 	//  -- SETUP -- 
+
+	// make sure all directories exist
+	if (!std::filesystem::is_directory("Export")) {
+		std::filesystem::create_directory("Export");
+	}
+	if (!std::filesystem::is_directory("Sessions")) {
+		std::filesystem::create_directory("Sessions");
+	}
+
+	// create session ID and session folder
+	createSessionID();
+	startSession();
 
 	srand(time(0));
 	std::ios_base::sync_with_stdio(false);
@@ -91,6 +105,8 @@ int main() {
 		ANSI::magenta_back_bright, ANSI::cyan_back_bright,  ANSI::white_back_bright, ANSI::black_back_bright
 	};
 	int colorForeIndex = 0, colorBackIndex = 0;
+
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("initialized basic variables in main()...");
 
 
 	// terminal raw mode
@@ -162,6 +178,8 @@ int main() {
 	} else {
 		if (USE_THREADED_INPUT) std::jthread(thread_doKeyStates, std::ref(keyStates), std::ref(keyStates_slow), keyChecker).detach();
 	}
+
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("set up terminal raw mode...");
 	
 
 	// TODO: needed?
@@ -183,6 +201,8 @@ int main() {
 	CellString colorCatalogue_24bit = getColorCatalogue_24bit();
 
 	CellString charCatalogue = getCharCatalogue();
+
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("pre-calculated items...");
 
 
 	//  -- LOOP -- 
@@ -207,8 +227,9 @@ int main() {
 		* 
 		* [Entr]: export
 		* [/]: import
-		* [Bksp]: reset
+		* [Home]: save
 		* 
+		* [Bksp]: reset
 		* 
 		* arrows OR [HJKL]: cursor
 		* holding [ALT]: fast cursor
@@ -390,30 +411,11 @@ int main() {
 
 			else if (sidePanelMode == 3) {
 				// export art
-				auto utcTimeNow = std::chrono::system_clock::now();
-				std::chrono::zoned_time localTimeZone{std::chrono::current_zone(), utcTimeNow};
-				auto localTime = localTimeZone.get_local_time();
-				
-				auto localTime_days = std::chrono::floor<std::chrono::days>(localTime);
-				std::chrono::year_month_day ymd{localTime_days};
-				std::chrono::hh_mm_ss hms{localTime - localTime_days};
-
-				std::string filename = "export/Exported_Art_";
-				filename += std::to_string(static_cast<int>(ymd.year()));
-				filename += '-';
-				filename += std::to_string(static_cast<unsigned int>(ymd.month()));
-				filename += '-';
-				filename += std::to_string(static_cast<unsigned int>(ymd.day()));
-				filename += '_';
-				filename += std::to_string(hms.hours().count());
-				filename += '-';
-				filename += std::to_string(hms.minutes().count());
-				filename += '-';
-				filename += std::to_string(hms.seconds().count());
-				filename += ".ans";
+				std::string filename = "Export/Exported_Art_" + getTimestamp() + ".ans";
 				
 				if (!loadArtIntoFile(ART, filename)) {
 					showExportFail = true;
+					if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("!! failure to export file: " + filename);
 				} else {
 					sidePanelMode = 0;
 				}
@@ -421,6 +423,10 @@ int main() {
 			#ifndef NDEBUG
 				}
 			#endif
+		}
+
+		if (keyStates_slow[Key::HOME]) {
+			saveArtToSession(ART);
 		}
 
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
@@ -534,8 +540,11 @@ int main() {
 				
 		// side panel
 
+		if (SCREEN_HEIGHT < 3) {
+			sidePanelMode = -1;
+			SCREEN_TOO_SMALL = true;
+		}
 		int thisX = SCREEN_WIDTH-1 - PANEL_SIZE + 2;
-
 		
 		if (sidePanelMode == 0) {  // basic panel
 			// sunrise text
@@ -544,7 +553,7 @@ int main() {
 			// this looks like shit
 			// TODO only use 1 CellString for the whole thing
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			render.putString(thisX, 4, nums);
+			if (SCREEN_HEIGHT > 6) render.putString(thisX, 4, nums);
 
 			// char hotkeys
 			CellString hotkeys {" "};
@@ -558,7 +567,7 @@ int main() {
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; hotkeys += " ";
-			render.putString(thisX, 5, hotkeys);
+			if (SCREEN_HEIGHT > 6) render.putString(thisX, 5, hotkeys);
 
 			// color mode
 			CellString cmode {"Color mode: "};
@@ -566,26 +575,26 @@ int main() {
 			else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
 			else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
 			else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
-			render.putString(thisX, 7, cmode);
+			if (SCREEN_HEIGHT > 8) render.putString(thisX, 7, cmode);
 
 			// art dimensions
 			CellString xy {"Size: "};
 			xy += std::to_string(SCREEN_WIDTH);
 			xy += "x";
 			xy += std::to_string(SCREEN_HEIGHT);
-			render.putString(thisX, 9, xy);
+			if (SCREEN_HEIGHT > 10) render.putString(thisX, 9, xy);
 
 			// enter to export
 			CellString toExportStr {"["};
 			toExportStr.append("Entr", KEY_COLOR, "");
 			toExportStr += "] to export";
-			render.putString(thisX, 11, toExportStr);
+			if (SCREEN_HEIGHT > 12) render.putString(thisX, 11, toExportStr);
 
 			// backspace to reset
 			CellString toResetStr {"["};
 			toResetStr.append("Bksp", KEY_COLOR, "");
 			toResetStr += "] to reset";
-			render.putString(thisX, 12, toResetStr);
+			if (SCREEN_HEIGHT > 13) render.putString(thisX, 12, toResetStr);
 		} 
 		else if (sidePanelMode == 1) {  // color catalogue
 			#define colorCatalogueLineNo 6
@@ -626,28 +635,30 @@ int main() {
 			toChangeCatStr += Cell{".", KEY_COLOR, ""};
 			toChangeCatStr += "] to change";
 
-			// current catalog type
-			render.putString(thisX, colorCatalogueLineNo-2, catName);
-			render.putString(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
+			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2) { 
+				// current catalog type
+				render.putString(thisX, colorCatalogueLineNo-2, catName);
+				render.putString(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
 
-			// X arrows
-			render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});
-			render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold, ""});
-			// Y arrows
-			render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold, ""});
-			render.put(thisX+catSizeX, colorCatalogueLineNo + catIndexY, Cell{"◄", ANSI::bold, ""});
+				// X arrows
+				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});
+				render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold, ""});
+				// Y arrows
+				render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold, ""});
+				render.put(thisX+catSizeX, colorCatalogueLineNo + catIndexY, Cell{"◄", ANSI::bold, ""});
 
-			// render catalogue
-			for (int yc = 0; yc < catSizeY; ++yc) {
-				for (int xc = 0; xc < catSizeX; ++xc) {
-					render.put(xc+thisX, yc+colorCatalogueLineNo, catStr[yc*catSizeX + xc]);
+				// render catalogue
+				for (int yc = 0; yc < catSizeY; ++yc) {
+					for (int xc = 0; xc < catSizeX; ++xc) {
+						render.put(xc+thisX, yc+colorCatalogueLineNo, catStr[yc*catSizeX + xc]);
+					}
 				}
 			}
 
 			// current color
 			CellString currentColorStr {"Current color: "};
 			LOOP(3) currentColorStr += Cell{" ", "", catStr[catIndexY*catSizeX + catIndexX].color_back};
-			render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
+			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3) render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
 
 			// to select
 			CellString toSelectStr {"["};
@@ -655,7 +666,7 @@ int main() {
 			toSelectStr += "] and [";
 			toSelectStr += Cell{"S", KEY_COLOR, ""};
 			toSelectStr += "] to apply to palette";
-			render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
+			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 4) render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
 		} else if (sidePanelMode == 2) {  // characters
 			#define charCatalogueLineNo 7
 
@@ -663,7 +674,7 @@ int main() {
 
 			// show hotkeys
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			render.putString(thisX, 4, nums);
+			if (SCREEN_HEIGHT > 5) render.putString(thisX, 4, nums);
 
 			CellString hotkeys {" "};
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
@@ -676,15 +687,17 @@ int main() {
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
-			render.putString(thisX, 5, hotkeys);
+			if (SCREEN_HEIGHT > 6) render.putString(thisX, 5, hotkeys);
 
 			// character table
-			for (int yc = 0; yc < 16; ++yc) {
-				for (int xc = 0; xc < 32; ++xc) {
-					render.put(xc+thisX, yc+charCatalogueLineNo, charCatalogue[yc*32 + xc]);
-					// signify current character
-					if (xc == charCatalogueIndexX && yc == charCatalogueIndexY) {
-						render.edit(xc+thisX, yc+charCatalogueLineNo, ANSI::red_back, 1);
+			if (SCREEN_HEIGHT > 16+charCatalogueLineNo + 1) {
+				for (int yc = 0; yc < 16; ++yc) {
+					for (int xc = 0; xc < 32; ++xc) {
+						render.put(xc+thisX, yc+charCatalogueLineNo, charCatalogue[yc*32 + xc]);
+						// signify current character
+						if (xc == charCatalogueIndexX && yc == charCatalogueIndexY) {
+							render.edit(xc+thisX, yc+charCatalogueLineNo, ANSI::red_back, 1);
+						}
 					}
 				}
 			}
@@ -695,7 +708,7 @@ int main() {
 			toSelectStr += "-";
 			toSelectStr += Cell{"9", KEY_COLOR, ""};
 			toSelectStr += "] to set char";
-			render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
+			if (SCREEN_HEIGHT > charCatalogueLineNo + 16 + 3) render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
 		} else if (sidePanelMode == 3) {  // exporting
 			render.putString(thisX, 1, CellString{"== EXPORTING =="});
 
@@ -704,17 +717,17 @@ int main() {
 			artSize += std::to_string(SCREEN_WIDTH);
 			artSize += "x";
 			artSize += std::to_string(SCREEN_HEIGHT);
-			render.putString(thisX, 4, artSize);
+			if (SCREEN_HEIGHT > 5) render.putString(thisX, 4, artSize);
 
 			// do it?
 			CellString doIt {"["};
 			doIt += CellString{"Entr", KEY_COLOR};
 			doIt += "] to export to .ans";
-			render.putString(thisX, 6, doIt);
+			if (SCREEN_HEIGHT > 7) render.putString(thisX, 6, doIt);
 
 			// export failure
 			if (showExportFail) {
-				render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
+				if (SCREEN_HEIGHT > 9) render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
 			}
 		}
 
@@ -796,6 +809,9 @@ int main() {
 			render.fill(Cell{" ", "", ANSI::red_back_bright});
 			render.putString(0, 0, CellString{"SCREEN"});
 			render.putString(0, 1, CellString{"TOO SMALL"});
+			// TODO add debug thing here
+		} else if (sidePanelMode == -1) {
+			sidePanelMode = 0;
 		}
 		
 		render.render();

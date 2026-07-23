@@ -13,10 +13,12 @@
  * [x] color catalogue picker
  * [x] character catalogue picker
  * [x] custom palettes
+ * [x] export art to .ans file
+ * [ ] session logging
+ * [ ] custom session IDs
  * [ ] load palettes to/from file
  * [ ] proper linux input support
  * [ ] stop re-calculating some things every single frame
- * [ ] export art to .ans file
  * [ ] ANSI mode
  * [ ] ANSI editor mode
  * [ ] minimum screen size
@@ -90,33 +92,37 @@
 
 inline std::string DEBUG_STR = "";
 
+// 0 = nothing (bad idea)
+// 1 = report crashes, errors
+// 2 = also report major events (export, etc.)
+// 3 = you wish for too much knowledge
+inline int DEBUG_REPORT_LEVEL = 2;
 
 /*
  * [date][minor]-[program condition][dev stage]
  * 
  * date: [month][year (2 digits)]
  * 
- * minor: for multiple versions in the same month
+ * minor: for multiple versions in the same month with the same everything
  * 
  * program conditions: 
- * 		N = not working (critical bug)
+ * 		N = not working / critical bug
  * 		U = under development (not ready for release)
- * 		W = working (needs further testing before release)
  * 		R = release
  * 		X = experimental test build
  * 
  * development stages: 
  * 		A = alpha (many key features not implemented)
  * 		B = beta (most/all features implemented, needs refining)
- * 		W = working (all planned features implemented and working well)
+ * 		F = finished (all planned features implemented and working well)
 **/
-inline constexpr const char* VERSION = "v07261-UA";
+inline constexpr const char* VERSION = "v07260-UA";
 
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
 inline bool INPUT_SAFE_MODE = false;
 
-// path to search for input devices
+// Linux path to search for input devices
 inline constexpr const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
 // default background char
