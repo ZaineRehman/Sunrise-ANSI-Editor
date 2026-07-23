@@ -14,6 +14,8 @@ add_executable(Sunrise_ANSI_Editor
 	${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/output.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/lib.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ANSI.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/precalculate.cpp
 )
 
 target_include_directories(Sunrise_ANSI_Editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

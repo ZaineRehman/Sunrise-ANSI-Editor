@@ -66,9 +66,9 @@
  *   		[ ] 24-bit code table
  *   		[ ] 24-bit code RGB explicit picker
  *   
- *   [ ] char catalogue
- *   		[ ] 16x16 grid
- *   		[ ] hotkey swapper
+ *   [x] char catalogue
+ *   		[x] 16x16 grid
+ *   		[x] hotkey swapper
  *   		[ ] default background changer
  * 
  *  == CONSIDER ==
