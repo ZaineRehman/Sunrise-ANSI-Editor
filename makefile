@@ -56,11 +56,39 @@ package:
 	cd build && cpack
 
 
+clean_all: clean
+clean_all: clean_sessions
+clean_all: clean_exports
+
 clean: 
 ifeq ($(OS), Windows_NT)
 	rmdir /s /q build
 else
 	rm -rf build
 endif
+
+clean_sessions: 
+ifeq ($(OS), Windows_NT)
+	rmdir /s /q Sessions
+else
+	rm -rf Sessions
+endif
+
+clean_exports: 
+ifeq ($(OS), Windows_NT)
+	rmdir /s /q Export
+else
+	rm -rf Export
+endif
+
+
+get_lines: 
+ifeq ($(OS), Windows_NT)
+	git ls-files | ForEach-Object { Get-Content $$_ } | Measure-Object -Line
+else
+	git ls-files | xargs wc -l
+endif
+
+
 	
-.PHONY: all debug release build clean run_d run_r
+.PHONY: all debug release build clean run_d run_r clean_sessions clean_exports clean_all get_lines

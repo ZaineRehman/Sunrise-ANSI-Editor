@@ -14,41 +14,39 @@
  * [x] character catalogue picker
  * [x] custom palettes
  * [x] export art to .ans file
- * [ ] session logging
- * [ ] custom session IDs
+ * [x] session logging
+ * [x] you dont need to loop through every cell on the screen
+ * [ ] screen scrolling
+ * [ ] importing art from file
  * [ ] load palettes to/from file
- * [ ] proper linux input support
- * [ ] stop re-calculating some things every single frame
- * [ ] ANSI mode
- * [ ] ANSI editor mode
- * [ ] minimum screen size
- * [ ] music
- * [ ] mouse input
- * [ ] highlighting sections for copy/paste
- * [ ] loading art from file
- * [ ] saving preferences
- * [ ] changing to/from input safe mode
- * [ ] creating animations
- * [ ] animation time delay
- * [ ] animations to gif
- * [ ] CHECK ALL TODO COMMENTS
- * [ ] gradient maker
  * [ ] trim empty spaces from art
+ * [ ] ANSI mode
+ * [ ] proper linux input support
+ * [ ] highlighting sections for copy/paste
+ * [ ] export file location picker
+ * [ ] mouse input
+ * [ ] saving preferences
+ * [ ] custom session IDs
+ * [ ] finalize window sizes
+ * [ ] minimum screen size
+ * [ ] support mode for only 4-bit color
+ * [ ] editor ANSI mode
+ * [ ] changing to/from input safe mode
+ * [ ] gradient maker
+ * [ ] only re-render when needed
+ * [ ] music
+ * [ ] creating animations
+ *      [ ] animation time delay
+ *      [ ] animations to gif
+ * [ ] CHECK ALL TODO COMMENTS
  * [ ] downgrading color mode -> remove those codes from art
  *      [ ] recognize the colors and appropriately downgrade?
- * [ ] finalize window sizes
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] win terminal shift+arrow and ctrl+arrow
  * [ ] clean up files
- * [ ] add a support mode for only 4-bit color
  * [ ] tutorial
- * [ ] only re-render when needed
- * [ ] you dont need to loop through every cell on the screen
- * [ ] export file location picker
  * [ ] autosave
- * [ ] screen scrolling
  * [ ] more than just color codes?
- * [ ] popups
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
@@ -90,20 +88,13 @@
 **/
 
 
-inline std::string DEBUG_STR = "";
-
-// 0 = nothing (bad idea)
-// 1 = report crashes, errors
-// 2 = also report major events (export, etc.)
-// 3 = you wish for too much knowledge
-inline int DEBUG_REPORT_LEVEL = 2;
 
 /*
  * [date][minor]-[program condition][dev stage]
  * 
  * date: [month][year (2 digits)]
  * 
- * minor: for multiple versions in the same month with the same everything
+ * minor: for multiple versions in the same month
  * 
  * program conditions: 
  * 		N = not working / critical bug
@@ -119,14 +110,23 @@ inline int DEBUG_REPORT_LEVEL = 2;
 inline constexpr const char* VERSION = "v07260-UA";
 
 
+inline std::string DEBUG_STR = "";
+
+// 0 = nothing (bad idea)
+// 1 = report crashes, errors
+// 2 = also report major events (export, etc.)
+// 3 = you wish for too much knowledge
+inline int DEBUG_REPORT_LEVEL = 2;
+
+
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
 inline bool INPUT_SAFE_MODE = false;
 
 // Linux path to search for input devices
 inline constexpr const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
-// default background char
-inline const std::string DEFAULT_BACK = ".";
+// default art background char
+inline const std::string DEFAULT_BACK = " ";
 
 
 // fps

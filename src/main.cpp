@@ -60,8 +60,7 @@ int main() {
 
 	bool SCREEN_TOO_SMALL = false;
 
-
-	Art ART (20, 5, Cell{DEFAULT_BACK, "", ""});
+	Art ART {1, 1, Cell{DEFAULT_BACK, "", ""}};
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
 	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
@@ -106,7 +105,7 @@ int main() {
 	};
 	int colorForeIndex = 0, colorBackIndex = 0;
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("initialized basic variables in main()...");
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Initialized basic variables in main()");
 
 
 	// terminal raw mode
@@ -127,6 +126,8 @@ int main() {
 		dwOutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 		SetConsoleMode(hOutput, dwOutputMode);
 
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole output mode set");
+
 		// raw input
 
 		HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
@@ -139,6 +140,8 @@ int main() {
 		dwInputMode |= ENABLE_VIRTUAL_TERMINAL_INPUT | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT;
 		SetConsoleMode(hInput, dwInputMode);
 
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole input mode set");
+
 		// hide cursor
 
 		CONSOLE_CURSOR_INFO cursorInfo;
@@ -146,6 +149,8 @@ int main() {
 		GetConsoleCursorInfo(hOutput, &cursorInfo);
 		cursorInfo.bVisible = FALSE;
 		SetConsoleCursorInfo(hOutput, &cursorInfo);
+
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole cursor hidden");
 
 		if (hInput == INVALID_HANDLE_VALUE || hOutput == INVALID_HANDLE_VALUE) return -1;
 	#else
@@ -155,17 +160,22 @@ int main() {
 		// most of these are the same as doing "raw" just without -opost because that messes shit up
 		// also allowing 'isig' for ctrl+C
 		system("stty -ignbrk -brkint -ignpar -inlcr -icanon -ixoff -igncr -icrnl -parmrk -inpck -istrip -ixon isig -iuclc -ixany -imaxbel -xcase min 1 time 0 -echo");
+
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tRaw mode enabled");
 		
 		if (!INPUT_SAFE_MODE) {
 			// find keyboard
 		
 			std::string handler = getKeyboardHandler();
-
+			
 			const std::string keyboardPath = "/dev/input/event" + handler;
 			std::cout << "Keyboard path: " << keyboardPath << '\n';
 
+			if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tKeyboard handler found at: " + keyboardPath);
+			
 			keyChecker = open(keyboardPath.c_str(), O_RDONLY | O_NONBLOCK);
 			if (keyChecker == -1) {
+				if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("\t!!!Keyboard not found. errno=" + std::strerror(errno));
 				std::cerr 
 					<< "COULD NOT LOAD KEYBOARD!\nPath: '" << keyboardPath << "'" 
 					<< "\nErr: " << std::strerror(errno)
@@ -175,11 +185,13 @@ int main() {
 	#endif
 	if (INPUT_SAFE_MODE) {
 		std::jthread(safeModeInputHelper).detach();
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tInput safemode thread detached");
 	} else {
 		if (USE_THREADED_INPUT) std::jthread(thread_doKeyStates, std::ref(keyStates), std::ref(keyStates_slow), keyChecker).detach();
+		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tInput thread detached");
 	}
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("set up terminal raw mode...");
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Set up terminal raw mode");
 	
 
 	// TODO: needed?
@@ -202,7 +214,7 @@ int main() {
 
 	CellString charCatalogue = getCharCatalogue();
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("pre-calculated items...");
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Pre-calculated items");
 
 
 	//  -- LOOP -- 
@@ -227,7 +239,8 @@ int main() {
 		* 
 		* [Entr]: export
 		* [/]: import
-		* [Home]: save
+		* 
+		* [Home] or [Ctrl]+[S]: save
 		* 
 		* [Bksp]: reset
 		* 
@@ -415,7 +428,7 @@ int main() {
 				
 				if (!loadArtIntoFile(ART, filename)) {
 					showExportFail = true;
-					if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("!! failure to export file: " + filename);
+					if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("!!! Failure to export file: " + filename);
 				} else {
 					sidePanelMode = 0;
 				}
@@ -425,7 +438,7 @@ int main() {
 			#endif
 		}
 
-		if (keyStates_slow[Key::HOME]) {
+		if (keyStates_slow[Key::HOME] || (keyStates[Key::CTRL] && keyStates_slow[Key::S])) {
 			saveArtToSession(ART);
 		}
 
@@ -727,8 +740,12 @@ int main() {
 
 			// export failure
 			if (showExportFail) {
-				if (SCREEN_HEIGHT > 9) render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
+				if (SCREEN_HEIGHT > 9) {
+					render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
+				}
 			}
+		} else if (sidePanelMode == 4) {  // importing
+
 		}
 
 		
@@ -849,8 +866,11 @@ int main() {
 
 		close(keyChecker);
 	#endif
+	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole mode reverted");
 
 	if (INPUT_SAFE_MODE) {}
+
+	addtoDebugReport("\tEND SESSION");
 
 	return 0;
 }

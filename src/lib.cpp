@@ -20,9 +20,9 @@ void signalHandler(int signal) {
 	if (DEBUG_REPORT_LEVEL >= 1) {
 		std::string sigstr = "UNKNOWN";
 		switch (signal) {
-			case SIGINT:  sigstr = "SIGINT";
-			case SIGTERM: sigstr = "SIGTERM";
-			case SIGABRT: sigstr = "SIGABRT";
+			case SIGINT:  sigstr = "SIGINT";  break;
+			case SIGTERM: sigstr = "SIGTERM"; break;
+			case SIGABRT: sigstr = "SIGABRT"; break;
 		}
 		addtoDebugReport("!!! signalHandler() recieved signal: " + sigstr);
 	}
