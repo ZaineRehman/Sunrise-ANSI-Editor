@@ -9,6 +9,7 @@
 
 #include "output.hpp"
 #include "lib.hpp"
+#include "log.hpp"
 
 
 bool loadArtFromFile(const std::string& path, Art& art) {
@@ -16,7 +17,10 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	std::vector<std::vector<Cell>> tempMap {};
 
 	std::ifstream file(path);
-	if (!file.is_open()) return false;
+	if (!file.is_open()) {
+		reportLog("!!! Failure to import file: could not open \"" + path + "\"");
+		return false;
+	}
 
 	/*
 	 *  v-----------CELL-----------v

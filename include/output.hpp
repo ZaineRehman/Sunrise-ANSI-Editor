@@ -61,6 +61,9 @@ struct CellString {
 		append(str, colorF, colorB);
 	}
 	CellString(const std::vector<Cell>& vec) : internal(vec) {}
+	CellString(const Cell& cell) {
+		append(cell);
+	}
 
 	inline const Cell& operator[](std::size_t i) const noexcept {
 		return internal[i];
@@ -82,6 +85,20 @@ struct CellString {
 			append(c);
 		}
 		return *this;
+	}
+
+	inline CellString operator+(const CellString& other) const {
+		std::vector<Cell> built = this->internal;
+		built.reserve(built.size() + other.internal.size());
+		built.insert(built.end(), other.internal.begin(), other.internal.end());
+		return CellString{built};
+	}
+	inline CellString operator+(const std::string& str) const {
+		return CellString(str) + *this;
+	}
+	inline CellString operator+(const char* str) const {
+		std::string realstr = str;
+		return CellString(realstr) + *this;
 	}
 
 	inline CellString& operator=(const CellString& other) {

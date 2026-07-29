@@ -116,7 +116,7 @@ void updateKeyStates_SAFE(KeyStates& keyStates, KeyStates& keyStates_slow) {
 			//case 42: keyStates[Key::KP_MUL]  = true; break;
 			//case 43: keyStates[Key::KP_PLUS] = true; break;
 			case 44: keyStates[Key::COMMA]   = true; break;
-			case 45: keyStates[Key::MINUS]    = true; break;
+			case 45: keyStates[Key::MINUS]   = true; break;
 			case 46: keyStates[Key::PERIOD]  = true; break;
 			case 47: keyStates[Key::SLASH]   = true; break;
 
@@ -345,3 +345,48 @@ void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChe
 
 	return activeKeys;
 }*/
+
+
+struct KeyCharMap {
+	Key key;
+	char ch;
+	char ch_shift;
+};
+
+constexpr KeyCharMap keyCharMapping[] = {
+	{Key::A,  'a', 'A'}, {Key::B,  'b', 'B'}, {Key::C,  'c', 'C'}, {Key::D,  'd', 'D'}, {Key::E,  'e', 'E'}, {Key::F,  'f', 'F'}, 
+	{Key::G,  'g', 'G'}, {Key::H,  'h', 'H'}, {Key::I,  'i', 'I'}, {Key::J,  'j', 'J'}, {Key::K,  'k', 'K'}, {Key::L,  'l', 'L'}, 
+	{Key::M,  'm', 'M'}, {Key::N,  'n', 'N'}, {Key::O,  'o', 'O'}, {Key::P,  'p', 'P'}, {Key::Q,  'q', 'Q'}, {Key::R,  'r', 'R'}, 
+	{Key::S,  's', 'S'}, {Key::T,  't', 'T'}, {Key::U,  'u', 'U'}, {Key::V,  'v', 'V'}, {Key::W,  'w', 'W'}, {Key::X,  'x', 'X'}, 
+	{Key::Y,  'y', 'Y'}, {Key::Z,  'z', 'Z'}, {Key::_0, '0', '!'}, {Key::_1, '1', '@'}, {Key::_2, '2', '#'}, {Key::_3, '3', '$'}, 
+	{Key::_4, '4', '%'}, {Key::_5, '5', '^'}, {Key::_6, '6', '&'}, {Key::_7, '7', '*'}, {Key::_8, '8', '('}, {Key::_9, '9', ')'}, 
+	{Key::MINUS, '-', '_'}, {Key::EQUALS, '=', '+'}, {Key::TICK,      '`', '~'}, {Key::LBRACKET,   '[', '{'},  {Key::RBRACKET, ']',  '}'}, {Key::SLASH, '/', '?'}, 
+	{Key::COMMA, ',', '<'}, {Key::PERIOD, '.', '>'}, {Key::SEMICOLON, ';', ':'}, {Key::APOSTROPHE, '\'', '"'}, {Key::BSLASH,   '\\', '|'}, 
+	{Key::KP_0, '0', '\0'}, {Key::KP_1, '1', '\0'}, {Key::KP_2, '2', '\0'}, {Key::KP_3, '3', '\0'}, {Key::KP_4, '4', '\0'}, 
+	{Key::KP_5, '5', '\0'}, {Key::KP_6, '6', '\0'}, {Key::KP_7, '7', '\0'}, {Key::KP_8, '8', '\0'}, {Key::KP_9, '9', '\0'}, 
+	{Key::KP_DIV, '/', '\0'}, {Key::KP_MUL, '*', '\0'}, {Key::KP_MINUS, '-', '\0'}, {Key::KP_PLUS, '+', '\0'}, {Key::KP_PERIOD, '.', '\0'}, 
+};
+
+// so that backspace isnt rapidfire
+inline bool _backspacePollingCheck = false;
+
+void pollInputsIntoString(const KeyStates& keyStates, const KeyStates& keyStates_slow, std::string& str) {
+	bool shifting = keyStates[Key::SHIFT];
+
+	for (const KeyCharMap& kcm : keyCharMapping) {
+		if (keyStates_slow[kcm.key]) {
+			char toAdd = shifting ? kcm.ch_shift : kcm.ch;
+			if (toAdd != '\0') str += toAdd;
+			break;
+		}
+	}
+
+	if (keyStates[Key::BACKSPACE] && !_backspacePollingCheck) {
+		if (keyStates[Key::CTRL]) str.erase(); 
+		else if (str.size()) str.pop_back();
+
+		_backspacePollingCheck = true;
+	} else if (!keyStates[Key::BACKSPACE]) {
+		_backspacePollingCheck = false;
+	}
+}

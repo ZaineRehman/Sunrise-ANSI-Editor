@@ -24,7 +24,7 @@ void signalHandler(int signal) {
 			case SIGTERM: sigstr = "SIGTERM"; break;
 			case SIGABRT: sigstr = "SIGABRT"; break;
 		}
-		addtoDebugReport("!!! signalHandler() recieved signal: " + sigstr);
+		reportLog("!!! signalHandler() recieved signal: " + sigstr);
 	}
 }
 

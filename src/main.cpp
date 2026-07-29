@@ -76,11 +76,21 @@ int main() {
 	// 0 = 4-bit, 1 = 8-bit, 2 = 24-bit
 	int catalogueShowing = 1;
 
+	// showing input popup?
+	bool popupShowing = false;
+	// input popup text (input)
+	std::string inputPopupText = "";
+	// input popup text (displayed)
+	std::string inputPopupTextDisplayed = "";
+	// frame that popup was requested
+	// for a slight input delay
+	int popupFrameStarted = 0;
+
 	// program frame number
 	int frame = 0;
 	// animation stage of the cursor
 	int cursorAnim = 0;
-	// 0 = no, 1 = colors, 2 = chars, 3 = exporting
+	// 0 = no, 1 = colors, 2 = chars, 3 = exporting, 4 = importing
 	char sidePanelMode = 0;
 
 	// double-check to make sure art isnt accidentally reset
@@ -88,6 +98,9 @@ int main() {
 
 	// if true, failed on export, so say that
 	bool showExportFail = false;
+
+	// path for import
+	std::string importPathString = "";
 
 	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
@@ -105,7 +118,7 @@ int main() {
 	};
 	int colorForeIndex = 0, colorBackIndex = 0;
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Initialized basic variables in main()");
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Initialized basic variables in main()");
 
 
 	// terminal raw mode
@@ -126,7 +139,7 @@ int main() {
 		dwOutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 		SetConsoleMode(hOutput, dwOutputMode);
 
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole output mode set");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tConsole output mode set");
 
 		// raw input
 
@@ -140,7 +153,7 @@ int main() {
 		dwInputMode |= ENABLE_VIRTUAL_TERMINAL_INPUT | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT;
 		SetConsoleMode(hInput, dwInputMode);
 
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole input mode set");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tConsole input mode set");
 
 		// hide cursor
 
@@ -150,7 +163,7 @@ int main() {
 		cursorInfo.bVisible = FALSE;
 		SetConsoleCursorInfo(hOutput, &cursorInfo);
 
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole cursor hidden");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tConsole cursor hidden");
 
 		if (hInput == INVALID_HANDLE_VALUE || hOutput == INVALID_HANDLE_VALUE) return -1;
 	#else
@@ -161,7 +174,7 @@ int main() {
 		// also allowing 'isig' for ctrl+C
 		system("stty -ignbrk -brkint -ignpar -inlcr -icanon -ixoff -igncr -icrnl -parmrk -inpck -istrip -ixon isig -iuclc -ixany -imaxbel -xcase min 1 time 0 -echo");
 
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tRaw mode enabled");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tRaw mode enabled");
 		
 		if (!INPUT_SAFE_MODE) {
 			// find keyboard
@@ -171,11 +184,11 @@ int main() {
 			const std::string keyboardPath = "/dev/input/event" + handler;
 			std::cout << "Keyboard path: " << keyboardPath << '\n';
 
-			if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tKeyboard handler found at: " + keyboardPath);
+			if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tKeyboard handler found at: " + keyboardPath);
 			
 			keyChecker = open(keyboardPath.c_str(), O_RDONLY | O_NONBLOCK);
 			if (keyChecker == -1) {
-				if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("\t!!!Keyboard not found. errno=" + std::strerror(errno));
+				if (DEBUG_REPORT_LEVEL >= 1) reportLog("\t!!!Keyboard not found. errno=" + std::strerror(errno));
 				std::cerr 
 					<< "COULD NOT LOAD KEYBOARD!\nPath: '" << keyboardPath << "'" 
 					<< "\nErr: " << std::strerror(errno)
@@ -185,13 +198,13 @@ int main() {
 	#endif
 	if (INPUT_SAFE_MODE) {
 		std::jthread(safeModeInputHelper).detach();
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tInput safemode thread detached");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tInput safemode thread detached");
 	} else {
 		if (USE_THREADED_INPUT) std::jthread(thread_doKeyStates, std::ref(keyStates), std::ref(keyStates_slow), keyChecker).detach();
-		if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tInput thread detached");
+		if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tInput thread detached");
 	}
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Set up terminal raw mode");
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Set up terminal raw mode");
 	
 
 	// TODO: needed?
@@ -214,7 +227,7 @@ int main() {
 
 	CellString charCatalogue = getCharCatalogue();
 
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("Pre-calculated items");
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Pre-calculated items");
 
 
 	//  -- LOOP -- 
@@ -222,6 +235,10 @@ int main() {
 	// get rid o this
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+	if (DEBUG_REPORT_LEVEL >= 2) {
+		if (RUNNING) reportLog("Entering main loop...");
+		else reportLog("NOT entering main loop: RUNNING is false");
+	}
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
 
@@ -237,15 +254,17 @@ int main() {
 		* 
 		* [C]: clear color
 		* 
-		* [Entr]: export
-		* [/]: import
+		* [Entr]: export mode
+		* 
+		* [/]: import mode
+		* 		[Z]:  edit path
 		* 
 		* [Home] or [Ctrl]+[S]: save
 		* 
 		* [Bksp]: reset
 		* 
 		* arrows OR [HJKL]: cursor
-		* holding [ALT]: fast cursor
+		* holding [Alt]: fast cursor
 		* 
 		* [{]: open character catalogue
 		* [}]: open color catalogue
@@ -260,7 +279,12 @@ int main() {
 
 		std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
 
-		if (keyStates[Key::ESC]) RUNNING = false;
+		if (keyStates[Key::ESC]) {
+			RUNNING = false;
+
+			reportLog("ESC pressed, saving and terminating...");
+			saveArtToSession(ART);
+		}
 
 		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  {
 			if (sidePanelMode == 0) {
@@ -340,9 +364,9 @@ int main() {
 			else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 
-		if (keyStates_slow[Key::Q]) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::E]) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
-		if (keyStates[Key::W]) {
+		if (keyStates_slow[Key::Q] && !popupShowing) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::E] && !popupShowing) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
+		if (keyStates[Key::W] && !popupShowing) {
 			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 				cursorAnim = 1;
@@ -357,9 +381,9 @@ int main() {
 			}
 		}
 		
-		if (keyStates_slow[Key::A]) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::D]) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
-		if (keyStates[Key::S]) {
+		if (keyStates_slow[Key::A] && !popupShowing) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::D] && !popupShowing) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
+		if (keyStates[Key::S] && !popupShowing) {
 			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 				cursorAnim = 1;
@@ -374,7 +398,7 @@ int main() {
 			}
 		}
 
-		if (keyStates[Key::C]) {
+		if (keyStates[Key::C] && !popupShowing) {
 			ART.edit(upd.first, upd.second, ANSI::reset, 0);
 			ART.edit(upd.first, upd.second, ANSI::reset, 1);
 			cursorAnim = 1;
@@ -400,7 +424,7 @@ int main() {
 			}
 		}
 
-		if (keyStates_slow[Key::BACKSPACE]) {
+		if (keyStates_slow[Key::BACKSPACE] && !popupShowing) {
 			if (killingArt) {
 				// TODO center of screen instead?
 				ART.reset(cursorX, cursorY);
@@ -416,20 +440,28 @@ int main() {
 			}
 		}
 
-		if (keyStates_slow[Key::ENTER]) {
+		if (keyStates_slow[Key::ENTER] || keyStates_slow[Key::KP_ENTER]) {
+			// i dont even remember why i put this directive here
 			#ifndef NDEBUG
 				if (frame > 10) {
 			#endif
 			if (sidePanelMode == 0) sidePanelMode = 3;
-
 			else if (sidePanelMode == 3) {
 				// export art
 				std::string filename = "Export/Exported_Art_" + getTimestamp() + ".ans";
 				
 				if (!loadArtIntoFile(ART, filename)) {
 					showExportFail = true;
-					if (DEBUG_REPORT_LEVEL >= 1) addtoDebugReport("!!! Failure to export file: " + filename);
+					if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to export file: " + filename);
 				} else {
+					sidePanelMode = 0;
+				}
+			} else if (sidePanelMode == 4) {
+				if (popupShowing) {
+					popupShowing = false;
+					importPathString = inputPopupText;
+				} else {
+					loadArtFromFile(importPathString, ART);
 					sidePanelMode = 0;
 				}
 			}
@@ -440,6 +472,19 @@ int main() {
 
 		if (keyStates_slow[Key::HOME] || (keyStates[Key::CTRL] && keyStates_slow[Key::S])) {
 			saveArtToSession(ART);
+		}
+
+		if (keyStates_slow[Key::SLASH] && !popupShowing) {
+			if (sidePanelMode == 4) sidePanelMode = 0;
+			else sidePanelMode = 4;
+		}
+
+		if (keyStates_slow[Key::Z] && !popupShowing) {
+			if (sidePanelMode == 4) {
+				popupShowing = true;
+				inputPopupTextDisplayed = "Enter file path for import";
+				popupFrameStarted = frame;
+			}
 		}
 
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
@@ -524,6 +569,7 @@ int main() {
 				}
 
 				// screen borders
+				// TODO restructure this
 
 				if (y == 0) {
 					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
@@ -745,7 +791,22 @@ int main() {
 				}
 			}
 		} else if (sidePanelMode == 4) {  // importing
+			render.putString(thisX, 1, CellString{"== IMPORTING =="});
 
+			// import path
+			CellString topTextStr {Cell{"↓", "", ""}};
+			topTextStr += "  Import Path  ";
+			topTextStr += Cell{"↓", "", ""};
+			render.putString(thisX, 3, topTextStr);
+
+			// path
+			render.putString(thisX, 4, CellString{importPathString});
+
+			// edit path key
+			render.putString(thisX, 6, CellString{"[Z] to edit path"});
+
+			// import
+			render.putString(thisX, 7, CellString{"[Enter] to import .ans file"});
 		}
 
 		
@@ -820,6 +881,48 @@ int main() {
 		}
 		if (cursorAnim == 0) cursorAnim = 2;
 
+		// popup
+		if (popupShowing) {
+			int xMid = SCREEN_WIDTH/2, yMid = SCREEN_HEIGHT/2;
+			int pwidth = SCREEN_WIDTH * POPUP_WIDTH_SCALE, pheight = SCREEN_HEIGHT * POPUP_HEIGHT_SCALE;
+			
+			CellString topBar {Cell{"╔", "", ""}};
+			LOOP(static_cast<size_t>(pwidth-2)) topBar += Cell{"═", "", ""};
+			topBar += Cell{"╗", "", ""};
+			render.putString(xMid - pwidth/2, yMid - pheight/2, topBar);
+
+			for (int i = 1; i < pheight-1; ++i) {
+				CellString midBar = {Cell{"║", "", ""}};
+				LOOP(static_cast<size_t>(pwidth-2)) midBar += " ";
+				midBar += Cell{"║", "", ""};
+				render.putString(xMid - pwidth/2, yMid - pheight/2 + i, midBar);
+			}
+
+			CellString endBar {Cell{"╚", "", ""}};
+			LOOP(static_cast<size_t>(pwidth-2)) endBar += Cell{"═", "", ""};
+			endBar += Cell{"╝", "", ""};
+			render.putString(xMid - pwidth/2, yMid + pheight/2 - 1, endBar);
+
+			if (frame > popupFrameStarted + POPUP_INPUT_DELAY) {
+				pollInputsIntoString(keyStates, keyStates_slow, inputPopupText);
+			}
+			// Export/Exported_Art_2026-7-23_15-26-9.ans
+			// Export/Exported_Art_2026-7-23_15-26-9.ans
+
+			int thisx = xMid - pwidth/2 + 2;
+			int thisy = yMid - pheight/2 + 1;
+
+			// query text
+			render.putString(thisx, thisy, CellString{inputPopupTextDisplayed});
+
+			// input from tha user
+			CellString userIn = CellString{inputPopupText} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
+			render.putString(thisx, thisy+1, userIn);
+
+			// finished yet?
+			render.putString(thisx, thisy+3, CellString{"[Enter] when done"});
+		}
+
 
 		// screen is too small to properly render panels
 		if (SCREEN_TOO_SMALL) {
@@ -833,9 +936,8 @@ int main() {
 		
 		render.render();
 		
-		frame++;
 		if (cursorAnim && !(frame % static_cast<int>(ANIM_CURSOR*FPS))) cursorAnim--;
-
+		
 		// assure proper FPS
 		double delta = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timeStart).count())/1e6;
 		if (delta < static_cast<double>(1.0f/(FPS))) {
@@ -843,6 +945,7 @@ int main() {
 				static_cast<int>(1e6*(static_cast<double>((1.0f/(FPS))) - delta))
 			));
 		}
+		frame++;
 	}
 
 
@@ -866,11 +969,11 @@ int main() {
 
 		close(keyChecker);
 	#endif
-	if (DEBUG_REPORT_LEVEL >= 2) addtoDebugReport("\tConsole mode reverted");
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tConsole mode reverted");
 
 	if (INPUT_SAFE_MODE) {}
 
-	addtoDebugReport("\tEND SESSION");
+	reportLog("\tEND SESSION");
 
 	return 0;
 }

@@ -16,8 +16,8 @@
  * [x] export art to .ans file
  * [x] session logging
  * [x] you dont need to loop through every cell on the screen
- * [ ] screen scrolling
  * [ ] importing art from file
+ * [ ] screen scrolling
  * [ ] load palettes to/from file
  * [ ] trim empty spaces from art
  * [ ] ANSI mode
@@ -44,9 +44,13 @@
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] win terminal shift+arrow and ctrl+arrow
  * [ ] clean up files
+ *      [ ] put CellString builds into separate file
+ *      [ ] organize inputs
  * [ ] tutorial
  * [ ] autosave
  * [ ] more than just color codes?
+ * [ ] GPL -> AGPL
+ * [ ] paste into popup text box
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
@@ -171,7 +175,16 @@ inline constexpr float COLOR_CATALOGUE_24B_Y =  6.0f;
 inline constexpr int COLOR_CATALOGUE_LARGEST_Y = 6;
 
 
-// if true, using direct keyboard inputs
+// amount of frames to ignore input for when popup is opened
+inline constexpr int POPUP_INPUT_DELAY = 10;
+
+// width of popup (in % of screen width)
+inline constexpr float POPUP_WIDTH_SCALE = .5f;
+// height of popup (in % of screen height)
+inline constexpr float POPUP_HEIGHT_SCALE = .333333f;
+
+
+// if true, using direct keyboard inputs (ASCII mode)
 inline bool DIRECT_KEY_INPUTS = false;
 
 // if true, use HJKL instead of UHJK for arrows, vim style

@@ -9,7 +9,6 @@
 
 #include "art.hpp"
 #include "lib.hpp"
-#include "file_io.hpp"
 
 
 void createSessionID() {
@@ -26,6 +25,25 @@ void createSessionID() {
     SESSION_ID = sessionName;
 }
 
+void reportLog(const std::string& str) {
+    std::string debugPath = "Sessions/" + SESSION_ID + "/report.log";
+    std::ofstream file(debugPath, std::ios_base::app);
+
+    file << "[";
+    file << getTimestamp();
+    file << "]: ";
+    file << str;
+    file << "\n";
+}
+
+void startSession() {
+    std::filesystem::create_directory("Sessions/" + SESSION_ID);
+    reportLog("START SESSION");
+}
+
+
+#include "file_io.hpp"
+
 void saveArtToSession(const Art& art) {
     auto utcTimeNow = std::chrono::system_clock::now();
     std::chrono::zoned_time localTimeZone{std::chrono::current_zone(), utcTimeNow};
@@ -38,19 +56,4 @@ void saveArtToSession(const Art& art) {
     std::string filename = "Sessions/" + SESSION_ID + "/saved_" + getTimestamp() + ".ans";
 
     loadArtIntoFile(art, filename);
-}
-
-void addtoDebugReport(const std::string& str) {
-    std::string debugPath = "Sessions/" + SESSION_ID + "/report";
-    std::ofstream file(debugPath, std::ios_base::app);
-
-    file << getTimestamp();
-    file << ": ";
-    file << str;
-    file << "\n";
-}
-
-void startSession() {
-    std::filesystem::create_directory("Sessions/" + SESSION_ID);
-    addtoDebugReport("START SESSION");
 }

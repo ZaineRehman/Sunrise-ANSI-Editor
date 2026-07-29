@@ -128,3 +128,8 @@ void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChe
 
 // for debugging, call it and find out what it does
 //std::string getActiveKeys(std::array<std::atomic<bool>>& keyStates);
+
+
+// checks key states and turns them into a string if applicable
+// ex. [A] -> "a",  [Shift]+[3] -> "#"
+void pollInputsIntoString(const KeyStates& keyStates, const KeyStates& keyStates_slow, std::string& str);

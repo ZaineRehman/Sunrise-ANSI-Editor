@@ -21,4 +21,4 @@ void startSession();
 void saveArtToSession(const Art& art);
 
 // add to debug report
-void addtoDebugReport(const std::string& str);
+void reportLog(const std::string& str);
