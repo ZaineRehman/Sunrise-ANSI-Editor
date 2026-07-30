@@ -492,6 +492,9 @@ int main() {
 		//if (keyStates[Key::K]) { ART.resize(0, 0, 1, 0); }
 		//if (keyStates[Key::L]) { ART.resize(0, 0, 0, 1); }
 
+
+		// -- CLAMP VALUES -- 
+
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
 
@@ -506,6 +509,24 @@ int main() {
 
 		clamp(charCatalogueIndexY, 0, 16-1);
 		clamp(charCatalogueIndexX, 1, 32-1);
+
+		// screen scrolling
+		if (cursorX < 1) {
+			ART.x += SCREEN_WIDTH - PANEL_SIZE-2;
+			cursorX = SCREEN_WIDTH - PANEL_SIZE-2;
+		}
+		else if (cursorX >= SCREEN_WIDTH - PANEL_SIZE-1) {
+			ART.x -= SCREEN_WIDTH-1 - PANEL_SIZE-2;
+			cursorX = 1;
+		}
+		if (cursorY < 1) {
+			ART.y += SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE-2;
+			cursorY = SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-2;
+		}
+		else if (cursorY >= SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-1) {
+			ART.y -= SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE-2;
+			cursorY = 1;
+		}
 
 
 		//  -- RENDER --
@@ -559,10 +580,13 @@ int main() {
 				*/
 			
 				// art
+				// TODO change this? idk
 
 				if (y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) && x < (SCREEN_WIDTH-1 - PANEL_SIZE + 1)) {
-					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE ) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
+					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
 						// in bounds of art
+						reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
+
 						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
@@ -686,7 +710,7 @@ int main() {
 			}
 			catName += "}";
 
-			render.putString(thisX, 1, CellString{"== COLOR CATALOGUE =="});
+			render.putString(thisX, 1, CellString{"== COLOR CATALOGUE ==", PANEL_HEADER_COLOR});
 
 			CellString toChangeCatStr {"["};
 			toChangeCatStr += Cell{",", KEY_COLOR, ""};
@@ -729,7 +753,7 @@ int main() {
 		} else if (sidePanelMode == 2) {  // characters
 			#define charCatalogueLineNo 7
 
-			render.putString(thisX, 1, CellString{"== CHAR CATALOGUE =="});
+			render.putString(thisX, 1, CellString{"== CHAR CATALOGUE ==", PANEL_HEADER_COLOR});
 
 			// show hotkeys
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
@@ -769,7 +793,7 @@ int main() {
 			toSelectStr += "] to set char";
 			if (SCREEN_HEIGHT > charCatalogueLineNo + 16 + 3) render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
 		} else if (sidePanelMode == 3) {  // exporting
-			render.putString(thisX, 1, CellString{"== EXPORTING =="});
+			render.putString(thisX, 1, CellString{"== EXPORTING ==", PANEL_HEADER_COLOR});
 
 			// art size
 			CellString artSize {"Dimensions: "};
@@ -791,7 +815,7 @@ int main() {
 				}
 			}
 		} else if (sidePanelMode == 4) {  // importing
-			render.putString(thisX, 1, CellString{"== IMPORTING =="});
+			render.putString(thisX, 1, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
 
 			// import path
 			CellString topTextStr {Cell{"↓", "", ""}};
@@ -800,7 +824,7 @@ int main() {
 			render.putString(thisX, 3, topTextStr);
 
 			// path
-			render.putString(thisX, 4, CellString{importPathString});
+			render.putString(thisX, 4, CellString{limitString(importPathString, PANEL_SIZE - 3)});
 
 			// edit path key
 			render.putString(thisX, 6, CellString{"[Z] to edit path"});
@@ -916,7 +940,7 @@ int main() {
 			render.putString(thisx, thisy, CellString{inputPopupTextDisplayed});
 
 			// input from tha user
-			CellString userIn = CellString{inputPopupText} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
+			CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
 			render.putString(thisx, thisy+1, userIn);
 
 			// finished yet?

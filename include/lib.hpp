@@ -26,6 +26,9 @@ std::string concat(const std::string& str1, const char* str2);
 // YYYY-MM-DD_HH-MM-SS
 std::string getTimestamp();
 
+// if a string is longer than the given max length, return the max number of characters but with "..." at the beginning
+std::string limitString(const std::string& str, size_t limit);
+
 
 // inclusive
 template <typename T>

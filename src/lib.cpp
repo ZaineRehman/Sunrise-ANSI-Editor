@@ -56,3 +56,9 @@ std::string getTimestamp() {
 
 	return timestamp;
 }
+
+std::string limitString(const std::string& str, size_t limit) {
+	if (str.size() <= limit) return str;
+
+	return "..." + str.substr(str.size()-1-limit, limit-3);
+}

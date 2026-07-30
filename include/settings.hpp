@@ -16,8 +16,9 @@
  * [x] export art to .ans file
  * [x] session logging
  * [x] you dont need to loop through every cell on the screen
+ * [x] screen scrolling
  * [ ] importing art from file
- * [ ] screen scrolling
+ * [ ] UTF-8 / CP-437 modes
  * [ ] load palettes to/from file
  * [ ] trim empty spaces from art
  * [ ] ANSI mode
@@ -120,7 +121,7 @@ inline std::string DEBUG_STR = "";
 // 1 = report crashes, errors
 // 2 = also report major events (export, etc.)
 // 3 = you wish for too much knowledge
-inline int DEBUG_REPORT_LEVEL = 2;
+inline int DEBUG_REPORT_LEVEL = 3;
 
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
@@ -184,6 +185,8 @@ inline constexpr float POPUP_WIDTH_SCALE = .5f;
 inline constexpr float POPUP_HEIGHT_SCALE = .333333f;
 
 
+// 
+
 // if true, using direct keyboard inputs (ASCII mode)
 inline bool DIRECT_KEY_INPUTS = false;
 
@@ -205,6 +208,8 @@ inline std::string KEY_COLOR = ANSI::bold;
 // cursor color
 inline std::string CURSOR_COLOR = ANSI::Color_8bit::makeColor(230, true);
 inline std::string CURSOR_COLOR_BACK = ANSI::Color_8bit::makeColor(227, false);
+// panel header color
+inline std::string PANEL_HEADER_COLOR = ANSI::bold;
 
 inline std::string DISPLAY_COLOR_4BIT = ANSI::green;
 inline std::string DISPLAY_COLOR_8BIT = ANSI::Color_8bit::makeColor(154);
