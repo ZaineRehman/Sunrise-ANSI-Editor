@@ -37,6 +37,14 @@ inline constexpr void clamp(T& num, const T& lower, const T& upper) {
 	else if (num > upper) num = upper;
 }
 
+// inclusive
+// rolls values over (min -> max, vice versa)
+template <typename T>
+inline constexpr void clamp_rollover(T& num, const T& lower, const T& upper) {
+		 if (num < lower) num = upper;
+	else if (num > upper) num = lower;
+}
+
 template <typename T>
 inline constexpr T max(const T& num1, const T& num2) {
 	return num1 > num2 ? num1 : num2;

@@ -7,9 +7,11 @@
 #include <string>
 #include <vector>
 
+#include "settings.hpp"
 #include "output.hpp"
 #include "lib.hpp"
 #include "log.hpp"
+#include "encodings.hpp"
 
 
 bool loadArtFromFile(const std::string& path, Art& art) {
@@ -34,6 +36,8 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 
 	std::string line;
 	int newY = 0;
+	// 0 = UTF-8, 1 = CP437
+	int encodingFound = 1;
 	while (std::getline(file, line)) {
 		newY++;
 		// ANSI code index
@@ -75,23 +79,27 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 					// 2-byte UTF-8 (110xxxxx)
 					if (i + 1 < line.size()) {
 						utf8_char = line.substr(i, 2);
-						i += 1; // Advance the outer loop counter
+						i += 1; // advance outer loop counter
+						encodingFound = 0;
 					}
 				} else if ((lead & 0xF0) == 0xE0) {
-					// 3-byte UTF-8 (1110xxxx) - Common for symbols, box-drawing, and CJK
+					// 3-byte UTF-8 (1110xxxx) - symbols, box-drawing, CJK
 					if (i + 2 < line.size()) {
 						utf8_char = line.substr(i, 3);
 						i += 2;
+						encodingFound = 0;
 					}
 				} else if ((lead & 0xF8) == 0xF0) {
-					// 4-byte UTF-8 (11110xxx) - Emojis
+					// 4-byte UTF-8 (11110xxx) - emojis
 					if (i + 3 < line.size()) {
 						utf8_char = line.substr(i, 4);
 						i += 3;
+						encodingFound = 0;
+						// TODO why the fuck are you using emojis
 					}
 				}
 
-				// If we failed to extract a valid sequence, fallback safely to the raw byte
+				// fallback
 				if (utf8_char.empty()) {
 					utf8_char += line[i];
 				}
@@ -102,6 +110,8 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			}
 		}
 	}
+
+	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tencoding found: " + std::string(encodingFound ? "UTF-8" : "CP437"));
 
 	// turn temp map into a real map
 	// pinnochio
@@ -114,10 +124,9 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			for (const Cell& i : tempMap[y]) {
 				linee += "{" + i.color_fore + i.color_back + i.ch + "}";
 			}
-
 			reportLog("Line " + std::to_string(y) + ": " + linee);
 		}
-		
+
 		largestFoundWidth = max(static_cast<size_t>(largestFoundWidth), tempMap[y].size());
 	}
 
@@ -131,7 +140,13 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 		}
 
 		for (size_t n = 0; n < tempMap[i].size(); ++n) {
-			newMap.push_back(tempMap[i][n]);
+			Cell toAdd = tempMap[i][n];
+
+			// make sure the encoding is proper (everything internally should be UTF-8)
+			// TODO redundantly runs this when no extended characters are found
+			if (encodingFound == 1) toAdd.ch = convert_cp437_utf8(toAdd.ch);
+
+			newMap.push_back(toAdd);
 		}
 	}
 
@@ -153,6 +168,12 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 	for (size_t i = 0; i < static_cast<size_t>(art.height); ++i) {
 		for (size_t x = 0; x < static_cast<size_t>(art.width); ++x) {
 			Cell thisCell = art.map[i*art.width + x];
+
+			// make sure encoding is right
+			if (ART_ENCODING == 1) {
+				thisCell.ch = convert_utf8_cp437(thisCell.ch);
+			}
+
 			built += thisCell.color_fore + thisCell.color_back + thisCell.ch;
 			if (thisCell.color_fore.size() || thisCell.color_back.size()) built += ANSI::reset;
 		}

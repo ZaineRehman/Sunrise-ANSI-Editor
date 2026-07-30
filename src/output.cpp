@@ -42,24 +42,24 @@ std::pair<int,int> getTerminalDimensions() {
 
 
 void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
-	assert(x < width && y < height);
+	if (x > width || y > height) return;
 
 	buffer[y*width + x] = cell;
 }
 
 void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
-	assert(x < width && y < height);
+	if (y*width + x >= buffer.size()) return;
 
 	     if (col == 0) buffer[y*width + x].color_fore = str;
 	else if (col == 1) buffer[y*width + x].color_back = str;
 	else buffer[y*width + x].ch    = str;
 }
 
-void Renderer::putString(uint32_t x, uint32_t y, const CellString& cells) {
-	assert(x+cells.size()-1);  // what the fuck is this
-
+void Renderer::put(uint32_t x, uint32_t y, const CellString& cells) {
 	for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
-		// (2, 34)
+		// (2, 34)  // ???
+
+		if (y*width + x + i >= buffer.size()) return;
 		buffer[y*width + x + i] = cells[i];
 	}
 }

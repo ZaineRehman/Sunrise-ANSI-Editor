@@ -17,8 +17,9 @@
  * [x] session logging
  * [x] you dont need to loop through every cell on the screen
  * [x] screen scrolling
- * [ ] importing art from file
+ * [x] importing art from file
  * [ ] UTF-8 / CP-437 modes
+ * [ ] render borders last
  * [ ] load palettes to/from file
  * [ ] trim empty spaces from art
  * [ ] ANSI mode
@@ -47,6 +48,7 @@
  * [ ] clean up files
  *      [ ] put CellString builds into separate file
  *      [ ] organize inputs
+ *      [ ] header comments
  * [ ] tutorial
  * [ ] autosave
  * [ ] more than just color codes?
@@ -55,7 +57,9 @@
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
- *   [ ] settings button
+ *   [x] settings
+ *          [x] color mode
+ *          [x] encoding
  *   		[ ] music volume
  *   		[ ] input safe mode
  *   		[ ] fps?
@@ -66,12 +70,12 @@
  *   		[ ] bottom panel size
  *   [ ] song name
  *   [ ] art size
- *   [ ] export button
- *   [ ] copy/paste button
- *   [ ] load from file button
- *   [ ] animation buttons
+ *   [x] export
+ *   [x] import
+ *   [ ] copy/paste
+ *   [ ] animation
  *   [x] color mode
- *   [ ] direct key input mode
+ *   [ ] ASCII mode
  *   [x] color catalogue
  *   		[ ] color mode changer
  *   		[x] 4-bit code table
@@ -88,7 +92,7 @@
  *  == CONSIDER ==
  * [ ] timeBeginPeriod() to change minimum sleep time
  * [ ] threaded inputs suck?
- * [ ] 8-bit color catalogue sucks
+ * [ ] change 8-bit color catalogue layout
  * [ ] in color picker, render a character onto the currently chosen color
 **/
 
@@ -131,7 +135,7 @@ inline bool INPUT_SAFE_MODE = false;
 inline constexpr const char* INPUT_DEVICE_SEARCH_PATH = "/proc/bus/input/devices";
 
 // default art background char
-inline const std::string DEFAULT_BACK = " ";
+inline std::string DEFAULT_BACK = " ";
 
 
 // fps
@@ -139,6 +143,7 @@ inline float FPS = 30.0f;
 
 // inputs per second
 // should not be lower than FPS
+// only used when threading input
 inline float IPS = 60.0f;
 
 inline bool USE_THREADED_INPUT = false;
@@ -168,7 +173,7 @@ inline constexpr int COLOR_CATALOGUE_4B_X =  8;
 inline constexpr int COLOR_CATALOGUE_4B_Y =  2;
 inline constexpr int COLOR_CATALOGUE_8B_X = 18;
 inline constexpr int COLOR_CATALOGUE_8B_Y =  6;
-// these are all floats and thats dumb but it makes for less casts
+// these are floats and thats dumb but it makes for less casts
 inline constexpr float COLOR_CATALOGUE_24B_X = 32.0f;
 inline constexpr float COLOR_CATALOGUE_24B_Y =  6.0f;
 
@@ -184,8 +189,12 @@ inline constexpr float POPUP_WIDTH_SCALE = .5f;
 // height of popup (in % of screen height)
 inline constexpr float POPUP_HEIGHT_SCALE = .333333f;
 
+// amount of settings
+inline constexpr int SETTINGS_AMOUNT = 2;
 
-// 
+
+// 0 = UTF-8, 1 = CP437
+inline int ART_ENCODING = false;
 
 // if true, using direct keyboard inputs (ASCII mode)
 inline bool DIRECT_KEY_INPUTS = false;
@@ -210,10 +219,18 @@ inline std::string CURSOR_COLOR = ANSI::Color_8bit::makeColor(230, true);
 inline std::string CURSOR_COLOR_BACK = ANSI::Color_8bit::makeColor(227, false);
 // panel header color
 inline std::string PANEL_HEADER_COLOR = ANSI::bold;
+// error color
+inline std::string ERROR_COLOR = ANSI::red_back_bright;
+
+// settings option color
+inline std::string SETTINGS_OPTION_COLOR = ANSI::bold;
 
 inline std::string DISPLAY_COLOR_4BIT = ANSI::green;
 inline std::string DISPLAY_COLOR_8BIT = ANSI::Color_8bit::makeColor(154);
 inline std::string DISPLAY_COLOR_24BIT = ANSI::Color_24bit::makeColor(45, 214, 183);
+
+inline std::string DISPLAY_ENCODING_UTF8 = ANSI::Color_24bit::makeColor(155, 155, 0);
+inline std::string DISPLAY_ENCODING_CP437 = ANSI::Color_24bit::makeColor(0, 155, 155);
 
 inline std::string HOTKEY_CHAR_1 = "█";
 inline std::string HOTKEY_CHAR_2 = "▓";

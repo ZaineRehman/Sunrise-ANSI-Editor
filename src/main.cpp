@@ -74,10 +74,11 @@ int main() {
 
 	// which catalogue to show
 	// 0 = 4-bit, 1 = 8-bit, 2 = 24-bit
-	int catalogueShowing = 1;
+	int colorCatalogueType = 1;
 
 	// showing input popup?
-	bool popupShowing = false;
+	// 0 = no, 1 = yes (text input), 2 = yes (confirmation)
+	int popupShowing = 0;
 	// input popup text (input)
 	std::string inputPopupText = "";
 	// input popup text (displayed)
@@ -90,7 +91,7 @@ int main() {
 	int frame = 0;
 	// animation stage of the cursor
 	int cursorAnim = 0;
-	// 0 = no, 1 = colors, 2 = chars, 3 = exporting, 4 = importing
+	// 0 = no, 1 = colors, 2 = chars, 3 = exporting, 4 = importing, 5 = settings
 	char sidePanelMode = 0;
 
 	// double-check to make sure art isnt accidentally reset
@@ -101,6 +102,17 @@ int main() {
 
 	// path for import
 	std::string importPathString = "";
+	// if true, failed on import, so say that
+	bool showImportFail = false;
+
+	// settings index
+	// 0 = color mode
+	// 1 = encoding
+	int settingsIndex = 0;
+	// if editing settings
+	// 0 = no, 1 = left, 2 = right
+	int settingsEdit = 0;
+
 
 	// foreground color palette
 	std::string colorForePalette[PALETTE_SIZE] = {
@@ -259,6 +271,8 @@ int main() {
 		* [/]: import mode
 		* 		[Z]:  edit path
 		* 
+		* [\]: settings
+		* 
 		* [Home] or [Ctrl]+[S]: save
 		* 
 		* [Bksp]: reset
@@ -290,37 +304,41 @@ int main() {
 			if (sidePanelMode == 0) {
 				cursorX--; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
-				if      (catalogueShowing == 0) catalogue4bIndexX--;
-				else if (catalogueShowing == 1) catalogue8bIndexX--;
-				else if (catalogueShowing == 2) catalogue24bIndexX--;
+				if      (colorCatalogueType == 0) catalogue4bIndexX--;
+				else if (colorCatalogueType == 1) catalogue8bIndexX--;
+				else if (colorCatalogueType == 2) catalogue24bIndexX--;
 			} else if (sidePanelMode == 2) charCatalogueIndexX-=2;
+			else if (sidePanelMode == 5) settingsEdit = 1;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) {
 			if (sidePanelMode == 0) {
 				cursorX++; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
-				if      (catalogueShowing == 0) catalogue4bIndexX++;
-				else if (catalogueShowing == 1) catalogue8bIndexX++;
-				else if (catalogueShowing == 2) catalogue24bIndexX++;
+				if      (colorCatalogueType == 0) catalogue4bIndexX++;
+				else if (colorCatalogueType == 1) catalogue8bIndexX++;
+				else if (colorCatalogueType == 2) catalogue24bIndexX++;
 			} else if (sidePanelMode == 2) charCatalogueIndexX+=2;
+			else if (sidePanelMode == 5) settingsEdit = 2;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    {
 			if (sidePanelMode == 0) {
 				cursorY--; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
-				if      (catalogueShowing == 0) catalogue4bIndexY--;
-				else if (catalogueShowing == 1) catalogue8bIndexY--;
-				else if (catalogueShowing == 2) catalogue24bIndexY--;
+				if      (colorCatalogueType == 0) catalogue4bIndexY--;
+				else if (colorCatalogueType == 1) catalogue8bIndexY--;
+				else if (colorCatalogueType == 2) catalogue24bIndexY--;
 			} else if (sidePanelMode == 2) charCatalogueIndexY--;
+			else if (sidePanelMode == 5) settingsIndex--;
 		}
 		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  {
 			if (sidePanelMode == 0) {
 				cursorY++; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
-				if      (catalogueShowing == 0) catalogue4bIndexY++;
-				else if (catalogueShowing == 1) catalogue8bIndexY++;
-				else if (catalogueShowing == 2) catalogue24bIndexY++;
+				if      (colorCatalogueType == 0) catalogue4bIndexY++;
+				else if (colorCatalogueType == 1) catalogue8bIndexY++;
+				else if (colorCatalogueType == 2) catalogue24bIndexY++;
 			} else if (sidePanelMode == 2) charCatalogueIndexY++;
+			else if (sidePanelMode == 5) settingsIndex++;
 		}
 
 		if (keyStates[Key::_1] || keyStates[Key::KP_1]) {
@@ -364,41 +382,41 @@ int main() {
 			else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 		}
 
-		if (keyStates_slow[Key::Q] && !popupShowing) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::E] && !popupShowing) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
-		if (keyStates[Key::W] && !popupShowing) {
+		if (keyStates_slow[Key::Q] && popupShowing == 0) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::E] && popupShowing == 0) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
+		if (keyStates[Key::W] && popupShowing == 0) {
 			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 				cursorAnim = 1;
 			} else if (sidePanelMode == 1) {
-				if (catalogueShowing == 0) {
+				if (colorCatalogueType == 0) {
 					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
-				} else if (catalogueShowing == 1) {
+				} else if (colorCatalogueType == 1) {
 					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back);
-				} else if (catalogueShowing == 2) {
+				} else if (colorCatalogueType == 2) {
 					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back);
 				}
 			}
 		}
 		
-		if (keyStates_slow[Key::A] && !popupShowing) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::D] && !popupShowing) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
-		if (keyStates[Key::S] && !popupShowing) {
+		if (keyStates_slow[Key::A] && popupShowing == 0) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+		if (keyStates_slow[Key::D] && popupShowing == 0) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
+		if (keyStates[Key::S] && popupShowing == 0) {
 			if (sidePanelMode == 0) {
 				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 				cursorAnim = 1;
 			} else if (sidePanelMode == 1) {
-				if (catalogueShowing == 0) {
+				if (colorCatalogueType == 0) {
 					colorForePalette[colorForeIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
-				} else if (catalogueShowing == 1) {
+				} else if (colorCatalogueType == 1) {
 					colorForePalette[colorForeIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
-				} else if (catalogueShowing == 2) {
+				} else if (colorCatalogueType == 2) {
 					colorForePalette[colorForeIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
 				}
 			}
 		}
 
-		if (keyStates[Key::C] && !popupShowing) {
+		if (keyStates[Key::C] && popupShowing == 0) {
 			ART.edit(upd.first, upd.second, ANSI::reset, 0);
 			ART.edit(upd.first, upd.second, ANSI::reset, 1);
 			cursorAnim = 1;
@@ -415,16 +433,16 @@ int main() {
 
 		if (keyStates_slow[Key::COMMA]) {
 			if (sidePanelMode == 1) {
-				catalogueShowing--;
+				colorCatalogueType--;
 			}
 		}
 		if (keyStates_slow[Key::PERIOD]) {
 			if (sidePanelMode == 1) {
-				catalogueShowing++;
+				colorCatalogueType++;
 			}
 		}
 
-		if (keyStates_slow[Key::BACKSPACE] && !popupShowing) {
+		if (keyStates_slow[Key::BACKSPACE] && popupShowing == 0) {
 			if (killingArt) {
 				// TODO center of screen instead?
 				ART.reset(cursorX, cursorY);
@@ -458,11 +476,15 @@ int main() {
 				}
 			} else if (sidePanelMode == 4) {
 				if (popupShowing) {
-					popupShowing = false;
+					popupShowing = 0;
 					importPathString = inputPopupText;
 				} else {
-					loadArtFromFile(importPathString, ART);
-					sidePanelMode = 0;
+					if (!loadArtFromFile(importPathString, ART)) {
+						showImportFail = true;
+						if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to import file: " + importPathString);
+					} else {
+						sidePanelMode = 0;
+					}
 				}
 			}
 			#ifndef NDEBUG
@@ -474,17 +496,22 @@ int main() {
 			saveArtToSession(ART);
 		}
 
-		if (keyStates_slow[Key::SLASH] && !popupShowing) {
+		if (keyStates_slow[Key::SLASH] && popupShowing == 0) {
 			if (sidePanelMode == 4) sidePanelMode = 0;
 			else sidePanelMode = 4;
 		}
 
-		if (keyStates_slow[Key::Z] && !popupShowing) {
+		if (keyStates_slow[Key::Z] && popupShowing == 0) {
 			if (sidePanelMode == 4) {
-				popupShowing = true;
+				popupShowing = 1;
 				inputPopupTextDisplayed = "Enter file path for import";
 				popupFrameStarted = frame;
 			}
+		}
+
+		if (keyStates_slow[Key::BSLASH]) {
+			if (sidePanelMode == 5) sidePanelMode = 0;
+			else sidePanelMode = 5;
 		}
 
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
@@ -498,7 +525,7 @@ int main() {
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
 
-		clamp(catalogueShowing, 0, 2);
+		clamp(colorCatalogueType, 0, 2);
 
 		clamp(catalogue4bIndexX, 0, static_cast<int>(COLOR_CATALOGUE_4B_X)-1);
 		clamp(catalogue4bIndexY, 0, static_cast<int>(COLOR_CATALOGUE_4B_Y)-1);
@@ -509,6 +536,8 @@ int main() {
 
 		clamp(charCatalogueIndexY, 0, 16-1);
 		clamp(charCatalogueIndexX, 1, 32-1);
+
+		clamp_rollover(settingsIndex, 0, SETTINGS_AMOUNT-1);
 
 		// screen scrolling
 		if (cursorX < 1) {
@@ -526,6 +555,26 @@ int main() {
 		else if (cursorY >= SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-1) {
 			ART.y -= SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE-2;
 			cursorY = 1;
+		}
+
+		// editing settings
+		if (settingsEdit > 0) {
+			switch (settingsIndex) {
+				case 0:  // color mode
+					if (settingsEdit == 1) COLOR_MODE--;
+					else COLOR_MODE++;
+
+					clamp_rollover(COLOR_MODE, 0, 3);
+
+					break;
+				case 1:  // encoding
+					if (settingsEdit == 1) ART_ENCODING--;
+					else ART_ENCODING++;
+
+					clamp_rollover(ART_ENCODING, 0, 1);
+
+					break;
+			}
 		}
 
 
@@ -585,8 +634,7 @@ int main() {
 				if (y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) && x < (SCREEN_WIDTH-1 - PANEL_SIZE + 1)) {
 					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
 						// in bounds of art
-						reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
-
+						//reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
 						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}
@@ -631,12 +679,12 @@ int main() {
 		
 		if (sidePanelMode == 0) {  // basic panel
 			// sunrise text
-			render.putString(thisX, 1, sunriseAnsi);
+			render.put(thisX, 1, sunriseAnsi);
 
 			// this looks like shit
 			// TODO only use 1 CellString for the whole thing
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			if (SCREEN_HEIGHT > 6) render.putString(thisX, 4, nums);
+			render.put(thisX, 4, nums);
 
 			// char hotkeys
 			CellString hotkeys {" "};
@@ -650,34 +698,46 @@ int main() {
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; hotkeys += " ";
-			if (SCREEN_HEIGHT > 6) render.putString(thisX, 5, hotkeys);
+			render.put(thisX, 5, hotkeys);
 
 			// color mode
 			CellString cmode {"Color mode: "};
-			if (COLOR_MODE == 0) cmode += "NONE";
+				 if (COLOR_MODE == 0) cmode += "NONE";
 			else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
 			else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
 			else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
-			if (SCREEN_HEIGHT > 8) render.putString(thisX, 7, cmode);
+			render.put(thisX, 7, cmode);
+
+			// encoding
+			CellString encoding {"Encoding: "};
+				 if (ART_ENCODING == 0) encoding += CellString{"UTF-8", DISPLAY_ENCODING_UTF8};
+			else if (ART_ENCODING == 1) encoding += CellString{"CP437", DISPLAY_ENCODING_CP437};
+			render.put(thisX, 8, encoding);
 
 			// art dimensions
 			CellString xy {"Size: "};
 			xy += std::to_string(SCREEN_WIDTH);
 			xy += "x";
 			xy += std::to_string(SCREEN_HEIGHT);
-			if (SCREEN_HEIGHT > 10) render.putString(thisX, 9, xy);
+			render.put(thisX, 10, xy);
 
 			// enter to export
 			CellString toExportStr {"["};
 			toExportStr.append("Entr", KEY_COLOR, "");
 			toExportStr += "] to export";
-			if (SCREEN_HEIGHT > 12) render.putString(thisX, 11, toExportStr);
+			render.put(thisX, 12, toExportStr);
+
+			// slash to import
+			CellString toImportStr {"["};
+			toImportStr.append("/", KEY_COLOR, "");
+			toImportStr += "] to import";
+			render.put(thisX, 13, toImportStr);
 
 			// backspace to reset
 			CellString toResetStr {"["};
 			toResetStr.append("Bksp", KEY_COLOR, "");
-			toResetStr += "] to reset";
-			if (SCREEN_HEIGHT > 13) render.putString(thisX, 12, toResetStr);
+			toResetStr += "] to clear art";
+			render.put(thisX, 15, toResetStr);
 		} 
 		else if (sidePanelMode == 1) {  // color catalogue
 			#define colorCatalogueLineNo 6
@@ -686,21 +746,21 @@ int main() {
 			CellString catStr;
 			CellString catName {"["};
 
-			if (catalogueShowing == 0) {
+			if (colorCatalogueType == 0) {
 				catIndexX = catalogue4bIndexX;
 				catIndexY = catalogue4bIndexY;
 				catSizeX = COLOR_CATALOGUE_4B_X;
 				catSizeY = COLOR_CATALOGUE_4B_Y;
 				catStr = colorCatalogue_4bit;
 				catName += CellString{"4-BIT", DISPLAY_COLOR_4BIT};
-			} else if (catalogueShowing == 1) {
+			} else if (colorCatalogueType == 1) {
 				catIndexX = catalogue8bIndexX;
 				catIndexY = catalogue8bIndexY;
 				catSizeX = COLOR_CATALOGUE_8B_X;
 				catSizeY = COLOR_CATALOGUE_8B_Y;
 				catStr = colorCatalogue_8bit;
 				catName += CellString{"8-BIT", DISPLAY_COLOR_8BIT};
-			} else if (catalogueShowing == 2) {
+			} else if (colorCatalogueType == 2) {
 				catIndexX = catalogue24bIndexX;
 				catIndexY = catalogue24bIndexY;
 				catSizeX = COLOR_CATALOGUE_24B_X;
@@ -710,7 +770,7 @@ int main() {
 			}
 			catName += "}";
 
-			render.putString(thisX, 1, CellString{"== COLOR CATALOGUE ==", PANEL_HEADER_COLOR});
+			render.put(thisX, 1, CellString{"== COLOR CATALOGUE ==", PANEL_HEADER_COLOR});
 
 			CellString toChangeCatStr {"["};
 			toChangeCatStr += Cell{",", KEY_COLOR, ""};
@@ -720,11 +780,11 @@ int main() {
 
 			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2) { 
 				// current catalog type
-				render.putString(thisX, colorCatalogueLineNo-2, catName);
-				render.putString(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
+				render.put(thisX, colorCatalogueLineNo-2, catName);
+				render.put(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
 
 				// X arrows
-				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});
+				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});  // TODO make settings color
 				render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold, ""});
 				// Y arrows
 				render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold, ""});
@@ -741,7 +801,7 @@ int main() {
 			// current color
 			CellString currentColorStr {"Current color: "};
 			LOOP(3) currentColorStr += Cell{" ", "", catStr[catIndexY*catSizeX + catIndexX].color_back};
-			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3) render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
+			render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
 
 			// to select
 			CellString toSelectStr {"["};
@@ -749,15 +809,15 @@ int main() {
 			toSelectStr += "] and [";
 			toSelectStr += Cell{"S", KEY_COLOR, ""};
 			toSelectStr += "] to apply to palette";
-			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 4) render.putString(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
+			render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
 		} else if (sidePanelMode == 2) {  // characters
 			#define charCatalogueLineNo 7
 
-			render.putString(thisX, 1, CellString{"== CHAR CATALOGUE ==", PANEL_HEADER_COLOR});
+			render.put(thisX, 1, CellString{"== CHAR CATALOGUE ==", PANEL_HEADER_COLOR});
 
 			// show hotkeys
 			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			if (SCREEN_HEIGHT > 5) render.putString(thisX, 4, nums);
+			render.put(thisX, 4, nums);
 
 			CellString hotkeys {" "};
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
@@ -770,7 +830,7 @@ int main() {
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
 			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
-			if (SCREEN_HEIGHT > 6) render.putString(thisX, 5, hotkeys);
+			render.put(thisX, 5, hotkeys);
 
 			// character table
 			if (SCREEN_HEIGHT > 16+charCatalogueLineNo + 1) {
@@ -791,46 +851,64 @@ int main() {
 			toSelectStr += "-";
 			toSelectStr += Cell{"9", KEY_COLOR, ""};
 			toSelectStr += "] to set char";
-			if (SCREEN_HEIGHT > charCatalogueLineNo + 16 + 3) render.putString(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
+			render.put(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
 		} else if (sidePanelMode == 3) {  // exporting
-			render.putString(thisX, 1, CellString{"== EXPORTING ==", PANEL_HEADER_COLOR});
+			render.put(thisX, 1, CellString{"== EXPORTING ==", PANEL_HEADER_COLOR});
 
 			// art size
 			CellString artSize {"Dimensions: "};
 			artSize += std::to_string(SCREEN_WIDTH);
 			artSize += "x";
 			artSize += std::to_string(SCREEN_HEIGHT);
-			if (SCREEN_HEIGHT > 5) render.putString(thisX, 4, artSize);
+			render.put(thisX, 4, artSize);
 
 			// do it?
 			CellString doIt {"["};
 			doIt += CellString{"Entr", KEY_COLOR};
 			doIt += "] to export to .ans";
-			if (SCREEN_HEIGHT > 7) render.putString(thisX, 6, doIt);
+			render.put(thisX, 6, doIt);
 
 			// export failure
 			if (showExportFail) {
-				if (SCREEN_HEIGHT > 9) {
-					render.putString(thisX, 8, CellString{"EXPORT FAILURE!", "", ANSI::red_back_bright});
-				}
+				render.put(thisX, 8, CellString{"EXPORT FAILURE!", "", ERROR_COLOR});  // TODO put color in settings
 			}
 		} else if (sidePanelMode == 4) {  // importing
-			render.putString(thisX, 1, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
+			render.put(thisX, 1, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
 
 			// import path
 			CellString topTextStr {Cell{"↓", "", ""}};
 			topTextStr += "  Import Path  ";
 			topTextStr += Cell{"↓", "", ""};
-			render.putString(thisX, 3, topTextStr);
+			render.put(thisX, 3, topTextStr);
 
 			// path
-			render.putString(thisX, 4, CellString{limitString(importPathString, PANEL_SIZE - 3)});
+			render.put(thisX, 4, CellString{limitString(importPathString, PANEL_SIZE - 3)});
 
 			// edit path key
-			render.putString(thisX, 6, CellString{"[Z] to edit path"});
+			render.put(thisX, 6, CellString{"[Z] to edit path"});
 
 			// import
-			render.putString(thisX, 7, CellString{"[Enter] to import .ans file"});
+			render.put(thisX, 7, CellString{"[Enter] to import .ans file"});
+
+			// import failure
+			if (showImportFail) {
+				render.put(thisX, 9, CellString{"IMPORT FAILURE!", "", ERROR_COLOR});
+			}
+		} else if (sidePanelMode == 5) {  // settings
+			render.put(thisX, 1, CellString{"== SETTINGS ==", PANEL_HEADER_COLOR});
+
+			// color mode
+			CellString colorMode;
+				 if (COLOR_MODE == 0) colorMode = CellString{"NONE"  , SETTINGS_OPTION_COLOR};
+			else if (COLOR_MODE == 1) colorMode = CellString{"4-BIT" , SETTINGS_OPTION_COLOR};
+			else if (COLOR_MODE == 2) colorMode = CellString{"8-BIT" , SETTINGS_OPTION_COLOR};
+			else if (COLOR_MODE == 3) colorMode = CellString{"24-BIT", SETTINGS_OPTION_COLOR};
+			render.put(thisX, 3, CellString{std::string(settingsIndex == 0 ? ">" : " ") + " Color mode: "} + colorMode);
+
+			// encoding
+			render.put(thisX, 4, CellString{std::string(settingsIndex == 1 ? ">" : " ") + " Encoding: "} + CellString{ART_ENCODING == 0 ? "UTF-8" : "CP437", SETTINGS_OPTION_COLOR});
+
+			// 
 		}
 
 		
@@ -895,7 +973,7 @@ int main() {
 			colors += "]";
 		}
 		
-		render.putString(2, thisY, colors);
+		render.put(2, thisY, colors);
 
 
 		// cursor
@@ -906,26 +984,26 @@ int main() {
 		if (cursorAnim == 0) cursorAnim = 2;
 
 		// popup
-		if (popupShowing) {
+		if (popupShowing > 0) {
 			int xMid = SCREEN_WIDTH/2, yMid = SCREEN_HEIGHT/2;
 			int pwidth = SCREEN_WIDTH * POPUP_WIDTH_SCALE, pheight = SCREEN_HEIGHT * POPUP_HEIGHT_SCALE;
 			
 			CellString topBar {Cell{"╔", "", ""}};
 			LOOP(static_cast<size_t>(pwidth-2)) topBar += Cell{"═", "", ""};
 			topBar += Cell{"╗", "", ""};
-			render.putString(xMid - pwidth/2, yMid - pheight/2, topBar);
+			render.put(xMid - pwidth/2, yMid - pheight/2, topBar);
 
 			for (int i = 1; i < pheight-1; ++i) {
 				CellString midBar = {Cell{"║", "", ""}};
 				LOOP(static_cast<size_t>(pwidth-2)) midBar += " ";
 				midBar += Cell{"║", "", ""};
-				render.putString(xMid - pwidth/2, yMid - pheight/2 + i, midBar);
+				render.put(xMid - pwidth/2, yMid - pheight/2 + i, midBar);
 			}
 
 			CellString endBar {Cell{"╚", "", ""}};
 			LOOP(static_cast<size_t>(pwidth-2)) endBar += Cell{"═", "", ""};
 			endBar += Cell{"╝", "", ""};
-			render.putString(xMid - pwidth/2, yMid + pheight/2 - 1, endBar);
+			render.put(xMid - pwidth/2, yMid + pheight/2 - 1, endBar);
 
 			if (frame > popupFrameStarted + POPUP_INPUT_DELAY) {
 				pollInputsIntoString(keyStates, keyStates_slow, inputPopupText);
@@ -937,22 +1015,22 @@ int main() {
 			int thisy = yMid - pheight/2 + 1;
 
 			// query text
-			render.putString(thisx, thisy, CellString{inputPopupTextDisplayed});
+			render.put(thisx, thisy, CellString{inputPopupTextDisplayed});
 
 			// input from tha user
 			CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
-			render.putString(thisx, thisy+1, userIn);
+			render.put(thisx, thisy+1, userIn);
 
 			// finished yet?
-			render.putString(thisx, thisy+3, CellString{"[Enter] when done"});
+			render.put(thisx, thisy+3, CellString{"[Enter] when done"});
 		}
 
 
 		// screen is too small to properly render panels
 		if (SCREEN_TOO_SMALL) {
 			render.fill(Cell{" ", "", ANSI::red_back_bright});
-			render.putString(0, 0, CellString{"SCREEN"});
-			render.putString(0, 1, CellString{"TOO SMALL"});
+			render.put(0, 0, CellString{"SCREEN"});
+			render.put(0, 1, CellString{"TOO SMALL"});
 			// TODO add debug thing here
 		} else if (sidePanelMode == -1) {
 			sidePanelMode = 0;

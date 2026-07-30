@@ -134,7 +134,7 @@ public:
 	// col = 0 (default): edit foreground color,  col = 1: edit background color,  col = 2: edit character
 	void edit(uint32_t x, uint32_t y, const std::string& str, char col = 0);
 	// puts a string of cells onto the buffer
-	void putString(uint32_t x, uint32_t y, const CellString& str);
+	void put(uint32_t x, uint32_t y, const CellString& str);
 
 	// get
 	Cell get(uint32_t x, uint32_t y) const;
