@@ -1,5 +1,5 @@
 CONFIG_FLAGS := 
-GCC_FLAGS := 
+GCC_FLAGS := -std=c++20
 BUILD_FLAGS := --parallel 4
 
 
