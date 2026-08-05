@@ -291,13 +291,28 @@ int main() {
 			else updateKeyStates(keyStates, keyStates_slow, keyChecker);
 		}
 
+		// ignore inputs if window not in focus
+		// TODO linux implementation
+		#ifdef _WIN32
+			if (!windowIsFocused(GetConsoleWindow()))
+		#else
+			if (false)
+		#endif
+		{
+			setKeyStatesOff(keyStates);
+			setKeyStatesOff(keyStates_slow);
+		}
+
 		std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
+		settingsEdit = 0;
 
-		if (keyStates[Key::ESC]) {
-			RUNNING = false;
+		if (keyStates_slow[Key::ESC]) {
+				if (sidePanelMode == 0) {
+				RUNNING = false;
 
-			reportLog("ESC pressed, saving and terminating...");
-			saveArtToSession(ART);
+				reportLog("ESC pressed, saving and terminating...");
+				saveArtToSession(ART);
+			} else sidePanelMode = 0;
 		}
 
 		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  {
@@ -407,11 +422,11 @@ int main() {
 				cursorAnim = 1;
 			} else if (sidePanelMode == 1) {
 				if (colorCatalogueType == 0) {
-					colorForePalette[colorForeIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
+					colorBackPalette[colorBackIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
 				} else if (colorCatalogueType == 1) {
-					colorForePalette[colorForeIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
+					colorBackPalette[colorBackIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
 				} else if (colorCatalogueType == 2) {
-					colorForePalette[colorForeIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
+					colorBackPalette[colorBackIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
 				}
 			}
 		}
@@ -560,28 +575,47 @@ int main() {
 		// editing settings
 		if (settingsEdit > 0) {
 			switch (settingsIndex) {
-				case 0:  // color mode
-					if (settingsEdit == 1) COLOR_MODE--;
-					else COLOR_MODE++;
+				case 0: {  // color mode
+					int oldMode = ART_COLOR_MODE;
+					if (settingsEdit == 1) ART_COLOR_MODE--;
+					else ART_COLOR_MODE++;
 
-					clamp_rollover(COLOR_MODE, 0, 3);
+					clamp_rollover(ART_COLOR_MODE, 0, 3);
+
+					for (size_t c = 0; c < ART.map.size(); ++c) {
+						ART.map[c] = clampColor(ART.map[c], ART_COLOR_MODE);
+					}
+
+					reportLog("Color mode changed: " + std::to_string(oldMode) + " -> " + std::to_string(ART_COLOR_MODE));
 
 					break;
-				case 1:  // encoding
+				}
+				case 1: {  // encoding
+					int oldEncoding = ART_ENCODING;
 					if (settingsEdit == 1) ART_ENCODING--;
 					else ART_ENCODING++;
 
 					clamp_rollover(ART_ENCODING, 0, 1);
+					
+					reportLog("Encoding changed: " + std::to_string(oldEncoding) + " -> " + std::to_string(ART_ENCODING));
 
 					break;
+				}
 			}
 		}
 
 
 		//  -- RENDER --
 
+		// analysis frame
 		if (!(frame % ANALYSIS_FREQUENCY)) {
-			COLOR_MODE = findHighestColorCode(CellString{ART.map});
+			int foundColorMode = findHighestColorCode(CellString{ART.map});
+			
+			if (foundColorMode != ART_COLOR_MODE) {
+				reportLog("Analysis - color mode change: " + std::to_string(ART_COLOR_MODE) + " -> " + std::to_string(foundColorMode));
+			}
+
+			ART_COLOR_MODE = foundColorMode;
 		}
 
 		render.clear();
@@ -702,10 +736,10 @@ int main() {
 
 			// color mode
 			CellString cmode {"Color mode: "};
-				 if (COLOR_MODE == 0) cmode += "NONE";
-			else if (COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
-			else if (COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
-			else if (COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
+				 if (ART_COLOR_MODE == 0) cmode += "NONE";
+			else if (ART_COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
+			else if (ART_COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
+			else if (ART_COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
 			render.put(thisX, 7, cmode);
 
 			// encoding
@@ -733,11 +767,18 @@ int main() {
 			toImportStr += "] to import";
 			render.put(thisX, 13, toImportStr);
 
+			// backslash for settings
+			CellString settingsStr {"["};
+			settingsStr.append("\\", KEY_COLOR, "");
+			settingsStr += "] for settings";
+			render.put(thisX, 14, settingsStr);
+
+
 			// backspace to reset
 			CellString toResetStr {"["};
 			toResetStr.append("Bksp", KEY_COLOR, "");
 			toResetStr += "] to clear art";
-			render.put(thisX, 15, toResetStr);
+			render.put(thisX, 16, toResetStr);
 		} 
 		else if (sidePanelMode == 1) {  // color catalogue
 			#define colorCatalogueLineNo 6
@@ -768,7 +809,7 @@ int main() {
 				catStr = colorCatalogue_24bit;
 				catName += CellString{"24-BIT", DISPLAY_COLOR_24BIT};
 			}
-			catName += "}";
+			catName += "]";
 
 			render.put(thisX, 1, CellString{"== COLOR CATALOGUE ==", PANEL_HEADER_COLOR});
 
@@ -899,10 +940,10 @@ int main() {
 
 			// color mode
 			CellString colorMode;
-				 if (COLOR_MODE == 0) colorMode = CellString{"NONE"  , SETTINGS_OPTION_COLOR};
-			else if (COLOR_MODE == 1) colorMode = CellString{"4-BIT" , SETTINGS_OPTION_COLOR};
-			else if (COLOR_MODE == 2) colorMode = CellString{"8-BIT" , SETTINGS_OPTION_COLOR};
-			else if (COLOR_MODE == 3) colorMode = CellString{"24-BIT", SETTINGS_OPTION_COLOR};
+				 if (ART_COLOR_MODE == 0) colorMode = CellString{"NONE"  , SETTINGS_OPTION_COLOR};
+			else if (ART_COLOR_MODE == 1) colorMode = CellString{"4-BIT" , SETTINGS_OPTION_COLOR};
+			else if (ART_COLOR_MODE == 2) colorMode = CellString{"8-BIT" , SETTINGS_OPTION_COLOR};
+			else if (ART_COLOR_MODE == 3) colorMode = CellString{"24-BIT", SETTINGS_OPTION_COLOR};
 			render.put(thisX, 3, CellString{std::string(settingsIndex == 0 ? ">" : " ") + " Color mode: "} + colorMode);
 
 			// encoding

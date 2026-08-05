@@ -49,11 +49,13 @@
  *      [ ] put CellString builds into separate file
  *      [ ] organize inputs
  *      [ ] header comments
+ *      [ ] make separate folder for I/O files
  * [ ] tutorial
  * [ ] autosave
  * [ ] more than just color codes?
  * [ ] GPL -> AGPL
  * [ ] paste into popup text box
+ * [ ] make popup text box cursor better
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
@@ -204,8 +206,11 @@ inline bool DIRECT_KEY_INPUTS = false;
 
 // type of color
 // 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
-inline int COLOR_MODE = 0;
+inline int ART_COLOR_MODE = 0;
 
+// type of color for the UI
+// 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
+inline int UI_COLOR_MODE = 3;
 
 #include "output.hpp"
 

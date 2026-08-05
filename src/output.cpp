@@ -2,13 +2,13 @@
  * Output related things
 **/
 
+#include "output.hpp"
+
 #include <iostream>
 #include <cstdint>
 #include <cassert>
 #include <vector>
 #include <string>
-
-#include "output.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -16,6 +16,8 @@
 	#include <unistd.h>
 	#include <sys/ioctl.h>
 #endif
+
+#include "lib.hpp"
 
 
 std::pair<int,int> getTerminalDimensions() {
@@ -117,17 +119,31 @@ void clear() {
 }
 
 int findHighestColorCode(const CellString& cells) {
-	int highest = 0;
+	int highest = -1;
 	for (size_t c = 0; c < cells.size(); ++c) {
-		int type1 = ANSI::findColorType(cells[c].color_fore) + 1;
-		int type2 = ANSI::findColorType(cells[c].color_back) + 1;
+		int type1 = ANSI::findColorType(cells[c].color_fore);
+		int type2 = ANSI::findColorType(cells[c].color_back);
 		if (type1 > highest) highest = type1;
 		if (type2 > highest) highest = type2;
 
-		if (highest == 2) break;
+		if (highest == 6 || highest == 7) break;
 	}
-	return highest;
+
+	if (highest == -1) return 0;  // no color
+	else if (highest < 4) return 1;  // 4-bit
+	else if (highest < 6) return 2;  // 8-bit
+	else return 3;  // 24-bit
 }
 
 
-#include "ANSI.hpp"
+Cell clampColor(const Cell& cell, int maxColor) {
+	auto convert = [](int n) {
+		if (n == -1) return 0;  // no color
+		else if (n < 4) return 1;  // 4-bit
+		else if (n < 6) return 2;  // 8-bit
+		else return 3;  // 24-bit
+	};
+
+	if (max(convert(ANSI::findColorType(cell.color_fore)), convert(ANSI::findColorType(cell.color_back))) > maxColor) return Cell{cell.ch, "", ""};
+	return cell;
+}

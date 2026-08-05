@@ -116,7 +116,14 @@ struct CellString {
 	}
 };
 
+// returns the highest level color code found
+// 0 = none,  1 = 4-bit,  2 = 8-bit,  3 = 24-bit
 int findHighestColorCode(const CellString& cells);
+
+// clamps a cell to a certain color code or lower, 
+// replacing the color with nothing if it must be removed
+// TODO  ^ this is temp ^
+Cell clampColor(const Cell& cell, int maxColor);
 
 // stores a screen buffer of Cells and renders them
 class Renderer {

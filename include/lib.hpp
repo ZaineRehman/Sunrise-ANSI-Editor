@@ -14,6 +14,10 @@
 #include <atomic>
 #include <chrono>
 
+#ifdef _WIN32
+	#include <windows.h>
+#endif
+
 
 inline std::atomic<bool> RUNNING(true);
 
@@ -29,6 +33,10 @@ std::string getTimestamp();
 // if a string is longer than the given max length, return the max number of characters but with "..." at the beginning
 std::string limitString(const std::string& str, size_t limit);
 
+// returns true if the window is currently in focus
+#ifdef _WIN32
+	bool windowIsFocused(HWND handle);
+#endif
 
 // inclusive
 template <typename T>

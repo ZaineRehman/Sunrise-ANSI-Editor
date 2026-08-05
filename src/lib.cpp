@@ -1,10 +1,15 @@
 /* 
  * Small functions
 **/
+
 #include "lib.hpp"
 
 #include <csignal>
 #include <string>
+
+#ifdef _WIN32
+	#include <windows.h>
+#endif
 
 #include "log.hpp"
 
@@ -62,3 +67,10 @@ std::string limitString(const std::string& str, size_t limit) {
 
 	return "..." + str.substr(str.size()-1-limit, limit-3);
 }
+
+
+#ifdef _WIN32
+	bool windowIsFocused(HWND handle) {
+		return GetForegroundWindow() == handle;
+	}
+#endif
