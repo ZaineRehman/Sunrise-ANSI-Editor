@@ -21,6 +21,7 @@
  * [x] UTF-8 / CP-437 modes
  * [x] render borders last
  * [x] ASCII mode
+ * [x] GPL -> AGPL
  * [ ] trim empty spaces from art
  * [ ] load palettes to/from file
  * [ ] proper linux input support
@@ -54,7 +55,6 @@
  *      [ ] make separate folder for I/O files
  * [ ] tutorial
  * [ ] autosave
- * [ ] GPL -> AGPL
  * [ ] paste into popup text box
  * [ ] make popup text box cursor better
  * [ ] assure terminal scrolling is disabled
@@ -78,14 +78,14 @@
  *   [ ] copy/paste
  *   [ ] animation
  *   [x] color mode
- *   [ ] ASCII mode
+ *   [x] ASCII mode
  *   [x] color catalogue
  *   		[x] color mode changer
  *   		[x] 4-bit code table
  *   		[x] 8-bit code table
- *   		[ ] 8-bit code RGB explicit picker
+ *   		[x] 8-bit code RGB explicit picker
  *   		[x] 24-bit code table
- *   		[ ] 24-bit code RGB explicit picker
+ *   		[x] 24-bit code RGB explicit picker
  *   
  *   [x] char catalogue
  *   		[x] 16x16 grid
@@ -102,25 +102,8 @@
 
 
 
-/*
- * [date][minor]-[program condition][dev stage]
- * 
- * date: [month][year (2 digits)]
- * 
- * minor: for multiple versions in the same month
- * 
- * program conditions: 
- * 		N = not working / critical bug
- * 		U = under development (not ready for release)
- * 		R = ready for release
- * 		X = experimental test build
- * 
- * development stages: 
- * 		A = alpha (many key features not implemented)
- * 		B = beta (most/all features implemented, needs refining)
- * 		F = finished (all planned features implemented and working well)
-**/
-inline constexpr const char* VERSION = "v08260-UA";
+// version
+inline constexpr const char* VERSION = "v0.1.0-a";
 
 
 inline std::string DEBUG_STR = "";
