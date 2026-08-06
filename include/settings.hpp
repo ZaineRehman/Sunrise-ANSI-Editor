@@ -57,6 +57,7 @@
  * [ ] GPL -> AGPL
  * [ ] paste into popup text box
  * [ ] make popup text box cursor better
+ * [ ] assure terminal scrolling is disabled
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
@@ -243,15 +244,15 @@ inline std::string DISPLAY_ENCODING_CP437 = ANSI::Color_24bit::makeColor(0, 155,
 
 
 inline std::string HOTKEY_CHAR_1 = "█";
-inline std::string HOTKEY_CHAR_2 = "▓";
-inline std::string HOTKEY_CHAR_3 = "▒";
-inline std::string HOTKEY_CHAR_4 = "░";
-inline std::string HOTKEY_CHAR_5 = " ";
-inline std::string HOTKEY_CHAR_6 = "▌";
-inline std::string HOTKEY_CHAR_7 = "▐";
-inline std::string HOTKEY_CHAR_8 = "▀";
-inline std::string HOTKEY_CHAR_9 = "▄";
-inline std::string HOTKEY_CHAR_0 = "■";
+inline std::string HOTKEY_CHAR_2 = "▀";
+inline std::string HOTKEY_CHAR_3 = "▄";
+inline std::string HOTKEY_CHAR_4 = "▌";
+inline std::string HOTKEY_CHAR_5 = "▐";
+inline std::string HOTKEY_CHAR_6 = "▓";
+inline std::string HOTKEY_CHAR_7 = "▒";
+inline std::string HOTKEY_CHAR_8 = "░";
+inline std::string HOTKEY_CHAR_9 = "■";
+inline std::string HOTKEY_CHAR_0 = " ";
 
 inline std::string HOTKEY_COLOR_Q = ANSI::red;
 inline std::string HOTKEY_COLOR_A = ANSI::red_back;

@@ -74,7 +74,12 @@ int main() {
 
 	// which catalogue to show
 	// 0 = 4-bit, 1 = 8-bit, 2 = 24-bit
+	// 3 = 8-bit picker, 4 = 24-bit picker
 	int colorCatalogueType = 1;
+
+	// catalogue color pickers
+	int colorPicker8bit_r  = 0, colorPicker8bit_g  = 0, colorPicker8bit_b  = 0;
+	int colorPicker24bit_r = 0, colorPicker24bit_g = 0, colorPicker24bit_b = 0;
 
 	// showing input popup?
 	// 0 = no, 1 = yes (text input), 2 = yes (confirmation)
@@ -86,6 +91,9 @@ int main() {
 	// frame that popup was requested
 	// for a slight input delay
 	int popupFrameStarted = 0;
+	// what are we doing in the popup?
+	// 0 = nothin/idc, 1 = changing R, 2 = changing G, 3 = changing B
+	int popupFlag = 0;
 
 	// program frame number
 	int frame = 0;
@@ -453,12 +461,16 @@ int main() {
 					ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
 					cursorAnim = 1;
 				} else if (sidePanelMode == 1) {
-					if (colorCatalogueType == 0) {
+					if (colorCatalogueType == 0) {  // 4-bit catalogue
 						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
-					} else if (colorCatalogueType == 1) {
+					} else if (colorCatalogueType == 1) {  // 8-bit catalogue
 						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back);
-					} else if (colorCatalogueType == 2) {
+					} else if (colorCatalogueType == 2) {  // 24-bit catalogue
 						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back);
+					} else if (colorCatalogueType == 3) {  // 8-bit picker
+						colorForePalette[colorForeIndex] = ANSI::Color_8bit::makeColor(colorPicker8bit_r, colorPicker8bit_g, colorPicker8bit_b, false);
+					} else if (colorCatalogueType == 4) {  // 24-bit picker
+						colorForePalette[colorForeIndex] = ANSI::Color_24bit::makeColor(colorPicker24bit_r, colorPicker24bit_g, colorPicker24bit_b, false);
 					}
 				}
 			}
@@ -470,12 +482,16 @@ int main() {
 					ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
 					cursorAnim = 1;
 				} else if (sidePanelMode == 1) {
-					if (colorCatalogueType == 0) {
+					if (colorCatalogueType == 0) {  // 4-bit catalogue
 						colorBackPalette[colorBackIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
-					} else if (colorCatalogueType == 1) {
+					} else if (colorCatalogueType == 1) {  // 8-bit catalogue
 						colorBackPalette[colorBackIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
-					} else if (colorCatalogueType == 2) {
+					} else if (colorCatalogueType == 2) {  // 24-bit catalogue
 						colorBackPalette[colorBackIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
+					} else if (colorCatalogueType == 3) {  // 8-bit picker
+						colorBackPalette[colorBackIndex] = ANSI::Color_8bit::makeColor(colorPicker8bit_r, colorPicker8bit_g, colorPicker8bit_b, true);
+					} else if (colorCatalogueType == 4) {  // 24-bit picker
+						colorBackPalette[colorBackIndex] = ANSI::Color_24bit::makeColor(colorPicker24bit_r, colorPicker24bit_g, colorPicker24bit_b, true);
 					}
 				}
 			}
@@ -525,6 +541,46 @@ int main() {
 				if (sidePanelMode == 4) sidePanelMode = 0;
 				else sidePanelMode = 4;
 			}
+
+			if (keyStates_slow[Key::R]) {
+				if (sidePanelMode == 1 && colorCatalogueType == 3) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter RED value (0-5)";
+					popupFrameStarted = frame;
+					popupFlag = 1;
+				} else if (sidePanelMode == 1 && colorCatalogueType == 4) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter RED value (0-255)";
+					popupFrameStarted = frame;
+					popupFlag = 1;
+				}
+			}
+			if (keyStates_slow[Key::G]) {
+				if (sidePanelMode == 1 && colorCatalogueType == 3) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter GREEN value (0-5)";
+					popupFrameStarted = frame;
+					popupFlag = 2;
+				} else if (sidePanelMode == 1 && colorCatalogueType == 4) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter GREEN value (0-255)";
+					popupFrameStarted = frame;
+					popupFlag = 2;
+				}
+			}
+			if (keyStates_slow[Key::B]) {
+				if (sidePanelMode == 1 && colorCatalogueType == 3) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter BLUE value (0-5)";
+					popupFrameStarted = frame;
+					popupFlag = 3;
+				} else if (sidePanelMode == 1 && colorCatalogueType == 4) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter BLUE value (0-255)";
+					popupFrameStarted = frame;
+					popupFlag = 3;
+				}
+			}
 		}  // ASCII mode check
 
 		if (keyStates_slow[Key::BACKSPACE] && popupShowing == 0) {
@@ -557,6 +613,46 @@ int main() {
 				} else {
 					// settings
 					sidePanelMode = 5;
+				}
+			} else if (sidePanelMode == 1) {
+				bool failed = false;
+				// color catalogue picker
+				int inputVal = 0;
+
+				try {
+					inputVal = std::stoi(inputPopupText);
+					reportLog("CHECK: \"" + inputPopupText + "\" -> " + std::to_string(inputVal));
+				} catch(...) {
+					if (DEBUG_REPORT_LEVEL >= 2) reportLog("!!! Failed to convert user input to int: \"" + inputPopupText + "\"");
+					failed = true;
+				}
+
+				if (colorCatalogueType == 3) {
+					// 8-bit
+					if (!failed) {
+						clamp(inputVal, 0, 5);
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("User value for 8-bit color: \"" + inputPopupText + "\" -> " + std::to_string(inputVal));
+						switch (popupFlag) {
+							case 1: colorPicker8bit_r = inputVal; break;
+							case 2: colorPicker8bit_g = inputVal; break;
+							case 3: colorPicker8bit_b = inputVal; break;
+						}
+					}
+				} else if (colorCatalogueType == 4) {
+					// 24-bit
+					if (!failed) {
+						clamp(inputVal, 0, 255);
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("User value for 24-bit color: \"" + inputPopupText + "\" -> " + std::to_string(inputVal));
+						switch (popupFlag) {
+							case 1: colorPicker24bit_r = inputVal; break;
+							case 2: colorPicker24bit_g = inputVal; break;
+							case 3: colorPicker24bit_b = inputVal; break;
+						}
+					}
+				}
+				if (!failed) {
+					popupShowing = 0;
+					inputPopupText = "";
 				}
 			} else if (sidePanelMode == 3) {
 				// export art
@@ -602,7 +698,7 @@ int main() {
 		clamp(cursorX, 0, SCREEN_WIDTH-1);
 		clamp(cursorY, 0, SCREEN_HEIGHT-1);
 
-		clamp(colorCatalogueType, 0, 2);
+		clamp(colorCatalogueType, 0, 4);
 
 		clamp(catalogue4bIndexX, 0, static_cast<int>(COLOR_CATALOGUE_4B_X)-1);
 		clamp(catalogue4bIndexY, 0, static_cast<int>(COLOR_CATALOGUE_4B_Y)-1);
@@ -744,9 +840,8 @@ int main() {
 			yLevel += 3;
 
 
-			// this looks like shit
-			// TODO only use 1 CellString for the whole thing
-			CellString text {" [1][2][3][4][5][6][7][8][9][0]"};
+			// this looks like shit kinda
+			CellString text {" [1][2][3][4][5][6][7][8][9][0]", KEY_COLOR};
 			render.put(thisX, yLevel, text);
 			yLevel++;
 
@@ -798,31 +893,31 @@ int main() {
 
 
 			// enter to export
-			text.clear(); text += "[";
-			text.append("Entr", KEY_COLOR, "");
-			text += "] for settings";
+			text.clear();
+			text += CellString{"[Entr]", KEY_COLOR};
+			text += " for settings";
 			render.put(thisX, yLevel, text);
 			yLevel++;
 
 			// slash to import
-			text.clear(); text += "[";
-			text.append("/", KEY_COLOR, "");
-			text += "] to export";
+			text.clear();
+			text += CellString{"[/]", KEY_COLOR};
+			text += " to export";
 			render.put(thisX, yLevel, text);
 			yLevel++;
 
 			// backslash for settings
-			text.clear(); text += "[";
-			text.append("\\", KEY_COLOR, "");
-			text += "] to import";
+			text.clear();
+			text += CellString{"[\\]", KEY_COLOR};
+			text += " to import";
 			render.put(thisX, yLevel, text);
 			yLevel += 2;
 
 
 			// backspace to reset
-			text.clear(); text += "[";
-			text.append("Bksp", KEY_COLOR, "");
-			text += "] to clear art";
+			text.clear();
+			text += CellString{"[Bksp]", KEY_COLOR};
+			text += " to clear art";
 			render.put(thisX, yLevel, text);
 		} 
 		else if (sidePanelMode == 1) {  // color catalogue
@@ -830,44 +925,58 @@ int main() {
 			int catIndexX, catIndexY;
 			float catSizeX, catSizeY;
 			CellString catStr;
-			CellString catName {"["};
+			CellString catName {"("};
 
-			if (colorCatalogueType == 0) {
+			if (colorCatalogueType == 0) {  // 4-bit
 				catIndexX = catalogue4bIndexX;
 				catIndexY = catalogue4bIndexY;
 				catSizeX = COLOR_CATALOGUE_4B_X;
 				catSizeY = COLOR_CATALOGUE_4B_Y;
 				catStr = colorCatalogue_4bit;
 				catName += CellString{"4-BIT", DISPLAY_COLOR_4BIT};
-			} else if (colorCatalogueType == 1) {
+			} else if (colorCatalogueType == 1) {  // 8-bit
 				catIndexX = catalogue8bIndexX;
 				catIndexY = catalogue8bIndexY;
 				catSizeX = COLOR_CATALOGUE_8B_X;
 				catSizeY = COLOR_CATALOGUE_8B_Y;
 				catStr = colorCatalogue_8bit;
 				catName += CellString{"8-BIT", DISPLAY_COLOR_8BIT};
-			} else if (colorCatalogueType == 2) {
+			} else if (colorCatalogueType == 2) {  // 24-bit
 				catIndexX = catalogue24bIndexX;
 				catIndexY = catalogue24bIndexY;
 				catSizeX = COLOR_CATALOGUE_24B_X;
 				catSizeY = COLOR_CATALOGUE_24B_Y;
 				catStr = colorCatalogue_24bit;
 				catName += CellString{"24-BIT", DISPLAY_COLOR_24BIT};
+			} else if (colorCatalogueType == 3) {  // 8-bit picker
+				catIndexX = -1; catIndexY = -1;
+				catSizeX = -1; catSizeY = -1;
+				catStr = {};
+				catName += CellString{"8-BIT PICK", DISPLAY_COLOR_8BIT};
+			} else if (colorCatalogueType == 4) {  // 24-bit picker
+				catIndexX = -1; catIndexY = -1;
+				catSizeX = -1; catSizeY = -1;
+				catStr = {};
+				catName += CellString{"24-BIT PICK", DISPLAY_COLOR_24BIT};
 			}
-			catName += "]";
+			catName += ")";
+
+			CellString text {};
 
 			render.put(thisX, 1, CellString{"== COLOR CATALOGUE ==", PANEL_HEADER_COLOR});
 
-			CellString toChangeCatStr {"["};
-			toChangeCatStr += Cell{",", KEY_COLOR, ""};
-			toChangeCatStr += "] [";
-			toChangeCatStr += Cell{".", KEY_COLOR, ""};
-			toChangeCatStr += "] to change";
+			text += CellString{"[,]", KEY_COLOR, ""};
+			text += " ";
+			text += CellString{"[.]", KEY_COLOR, ""};
+			text += " to change";
 
-			if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2) { 
-				// current catalog type
-				render.put(thisX, colorCatalogueLineNo-2, catName);
-				render.put(thisX+14, colorCatalogueLineNo-2, toChangeCatStr);
+			// current catalog type
+			render.put(thisX, colorCatalogueLineNo-2, catName);
+			render.put(thisX+15, colorCatalogueLineNo-2, text);
+
+			// for catalogue rendering
+			if (catIndexX != -1) {
+				//if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2) {}
 
 				// X arrows
 				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});  // TODO make settings color
@@ -882,99 +991,228 @@ int main() {
 						render.put(xc+thisX, yc+colorCatalogueLineNo, catStr[yc*catSizeX + xc]);
 					}
 				}
+
+				// current color
+				text.clear(); text += "Current color: ";
+				text += CellString{"   ", "", catStr[catIndexY*catSizeX + catIndexX].color_back};
+				render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, text);
+			} else {
+				// picker rendering
+				/*
+				 *  [R] Red   [G] Green   [B] Blue
+				 *   rrrrr      ggggg       bbbbb
+				 *   r---r      g---g       b---b
+				 *   rrrrr      ggggg       bbbbb
+				 * 
+				 * Value range: 0-5 OR 0-255
+				**/
+				text.clear(); text += " [R] Red   [G] Green   [B] Blue";
+				render.put(thisX, colorCatalogueLineNo+1, text);
+
+				if (colorCatalogueType == 3) {  // 8-bit picker
+					// box with value in it
+
+					text.clear(); text += "  ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(0, colorPicker8bit_g, 0, true)};
+					text += "       ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(0, 0, colorPicker8bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+3, text);
+
+					text.clear(); text += "  ";
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, 0, 0, true)};
+					std::string num = std::to_string(colorPicker8bit_r); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, 0, 0, true)};
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(0, colorPicker8bit_g, 0, true)};
+					num = std::to_string(colorPicker8bit_g); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_8bit::makeColor(0, colorPicker8bit_g, 0, true)};
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(0, colorPicker8bit_g, 0, true)};
+					text += "       ";
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(0, 0, colorPicker8bit_b, true)};
+					num = std::to_string(colorPicker8bit_b); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_8bit::makeColor(0, 0, colorPicker8bit_b, true)};
+					text += CellString{" ", "", ANSI::Color_8bit::makeColor(0, 0, colorPicker8bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+4, text);
+
+					text.clear(); text += "  ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(0, colorPicker8bit_g, 0, true)};
+					text += "       ";
+					text += CellString{"     ", "", ANSI::Color_8bit::makeColor(0, 0, colorPicker8bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+5, text);
+
+					CellString colorBlock {"     ", "", ANSI::Color_8bit::makeColor(colorPicker8bit_r, colorPicker8bit_g, colorPicker8bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+7, CellString{"Current color:  "} + colorBlock);
+					render.put(thisX, colorCatalogueLineNo+8, CellString{"                "} + colorBlock);
+				} else {  // 24-bit picker
+					// box with value in it
+					
+					text.clear(); text += "  ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(0, colorPicker24bit_g, 0, true)};
+					text += "       ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(0, 0, colorPicker24bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+3, text);
+
+					text.clear(); text += "  ";
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, 0, 0, true)};
+					std::string num = std::to_string(colorPicker24bit_r); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, 0, 0, true)};
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(0, colorPicker24bit_g, 0, true)};
+					num = std::to_string(colorPicker24bit_g); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_24bit::makeColor(0, colorPicker24bit_g, 0, true)};
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(0, colorPicker24bit_g, 0, true)};
+					text += "       ";
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(0, 0, colorPicker24bit_b, true)};
+					num = std::to_string(colorPicker24bit_b); num.resize(3, ' ');
+					text += CellString{num, "", ANSI::Color_24bit::makeColor(0, 0, colorPicker24bit_b, true)};
+					text += CellString{" ", "", ANSI::Color_24bit::makeColor(0, 0, colorPicker24bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+4, text);
+
+					text.clear(); text += "  ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, 0, 0, true)};
+					text += "      ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(0, colorPicker24bit_g, 0, true)};
+					text += "       ";
+					text += CellString{"     ", "", ANSI::Color_24bit::makeColor(0, 0, colorPicker24bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+5, text);
+
+					CellString colorBlock {"     ", "", ANSI::Color_24bit::makeColor(colorPicker24bit_r, colorPicker24bit_g, colorPicker24bit_b, true)};
+					render.put(thisX, colorCatalogueLineNo+7, CellString{"Current color: "} + colorBlock);
+					render.put(thisX, colorCatalogueLineNo+8, CellString{"               "} + colorBlock);
+				}
 			}
 
-			// current color
-			CellString currentColorStr {"Current color: "};
-			LOOP(3) currentColorStr += Cell{" ", "", catStr[catIndexY*catSizeX + catIndexX].color_back};
-			render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2, currentColorStr);
-
 			// to select
-			CellString toSelectStr {"["};
-			toSelectStr += Cell{"W", KEY_COLOR, ""};
-			toSelectStr += "] and [";
-			toSelectStr += Cell{"S", KEY_COLOR, ""};
-			toSelectStr += "] to apply to palette";
-			render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 3, toSelectStr);
+			text.clear();
+			text += CellString{"[W]", KEY_COLOR};
+			text += " / ";
+			text += CellString{"[S]", KEY_COLOR};
+			text += " to apply to palette";
+			render.put(thisX, colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 5, text);
 		} else if (sidePanelMode == 2) {  // characters
 			#define charCatalogueLineNo 7
+
+			CellString text {};
 
 			render.put(thisX, 1, CellString{"== CHAR CATALOGUE ==", PANEL_HEADER_COLOR});
 
 			// show hotkeys
-			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			render.put(thisX, 4, nums);
+			text.clear(); text += CellString{" [1][2][3][4][5][6][7][8][9][0]", KEY_COLOR};
+			render.put(thisX, 4, text);
 
-			CellString hotkeys {" "};
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; hotkeys += " ";
-			render.put(thisX, 5, hotkeys);
+			text.clear(); text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; text += " ";
+			render.put(thisX, 5, text);
 
 			// character table
-			if (SCREEN_HEIGHT > 16+charCatalogueLineNo + 1) {
-				for (int yc = 0; yc < 16; ++yc) {
-					for (int xc = 0; xc < 32; ++xc) {
-						render.put(xc+thisX, yc+charCatalogueLineNo, charCatalogue[yc*32 + xc]);
-						// signify current character
-						if (xc == charCatalogueIndexX && yc == charCatalogueIndexY) {
-							render.edit(xc+thisX, yc+charCatalogueLineNo, ANSI::red_back, 1);
-						}
+			//if (SCREEN_HEIGHT > 16+charCatalogueLineNo + 1) {}
+			for (int yc = 0; yc < 16; ++yc) {
+				for (int xc = 0; xc < 32; ++xc) {
+					render.put(xc+thisX, yc+charCatalogueLineNo, charCatalogue[yc*32 + xc]);
+					// signify current character
+					if (xc == charCatalogueIndexX && yc == charCatalogueIndexY) {
+						render.edit(xc+thisX, yc+charCatalogueLineNo, ANSI::red_back, 1);
 					}
 				}
 			}
 
 			// select keys
-			CellString toSelectStr {"["};
-			toSelectStr += Cell{"0", KEY_COLOR, ""};
-			toSelectStr += "-";
-			toSelectStr += Cell{"9", KEY_COLOR, ""};
-			toSelectStr += "] to set char";
-			render.put(thisX, charCatalogueLineNo + 16 + 2, toSelectStr);
+			text.clear();
+			text += CellString{"[0-9]", KEY_COLOR};
+			text += " to set char";
+			render.put(thisX, charCatalogueLineNo + 16 + 2, text);
 		} else if (sidePanelMode == 3) {  // exporting
-			render.put(thisX, 1, CellString{"== EXPORTING ==", PANEL_HEADER_COLOR});
+			CellString text {};
+			int yLevel = 1;
+			
+			render.put(thisX, yLevel, CellString{"== EXPORTING ==", PANEL_HEADER_COLOR});
+			yLevel += 3;
+
 
 			// art size
-			CellString artSize {"Dimensions: "};
-			artSize += std::to_string(SCREEN_WIDTH);
-			artSize += "x";
-			artSize += std::to_string(SCREEN_HEIGHT);
-			render.put(thisX, 4, artSize);
+			text.clear(); text += "Dimensions: ";
+			text += std::to_string(SCREEN_WIDTH);
+			text += "x";
+			text += std::to_string(SCREEN_HEIGHT);
+			render.put(thisX, yLevel, text);
+			yLevel++;
+
+			// encoding
+			text.clear(); text += "Encoding: ";
+			text += ART_ENCODING ? CellString{"CP437", DISPLAY_ENCODING_CP437, ""} : CellString{"UTF-8", DISPLAY_ENCODING_UTF8, ""};
+			render.put(thisX, yLevel, text);
+			yLevel++;
+
+			// color mode
+			CellString artColorCellstr;
+				 if (ART_COLOR_MODE == 0) { artColorCellstr = CellString{"NONE"}; }
+			else if (ART_COLOR_MODE == 1) { artColorCellstr = CellString{"4-BIT",  DISPLAY_COLOR_4BIT};  }
+			else if (ART_COLOR_MODE == 2) { artColorCellstr = CellString{"8-BIT",  DISPLAY_COLOR_8BIT};  }
+			else { artColorCellstr = CellString{"24-BIT", DISPLAY_COLOR_24BIT}; }
+
+			text.clear(); text += "Color (highest): ";
+			text += artColorCellstr;
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
+
 
 			// do it?
-			CellString doIt {"["};
-			doIt += CellString{"Entr", KEY_COLOR};
-			doIt += "] to export to .ans";
-			render.put(thisX, 6, doIt);
+			text.clear();
+			text += CellString{"[Entr]", KEY_COLOR};
+			text += " to export to .ans";
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
+
 
 			// export failure
 			if (showExportFail) {
-				render.put(thisX, 8, CellString{"EXPORT FAILURE!", "", ERROR_COLOR});  // TODO put color in settings
+				render.put(thisX, yLevel, CellString{"EXPORT FAILURE!", "", ERROR_COLOR});  // TODO put color in settings
 			}
 		} else if (sidePanelMode == 4) {  // importing
-			render.put(thisX, 1, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
+			CellString text {};
+			int yLevel = 1;
+			
+			render.put(thisX, yLevel, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
+			yLevel += 3;
+
 
 			// import path
-			CellString topTextStr {Cell{"↓", "", ""}};
-			topTextStr += "  Import Path  ";
-			topTextStr += Cell{"↓", "", ""};
-			render.put(thisX, 3, topTextStr);
+			text.clear(); text += Cell{"↓", "", ""};
+			text += "  Import Path  ";
+			text += Cell{"↓", "", ""};
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// path
-			render.put(thisX, 4, CellString{limitString(importPathString, PANEL_SIZE - 3)});
+			render.put(thisX, yLevel, CellString{limitString(importPathString, PANEL_SIZE - 3)});
+			yLevel += 2;
+
 
 			// edit path key
-			render.put(thisX, 6, CellString{"[Z] to edit path"});
+			render.put(thisX, yLevel, CellString{"[Z]", KEY_COLOR} + CellString{" to edit path"});
+			yLevel++;
 
 			// import
-			render.put(thisX, 7, CellString{"[Enter] to import .ans file"});
+			render.put(thisX, yLevel, CellString{"[Enter]", KEY_COLOR} + CellString{" to import .ans file"});
+			yLevel += 2;
+
 
 			// import failure
 			if (showImportFail) {
@@ -1227,6 +1465,18 @@ int main() {
 	//std::cout << "\x1b[?9001l" << std::flush;
 	//system("Set-PSReadLineOption -EditMode Windows");
 	std::cout << ANSI::reset << ANSI::cursor_visible << std::flush;
+
+	//std::cin.clear();
+	//if (std::cin.rdbuf()->in_avail() > 0) {
+	//	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	//}
+	//fflush(stdin);
+	#ifdef _WIN32
+		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	#else
+		tcflush(STDIN_FILENO, TCIFLUSH);
+	#endif
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tInput buffer cleared");
 
 	#ifdef _WIN32
 		SetConsoleMode(hInput, originalMode);

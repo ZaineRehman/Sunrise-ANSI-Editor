@@ -44,7 +44,8 @@ std::pair<int,int> getTerminalDimensions() {
 
 
 void Renderer::put(uint32_t x, uint32_t y, const Cell& cell) {
-	if (x > width || y > height) return;
+	//if (x > width || y > height) return;
+	if (y*width + x >= buffer.size()) return;
 
 	buffer[y*width + x] = cell;
 }
@@ -67,7 +68,7 @@ void Renderer::put(uint32_t x, uint32_t y, const CellString& cells) {
 }
 
 Cell Renderer::get(uint32_t x, uint32_t y) const {
-	assert(x < width && y < height);
+	assert(x < width && y < height);  // TODO change
 
 	return buffer[y*width + x];
 }
