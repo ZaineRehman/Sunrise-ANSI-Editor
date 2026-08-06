@@ -22,15 +22,14 @@ void signalHandler(int signal) {
 			RUNNING = false;
 			break;
 	}
-	if (DEBUG_REPORT_LEVEL >= 1) {
-		std::string sigstr = "UNKNOWN";
-		switch (signal) {
-			case SIGINT:  sigstr = "SIGINT";  break;
-			case SIGTERM: sigstr = "SIGTERM"; break;
-			case SIGABRT: sigstr = "SIGABRT"; break;
-		}
-		reportLog("!!! signalHandler() recieved signal: " + sigstr);
+	
+	std::string sigstr = "UNKNOWN";
+	switch (signal) {
+		case SIGINT:  sigstr = "SIGINT";  break;
+		case SIGTERM: sigstr = "SIGTERM"; break;
+		case SIGABRT: sigstr = "SIGABRT"; break;
 	}
+	reportLog("!!! signalHandler() recieved signal: " + sigstr);
 }
 
 std::string concat(const std::string& str1, const char* str2) {

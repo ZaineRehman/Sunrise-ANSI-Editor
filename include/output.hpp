@@ -114,6 +114,10 @@ struct CellString {
 	inline void append(const Cell& cell) {
 		internal.push_back(cell);
 	}
+
+	inline void clear() {
+		internal.clear();
+	}
 };
 
 // returns the highest level color code found

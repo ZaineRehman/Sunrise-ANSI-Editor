@@ -336,6 +336,9 @@ void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChe
 			keyStates_slow[m.key] = code & 0x0001;
 		}
 
+		// explicitly different
+		keyStates_slow[Key::CAPSLOCK] = GetKeyState(VK_CAPITAL) & 0x0001;
+
 	#else
 		struct input_event event;
 		while (read(keyChecker, &event, sizeof(struct input_event)) > 0) {
@@ -386,10 +389,10 @@ constexpr KeyCharMap keyCharMapping[] = {
 	{Key::G,  'g', 'G'}, {Key::H,  'h', 'H'}, {Key::I,  'i', 'I'}, {Key::J,  'j', 'J'}, {Key::K,  'k', 'K'}, {Key::L,  'l', 'L'}, 
 	{Key::M,  'm', 'M'}, {Key::N,  'n', 'N'}, {Key::O,  'o', 'O'}, {Key::P,  'p', 'P'}, {Key::Q,  'q', 'Q'}, {Key::R,  'r', 'R'}, 
 	{Key::S,  's', 'S'}, {Key::T,  't', 'T'}, {Key::U,  'u', 'U'}, {Key::V,  'v', 'V'}, {Key::W,  'w', 'W'}, {Key::X,  'x', 'X'}, 
-	{Key::Y,  'y', 'Y'}, {Key::Z,  'z', 'Z'}, {Key::_0, '0', '!'}, {Key::_1, '1', '@'}, {Key::_2, '2', '#'}, {Key::_3, '3', '$'}, 
-	{Key::_4, '4', '%'}, {Key::_5, '5', '^'}, {Key::_6, '6', '&'}, {Key::_7, '7', '*'}, {Key::_8, '8', '('}, {Key::_9, '9', ')'}, 
+	{Key::Y,  'y', 'Y'}, {Key::Z,  'z', 'Z'}, {Key::_0, '0', ')'}, {Key::_1, '1', '!'}, {Key::_2, '2', '@'}, {Key::_3, '3', '#'}, 
+	{Key::_4, '4', '$'}, {Key::_5, '5', '%'}, {Key::_6, '6', '^'}, {Key::_7, '7', '&'}, {Key::_8, '8', '*'}, {Key::_9, '9', '('}, 
 	{Key::MINUS, '-', '_'}, {Key::EQUALS, '=', '+'}, {Key::TICK,      '`', '~'}, {Key::LBRACKET,   '[', '{'},  {Key::RBRACKET, ']',  '}'}, {Key::SLASH, '/', '?'}, 
-	{Key::COMMA, ',', '<'}, {Key::PERIOD, '.', '>'}, {Key::SEMICOLON, ';', ':'}, {Key::APOSTROPHE, '\'', '"'}, {Key::BSLASH,   '\\', '|'}, 
+	{Key::COMMA, ',', '<'}, {Key::PERIOD, '.', '>'}, {Key::SEMICOLON, ';', ':'}, {Key::APOSTROPHE, '\'', '"'}, {Key::BSLASH,   '\\', '|'}, {Key::SPACE, ' ', ' '}, 
 	{Key::KP_0, '0', '\0'}, {Key::KP_1, '1', '\0'}, {Key::KP_2, '2', '\0'}, {Key::KP_3, '3', '\0'}, {Key::KP_4, '4', '\0'}, 
 	{Key::KP_5, '5', '\0'}, {Key::KP_6, '6', '\0'}, {Key::KP_7, '7', '\0'}, {Key::KP_8, '8', '\0'}, {Key::KP_9, '9', '\0'}, 
 	{Key::KP_DIV, '/', '\0'}, {Key::KP_MUL, '*', '\0'}, {Key::KP_MINUS, '-', '\0'}, {Key::KP_PLUS, '+', '\0'}, {Key::KP_PERIOD, '.', '\0'}, 
@@ -399,7 +402,7 @@ constexpr KeyCharMap keyCharMapping[] = {
 inline bool _backspacePollingCheck = false;
 
 void pollInputsIntoString(const KeyStates& keyStates, const KeyStates& keyStates_slow, std::string& str) {
-	bool shifting = keyStates[Key::SHIFT];
+	bool shifting = keyStates[Key::SHIFT] || keyStates_slow[Key::CAPSLOCK];
 
 	for (const KeyCharMap& kcm : keyCharMapping) {
 		if (keyStates_slow[kcm.key]) {

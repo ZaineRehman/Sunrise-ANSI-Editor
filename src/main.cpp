@@ -33,7 +33,7 @@
 
 int main() {
 	
-	//  -- SETUP -- 
+	// -- SETUP -- 
 
 	// make sure all directories exist
 	if (!std::filesystem::is_directory("Export")) {
@@ -89,13 +89,18 @@ int main() {
 
 	// program frame number
 	int frame = 0;
+	// ignore input for this many frames
+	int ignoreInputFrames = 6;
+
 	// animation stage of the cursor
 	int cursorAnim = 0;
 	// 0 = no, 1 = colors, 2 = chars, 3 = exporting, 4 = importing, 5 = settings
 	char sidePanelMode = 0;
 
-	// double-check to make sure art isnt accidentally reset
+	// double check to make sure art isnt accidentally reset
 	bool killingArt = false;
+	// double check for program exitg
+	bool exitingProgram = false;
 
 	// if true, failed on export, so say that
 	bool showExportFail = false;
@@ -112,6 +117,9 @@ int main() {
 	// if editing settings
 	// 0 = no, 1 = left, 2 = right
 	int settingsEdit = 0;
+	// index of settings option to be displayed at the top of the screen
+	// used for scrolling thru options
+	int settingsTopIndex = 0;
 
 
 	// foreground color palette
@@ -200,7 +208,7 @@ int main() {
 			
 			keyChecker = open(keyboardPath.c_str(), O_RDONLY | O_NONBLOCK);
 			if (keyChecker == -1) {
-				if (DEBUG_REPORT_LEVEL >= 1) reportLog("\t!!!Keyboard not found. errno=" + std::strerror(errno));
+				reportLog("\t!!!Keyboard not found. errno=" + std::strerror(errno));
 				std::cerr 
 					<< "COULD NOT LOAD KEYBOARD!\nPath: '" << keyboardPath << "'" 
 					<< "\nErr: " << std::strerror(errno)
@@ -229,7 +237,7 @@ int main() {
 	clear();
 	
 
-	//  -- PRE CALCULATED STUFF -- 
+	// -- PRE CALCULATED STUFF -- 
 
 	CellString sunriseAnsi = getSunriseAnsi();
 
@@ -242,9 +250,11 @@ int main() {
 	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Pre-calculated items");
 
 
-	//  -- LOOP -- 
+	// -- LOOP -- 
 
 	// get rid o this
+	// do NOT get rid o this
+	// nah get rid o it
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	if (DEBUG_REPORT_LEVEL >= 2) {
@@ -256,32 +266,43 @@ int main() {
 
 		SCREEN_TOO_SMALL = false;
 
-		//  -- INPUTS -- 
+		// -- INPUTS -- 
 
 		/*
+		* [←↕→] OR [HJKL]: cursor
+		* holding [Alt]: fast cursor
+		* 
 		* [0-9]: set character
 		* 
 		* [QE/W]: change/set background color
 		* [AD/S]: change/set foreground color
 		* 
 		* [C]: clear color
+		* [Del]: clear character
 		* 
-		* [Entr]: export mode
-		* 
-		* [/]: import mode
-		* 		[Z]:  edit path
-		* 
-		* [\]: settings
-		* 
-		* [Home] or [Ctrl]+[S]: save
-		* 
-		* [Bksp]: reset
-		* 
-		* arrows OR [HJKL]: cursor
-		* holding [Alt]: fast cursor
-		* 
-		* [{]: open character catalogue
 		* [}]: open color catalogue
+		* 		[,]: change catalogue left
+		* 		[.]: change catalogue right
+		* 		[W]: apply color to foreground palette
+		* 		[S]: apply color to background palette
+		* 		[Q/E]: change active foreground palette color
+		* 		[A/D]: change active background palette color
+		* [{]: open character catalogue
+		* 
+		* [Bksp]: reset art
+		* 
+		* [Entr]: settings
+		* 		[←→]: edit setting
+		* 		[↕]: change which setting
+		* 
+		* [/]: export
+		* 		[Entr]: confirm
+		* [\]: import
+		* 		[Z]: edit path
+		* 		[Entr]: confirm
+		* 
+		* [Ctrl]+[S]: save art
+		* [Ctrl]+[A]: toggle ASCII mode
 		**/
 
 		//setKeyStatesOff(keyStates);
@@ -294,11 +315,11 @@ int main() {
 		// ignore inputs if window not in focus
 		// TODO linux implementation
 		#ifdef _WIN32
-			if (!windowIsFocused(GetConsoleWindow()))
+			if (!windowIsFocused(GetConsoleWindow()) 
 		#else
-			if (false)
+			if (false 
 		#endif
-		{
+		|| ignoreInputFrames) {  // ignore first couple inputs, trust me ok
 			setKeyStatesOff(keyStates);
 			setKeyStatesOff(keyStates_slow);
 		}
@@ -307,15 +328,41 @@ int main() {
 		settingsEdit = 0;
 
 		if (keyStates_slow[Key::ESC]) {
-				if (sidePanelMode == 0) {
-				RUNNING = false;
-
-				reportLog("ESC pressed, saving and terminating...");
-				saveArtToSession(ART);
+			if (sidePanelMode == 0) {
+				if (killingArt) {
+					killingArt = false;
+					popupShowing = 0;
+				}
+				else if (!exitingProgram) {
+					exitingProgram = true;
+					popupShowing = 2;
+					inputPopupTextDisplayed = "Exit program?";
+					popupFrameStarted = frame;
+				} else if (exitingProgram) {
+					exitingProgram = false;
+					popupShowing = 0;
+				}
 			} else sidePanelMode = 0;
 		}
 
-		if (keyStates[Key::ALT] ? keyStates[Key::H] || keyStates[Key::LEFT]  : keyStates_slow[Key::H] || keyStates_slow[Key::LEFT])  {
+		if (keyStates[Key::CTRL]) {
+			if (keyStates_slow[Key::A]) {
+				// toggle ASCII mode
+				ASCII_MODE = !ASCII_MODE;
+				ignoreInputFrames += 6;
+			}
+			if (keyStates_slow[Key::S]) {
+				// save art
+				saveArtToSession(ART);
+				ignoreInputFrames += 6;
+			}
+		}
+
+		if (keyStates[Key::DEL]) {
+			ART.edit(upd.first, upd.second, " ", 2);
+		}
+
+		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::H]) || keyStates[Key::LEFT]  : (!ASCII_MODE && keyStates_slow[Key::H]) || keyStates_slow[Key::LEFT])  {
 			if (sidePanelMode == 0) {
 				cursorX--; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
@@ -325,7 +372,7 @@ int main() {
 			} else if (sidePanelMode == 2) charCatalogueIndexX-=2;
 			else if (sidePanelMode == 5) settingsEdit = 1;
 		}
-		if (keyStates[Key::ALT] ? keyStates[Key::L] || keyStates[Key::RIGHT] : keyStates_slow[Key::L] || keyStates_slow[Key::RIGHT]) {
+		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::L]) || keyStates[Key::RIGHT] : (!ASCII_MODE && keyStates_slow[Key::L]) || keyStates_slow[Key::RIGHT]) {
 			if (sidePanelMode == 0) {
 				cursorX++; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
@@ -335,7 +382,7 @@ int main() {
 			} else if (sidePanelMode == 2) charCatalogueIndexX+=2;
 			else if (sidePanelMode == 5) settingsEdit = 2;
 		}
-		if (keyStates[Key::ALT] ? keyStates[Key::J] || keyStates[Key::UP]    : keyStates_slow[Key::J] || keyStates_slow[Key::UP])    {
+		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::J]) || keyStates[Key::UP]    : (!ASCII_MODE && keyStates_slow[Key::J]) || keyStates_slow[Key::UP])    {
 			if (sidePanelMode == 0) {
 				cursorY--; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
@@ -345,7 +392,7 @@ int main() {
 			} else if (sidePanelMode == 2) charCatalogueIndexY--;
 			else if (sidePanelMode == 5) settingsIndex--;
 		}
-		if (keyStates[Key::ALT] ? keyStates[Key::K] || keyStates[Key::DOWN]  : keyStates_slow[Key::K] || keyStates_slow[Key::DOWN])  {
+		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::K]) || keyStates[Key::DOWN]  : (!ASCII_MODE && keyStates_slow[Key::K]) || keyStates_slow[Key::DOWN])  {
 			if (sidePanelMode == 0) {
 				cursorY++; cursorAnim = 3;
 			} else if (sidePanelMode == 1) {
@@ -356,136 +403,168 @@ int main() {
 			else if (sidePanelMode == 5) settingsIndex++;
 		}
 
-		if (keyStates[Key::_1] || keyStates[Key::KP_1]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_1 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_2] || keyStates[Key::KP_2]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_2 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_3] || keyStates[Key::KP_3]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_3 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_4] || keyStates[Key::KP_4]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_4 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_5] || keyStates[Key::KP_5]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_5 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_6] || keyStates[Key::KP_6]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_6 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_7] || keyStates[Key::KP_7]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_7 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_8] || keyStates[Key::KP_8]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_8 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_9] || keyStates[Key::KP_9]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_9 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
-		if (keyStates[Key::_0] || keyStates[Key::KP_0]) {
-			if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
-			else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
-		}
+		// dont check for these inputs in ASCII mode
+		if (!ASCII_MODE && !ignoreInputFrames) {
+			if (keyStates[Key::_1] || keyStates[Key::KP_1]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_1, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_1 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_2] || keyStates[Key::KP_2]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_2, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_2 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_3] || keyStates[Key::KP_3]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_3, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_3 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_4] || keyStates[Key::KP_4]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_4, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_4 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_5] || keyStates[Key::KP_5]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_5, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_5 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_6] || keyStates[Key::KP_6]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_6, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_6 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_7] || keyStates[Key::KP_7]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_7, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_7 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_8] || keyStates[Key::KP_8]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_8, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_8 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_9] || keyStates[Key::KP_9]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_9, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_9 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
+			if (keyStates[Key::_0] || keyStates[Key::KP_0]) {
+				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
+				else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
+			}
 
-		if (keyStates_slow[Key::Q] && popupShowing == 0) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::E] && popupShowing == 0) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
-		if (keyStates[Key::W] && popupShowing == 0) {
-			if (sidePanelMode == 0) {
-				ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
-				cursorAnim = 1;
-			} else if (sidePanelMode == 1) {
-				if (colorCatalogueType == 0) {
-					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
-				} else if (colorCatalogueType == 1) {
-					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back);
-				} else if (colorCatalogueType == 2) {
-					colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back);
+			if (keyStates_slow[Key::Q] && popupShowing == 0) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+			if (keyStates_slow[Key::E] && popupShowing == 0) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
+			if (keyStates[Key::W] && popupShowing == 0) {
+				if (sidePanelMode == 0) {
+					ART.edit(upd.first, upd.second, colorForePalette[colorForeIndex], 0);
+					cursorAnim = 1;
+				} else if (sidePanelMode == 1) {
+					if (colorCatalogueType == 0) {
+						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back);
+					} else if (colorCatalogueType == 1) {
+						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back);
+					} else if (colorCatalogueType == 2) {
+						colorForePalette[colorForeIndex] = ANSI::invertColor(colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back);
+					}
 				}
 			}
-		}
-		
-		if (keyStates_slow[Key::A] && popupShowing == 0) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
-		if (keyStates_slow[Key::D] && popupShowing == 0) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
-		if (keyStates[Key::S] && popupShowing == 0) {
-			if (sidePanelMode == 0) {
-				ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
-				cursorAnim = 1;
-			} else if (sidePanelMode == 1) {
-				if (colorCatalogueType == 0) {
-					colorBackPalette[colorBackIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
-				} else if (colorCatalogueType == 1) {
-					colorBackPalette[colorBackIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
-				} else if (colorCatalogueType == 2) {
-					colorBackPalette[colorBackIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
+			
+			if (keyStates_slow[Key::A] && popupShowing == 0) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+			if (keyStates_slow[Key::D] && popupShowing == 0) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
+			if (keyStates[Key::S] && popupShowing == 0) {
+				if (sidePanelMode == 0) {
+					ART.edit(upd.first, upd.second, colorBackPalette[colorBackIndex], 1);
+					cursorAnim = 1;
+				} else if (sidePanelMode == 1) {
+					if (colorCatalogueType == 0) {
+						colorBackPalette[colorBackIndex] = colorCatalogue_4bit[catalogue4bIndexY*COLOR_CATALOGUE_4B_X + catalogue4bIndexX].color_back;
+					} else if (colorCatalogueType == 1) {
+						colorBackPalette[colorBackIndex] = colorCatalogue_8bit[catalogue8bIndexY*COLOR_CATALOGUE_8B_X + catalogue8bIndexX].color_back;
+					} else if (colorCatalogueType == 2) {
+						colorBackPalette[colorBackIndex] = colorCatalogue_24bit[catalogue24bIndexY*COLOR_CATALOGUE_24B_X + catalogue24bIndexX].color_back;
+					}
 				}
 			}
-		}
 
-		if (keyStates[Key::C] && popupShowing == 0) {
-			ART.edit(upd.first, upd.second, ANSI::reset, 0);
-			ART.edit(upd.first, upd.second, ANSI::reset, 1);
-			cursorAnim = 1;
-		}
-
-		if (keyStates_slow[Key::LBRACKET]) {
-			if (sidePanelMode == 1) sidePanelMode = 0;
-			else sidePanelMode = 1;
-		}
-		if (keyStates_slow[Key::RBRACKET]) {
-			if (sidePanelMode == 2) sidePanelMode = 0;
-			else sidePanelMode = 2;
-		}
-
-		if (keyStates_slow[Key::COMMA]) {
-			if (sidePanelMode == 1) {
-				colorCatalogueType--;
+			if (keyStates[Key::C] && popupShowing == 0) {
+				ART.edit(upd.first, upd.second, ANSI::reset, 0);
+				ART.edit(upd.first, upd.second, ANSI::reset, 1);
+				cursorAnim = 1;
 			}
-		}
-		if (keyStates_slow[Key::PERIOD]) {
-			if (sidePanelMode == 1) {
-				colorCatalogueType++;
+
+			if (keyStates_slow[Key::LBRACKET]) {
+				if (sidePanelMode == 1) sidePanelMode = 0;
+				else sidePanelMode = 1;
 			}
-		}
+			if (keyStates_slow[Key::RBRACKET]) {
+				if (sidePanelMode == 2) sidePanelMode = 0;
+				else sidePanelMode = 2;
+			}
+
+			if (keyStates_slow[Key::COMMA]) {
+				if (sidePanelMode == 1) {
+					colorCatalogueType--;
+				}
+			}
+			if (keyStates_slow[Key::PERIOD]) {
+				if (sidePanelMode == 1) {
+					colorCatalogueType++;
+				}
+			}
+
+			if (keyStates_slow[Key::SLASH] && popupShowing == 0) {
+				// import
+				if (sidePanelMode == 3) sidePanelMode = 0;
+				else sidePanelMode = 3;
+			}
+
+			if (keyStates_slow[Key::Z] && popupShowing == 0) {
+				if (sidePanelMode == 4) {
+					popupShowing = 1;
+					inputPopupTextDisplayed = "Enter file path for import";
+					popupFrameStarted = frame;
+				}
+			}
+
+			if (keyStates_slow[Key::BSLASH]) {
+				// export
+				if (sidePanelMode == 4) sidePanelMode = 0;
+				else sidePanelMode = 4;
+			}
+		}  // ASCII mode check
 
 		if (keyStates_slow[Key::BACKSPACE] && popupShowing == 0) {
-			if (killingArt) {
-				// TODO center of screen instead?
-				ART.reset(cursorX, cursorY);
-				killingArt = false;
-			} else {
+			if (!killingArt) {
 				killingArt = true;
-			}
-		}
-		
-		if (keyStates_slow[Key::ESC]) {
-			if (killingArt) {
-				killingArt = false;
+				popupShowing = 2;
+				inputPopupTextDisplayed = "Reset art?";
+				popupFrameStarted = frame;
 			}
 		}
 
 		if (keyStates_slow[Key::ENTER] || keyStates_slow[Key::KP_ENTER]) {
 			// i dont even remember why i put this directive here
-			#ifndef NDEBUG
-				if (frame > 10) {
-			#endif
-			if (sidePanelMode == 0) sidePanelMode = 3;
-			else if (sidePanelMode == 3) {
+			// ah nvm i do
+			//#ifndef NDEBUG
+			//	if (frame > 10) {
+			//#endif
+			if (sidePanelMode == 0) {
+				if (popupShowing) {
+					if (exitingProgram) {
+						// confirm program death
+						RUNNING = false;
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("Exit confirmed, saving and terminating...");
+						saveArtToSession(ART);
+					} else if (killingArt) {
+						// TODO center of screen instead?
+						ART.reset(cursorX, cursorY);
+						popupShowing = 0;
+					}
+				} else {
+					// settings
+					sidePanelMode = 5;
+				}
+			} else if (sidePanelMode == 3) {
 				// export art
 				std::string filename = "Export/Exported_Art_" + getTimestamp() + ".ans";
 				
 				if (!loadArtIntoFile(ART, filename)) {
 					showExportFail = true;
-					if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to export file: " + filename);
+					//if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to export file: " + filename);
 				} else {
 					sidePanelMode = 0;
 				}
@@ -496,38 +575,21 @@ int main() {
 				} else {
 					if (!loadArtFromFile(importPathString, ART)) {
 						showImportFail = true;
-						if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to import file: " + importPathString);
+						//if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to import file: " + importPathString);
 					} else {
 						sidePanelMode = 0;
 					}
 				}
-			}
-			#ifndef NDEBUG
-				}
-			#endif
+			} else if (sidePanelMode == 5) sidePanelMode = 0;
+			//#ifndef NDEBUG
+			//	}
+			//#endif
 		}
 
-		if (keyStates_slow[Key::HOME] || (keyStates[Key::CTRL] && keyStates_slow[Key::S])) {
-			saveArtToSession(ART);
-		}
-
-		if (keyStates_slow[Key::SLASH] && popupShowing == 0) {
-			if (sidePanelMode == 4) sidePanelMode = 0;
-			else sidePanelMode = 4;
-		}
-
-		if (keyStates_slow[Key::Z] && popupShowing == 0) {
-			if (sidePanelMode == 4) {
-				popupShowing = 1;
-				inputPopupTextDisplayed = "Enter file path for import";
-				popupFrameStarted = frame;
-			}
-		}
-
-		if (keyStates_slow[Key::BSLASH]) {
-			if (sidePanelMode == 5) sidePanelMode = 0;
-			else sidePanelMode = 5;
-		}
+		//if (keyStates_slow[Key::HOME]) {
+		//	// save art
+		//	saveArtToSession(ART);
+		//}
 
 		//if (keyStates[Key::H]) { ART.resize(1, 0, 0, 0); }
 		//if (keyStates[Key::J]) { ART.resize(0, 1, 0, 0); }
@@ -553,6 +615,21 @@ int main() {
 		clamp(charCatalogueIndexX, 1, 32-1);
 
 		clamp_rollover(settingsIndex, 0, SETTINGS_AMOUNT-1);
+
+
+		// -- EVALUATE SOME INPUTS --
+
+		if (ASCII_MODE && !ignoreInputFrames) {
+			std::string asciiString = "";
+			pollInputsIntoString(keyStates, keyStates_slow, asciiString);
+
+			if (asciiString.size()) {
+				asciiString = asciiString[0];  // first index in case of multiple inputs
+				// set cell to character
+				ART.edit(upd.first, upd.second, asciiString, 2);
+				cursorAnim = 1;
+			}
+		}
 
 		// screen scrolling
 		if (cursorX < 1) {
@@ -601,11 +678,18 @@ int main() {
 
 					break;
 				}
+				case 2: {  // input safe mode
+					INPUT_SAFE_MODE = !INPUT_SAFE_MODE;
+					
+					reportLog("Safemode toggled: " + std::string(INPUT_SAFE_MODE ? "ON" : "OFF"));
+
+					break;
+				}
 			}
 		}
 
 
-		//  -- RENDER --
+		// -- RENDERING --
 
 		// analysis frame
 		if (!(frame % ANALYSIS_FREQUENCY)) {
@@ -626,13 +710,13 @@ int main() {
 
 		std::pair<int,int> check = getTerminalDimensions();
 		if (SCREEN_WIDTH != check.first || SCREEN_HEIGHT != check.second) {
-			// minuz 1
+			// minuz 1  << OLD COMMENT, NOT ANYMORE!!!
 			SCREEN_WIDTH = check.first;
 			SCREEN_HEIGHT = check.second;
 			render.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 			// put art in center if first time
-			if (frame < 5) {  // no, this isnt right
+			if (frame < 4) {  // no, this isnt good
 				ART.x = SCREEN_WIDTH/2 - ART.width/2 - PANEL_SIZE/2;
 				ART.y = SCREEN_HEIGHT/2 - ART.height/2 - BOTTOM_PANEL_SIZE;
 				// cursor as well, only if program just opened
@@ -643,142 +727,103 @@ int main() {
 			render.clear();
 		}
 
-		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-			for (int x = 0; x < SCREEN_WIDTH; ++x) {
-				/*        SX
-				############
-				#          #
-				#    $@@@  #
-				#    @@@@  #
-				#    @@@@  #
-				#          #
-				############ SY
-
-				art: 4x3
-				window: 12, 7
-				top left: 5, 2
-
-				bottom right: 8, 4 global  --  top left + (art dimensions - 1)
-							: 3, 2 local  --  art dimensions - 1
-				*/
-			
-				// art
-				// TODO change this? idk
-
-				if (y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) && x < (SCREEN_WIDTH-1 - PANEL_SIZE + 1)) {
-					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
-						// in bounds of art
-						//reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
-						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
-						//render.put(x, y, Cell{"!",ANSI::reset,""});
-					}
-				}
-
-				// screen borders
-				// TODO restructure this
-
-				if (y == 0) {
-					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
-					else                                       render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
-				}
-				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-					if (x == 0)                                render.put(0, y, Cell{"╠", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣", BORDER_COLOR, ""});
-					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE)  render.put(x, y, Cell{"═", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"║", BORDER_COLOR, ""});
-				}
-				else if (y == SCREEN_HEIGHT-1) {
-					if (x == 0)                                render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
-					else                                       render.put(x, y, Cell{"═", BORDER_COLOR, ""});
-				}
-				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
-					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
-				}
-			}
-		}
-
-		//  -- TEXT --
 				
-		// side panel
+		// -- SIDE PANEL --
 
-		if (SCREEN_HEIGHT < 3) {
+		if (SCREEN_HEIGHT < 6) {
 			sidePanelMode = -1;
 			SCREEN_TOO_SMALL = true;
 		}
 		int thisX = SCREEN_WIDTH-1 - PANEL_SIZE + 2;
 		
-		if (sidePanelMode == 0) {  // basic panel
+		if (sidePanelMode == 0) {  // standard panel
+			int yLevel = 1;
+
 			// sunrise text
-			render.put(thisX, 1, sunriseAnsi);
+			render.put(thisX, yLevel, sunriseAnsi);
+			yLevel += 3;
+
 
 			// this looks like shit
 			// TODO only use 1 CellString for the whole thing
-			CellString nums {" [1][2][3][4][5][6][7][8][9][0]"};
-			render.put(thisX, 4, nums);
+			CellString text {" [1][2][3][4][5][6][7][8][9][0]"};
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// char hotkeys
-			CellString hotkeys {" "};
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_1, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_2, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_3, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_4, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_5, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_6, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_7, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; hotkeys += " ";
-			hotkeys += " "; hotkeys += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; hotkeys += " ";
-			render.put(thisX, 5, hotkeys);
+			text.clear(); text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_1, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_2, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_3, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_4, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_5, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_6, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_7, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; text += " ";
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
+
 
 			// color mode
-			CellString cmode {"Color mode: "};
-				 if (ART_COLOR_MODE == 0) cmode += "NONE";
-			else if (ART_COLOR_MODE == 1) cmode += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
-			else if (ART_COLOR_MODE == 2) cmode += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
-			else if (ART_COLOR_MODE == 3) cmode += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
-			render.put(thisX, 7, cmode);
+			text.clear(); text += "Color mode: ";
+				 if (ART_COLOR_MODE == 0) text += "NONE";
+			else if (ART_COLOR_MODE == 1) text += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
+			else if (ART_COLOR_MODE == 2) text += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
+			else if (ART_COLOR_MODE == 3) text += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// encoding
-			CellString encoding {"Encoding: "};
-				 if (ART_ENCODING == 0) encoding += CellString{"UTF-8", DISPLAY_ENCODING_UTF8};
-			else if (ART_ENCODING == 1) encoding += CellString{"CP437", DISPLAY_ENCODING_CP437};
-			render.put(thisX, 8, encoding);
+			text.clear(); text += "Encoding: ";
+				 if (ART_ENCODING == 0) text += CellString{"UTF-8", DISPLAY_ENCODING_UTF8};
+			else if (ART_ENCODING == 1) text += CellString{"CP437", DISPLAY_ENCODING_CP437};
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// art dimensions
-			CellString xy {"Size: "};
-			xy += std::to_string(SCREEN_WIDTH);
-			xy += "x";
-			xy += std::to_string(SCREEN_HEIGHT);
-			render.put(thisX, 10, xy);
+			text.clear(); text += "Dimensions: ";
+			text += std::to_string(ART.width);
+			text += "x";
+			text += std::to_string(ART.height);
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
+
+
+			text.clear(); text += "ASCII mode: ";
+			text += CellString{ASCII_MODE ? "ON" : "OFF", ASCII_MODE ? SETTINGS_COLOR_ON : SETTINGS_COLOR_OFF};
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
+
 
 			// enter to export
-			CellString toExportStr {"["};
-			toExportStr.append("Entr", KEY_COLOR, "");
-			toExportStr += "] to export";
-			render.put(thisX, 12, toExportStr);
+			text.clear(); text += "[";
+			text.append("Entr", KEY_COLOR, "");
+			text += "] for settings";
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// slash to import
-			CellString toImportStr {"["};
-			toImportStr.append("/", KEY_COLOR, "");
-			toImportStr += "] to import";
-			render.put(thisX, 13, toImportStr);
+			text.clear(); text += "[";
+			text.append("/", KEY_COLOR, "");
+			text += "] to export";
+			render.put(thisX, yLevel, text);
+			yLevel++;
 
 			// backslash for settings
-			CellString settingsStr {"["};
-			settingsStr.append("\\", KEY_COLOR, "");
-			settingsStr += "] for settings";
-			render.put(thisX, 14, settingsStr);
+			text.clear(); text += "[";
+			text.append("\\", KEY_COLOR, "");
+			text += "] to import";
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
 
 
 			// backspace to reset
-			CellString toResetStr {"["};
-			toResetStr.append("Bksp", KEY_COLOR, "");
-			toResetStr += "] to clear art";
-			render.put(thisX, 16, toResetStr);
+			text.clear(); text += "[";
+			text.append("Bksp", KEY_COLOR, "");
+			text += "] to clear art";
+			render.put(thisX, yLevel, text);
 		} 
 		else if (sidePanelMode == 1) {  // color catalogue
 			#define colorCatalogueLineNo 6
@@ -938,6 +983,8 @@ int main() {
 		} else if (sidePanelMode == 5) {  // settings
 			render.put(thisX, 1, CellString{"== SETTINGS ==", PANEL_HEADER_COLOR});
 
+			settingsTopIndex;
+
 			// color mode
 			CellString colorMode;
 				 if (ART_COLOR_MODE == 0) colorMode = CellString{"NONE"  , SETTINGS_OPTION_COLOR};
@@ -949,11 +996,12 @@ int main() {
 			// encoding
 			render.put(thisX, 4, CellString{std::string(settingsIndex == 1 ? ">" : " ") + " Encoding: "} + CellString{ART_ENCODING == 0 ? "UTF-8" : "CP437", SETTINGS_OPTION_COLOR});
 
-			// 
+			// input safe mode
+			render.put(thisX, 5, CellString{"Input safemode: "} + CellString{INPUT_SAFE_MODE ? "ON" : "OFF", INPUT_SAFE_MODE ? SETTINGS_COLOR_ON : SETTINGS_COLOR_OFF});
 		}
 
 		
-		// bottom panel
+		// -- BOTTOM PANEL --
 
 		int thisY = SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE + 1;
 		// 0 = show everything (width >= 109)
@@ -997,7 +1045,8 @@ int main() {
 		}
 		for (int c = 0; c < PALETTE_SIZE; ++c) {
 			colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
-		} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
+		} colors += Cell{" ", ANSI::reset, ""};
+		if (mode < 2) colors += "   ";
 
 
 		if (mode < 1) {
@@ -1017,14 +1066,77 @@ int main() {
 		render.put(2, thisY, colors);
 
 
-		// cursor
+		// -- ART AND BORDERS --
+
+		for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+			for (int x = 0; x < SCREEN_WIDTH; ++x) {
+				/*        SX
+				############
+				#          #
+				#    $@@@  #
+				#    @@@@  #
+				#    @@@@  #
+				#          #
+				############ SY
+
+				art: 4x3
+				window: 12, 7
+				top left: 5, 2
+
+				bottom right: 8, 4 global  --  top left + (art dimensions - 1)
+							: 3, 2 local  --  art dimensions - 1
+				*/
+			
+				// art
+				// TODO change this? idk
+
+				if (y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) && x < (SCREEN_WIDTH-1 - PANEL_SIZE + 1)) {
+					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
+						// in bounds of art
+						//reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
+						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
+						//render.put(x, y, Cell{"!",ANSI::reset,""});
+					}
+				}
+
+				// screen borders
+				// TODO restructure this
+
+				if (y == 0) {
+					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
+					else                                       render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
+				}
+				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
+					if (x == 0)                                render.put(0, y, Cell{"╠", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣", BORDER_COLOR, ""});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE)  render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+				}
+				else if (y == SCREEN_HEIGHT-1) {
+					if (x == 0)                                render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
+					else                                       render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+				}
+				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
+					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+				}
+			}
+		}
+
+
+		// -- CURSOR --
 		if (cursorAnim > 1 && !sidePanelMode) {
 			render.edit(cursorX, cursorY, CURSOR_COLOR, 0);
 			render.edit(cursorX, cursorY, CURSOR_COLOR_BACK, 1);
 		}
 		if (cursorAnim == 0) cursorAnim = 2;
 
-		// popup
+
+		// -- POPUP --
+
 		if (popupShowing > 0) {
 			int xMid = SCREEN_WIDTH/2, yMid = SCREEN_HEIGHT/2;
 			int pwidth = SCREEN_WIDTH * POPUP_WIDTH_SCALE, pheight = SCREEN_HEIGHT * POPUP_HEIGHT_SCALE;
@@ -1046,24 +1158,34 @@ int main() {
 			endBar += Cell{"╝", "", ""};
 			render.put(xMid - pwidth/2, yMid + pheight/2 - 1, endBar);
 
-			if (frame > popupFrameStarted + POPUP_INPUT_DELAY) {
-				pollInputsIntoString(keyStates, keyStates_slow, inputPopupText);
+			if (popupShowing == 1) {
+				if (frame > popupFrameStarted + POPUP_INPUT_DELAY) {
+					pollInputsIntoString(keyStates, keyStates_slow, inputPopupText);
+				}
+
+				int thisx = xMid - pwidth/2 + 2;
+				int thisy = yMid - pheight/2 + 1;
+
+				// query text
+				render.put(thisx, thisy, CellString{inputPopupTextDisplayed});
+
+				// input from tha user
+				CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
+				render.put(thisx, thisy+1, userIn);
+
+				// finished yet?
+				render.put(thisx, thisy+3, CellString{"[Enter] when done"});
+			} else if (popupShowing == 2) {
+				int thisx = xMid - inputPopupTextDisplayed.size()/2;
+				int thisy = yMid - pheight/2 + 1;
+
+				CellString text1 = CellString{"["} + CellString{"Entr", KEY_COLOR} + CellString{"]"} + CellString{" to confirm"};
+				CellString text2 = CellString{"["} + CellString{"Esc", KEY_COLOR} + CellString{"]"} + CellString{" to cancel"};
+
+				render.put(thisx, thisy, CellString{inputPopupTextDisplayed});
+				render.put(xMid - text1.size()/2, thisy + pheight/3, text1);
+				render.put(xMid - text2.size()/2, thisy + pheight/3 + 1, text2);
 			}
-			// Export/Exported_Art_2026-7-23_15-26-9.ans
-			// Export/Exported_Art_2026-7-23_15-26-9.ans
-
-			int thisx = xMid - pwidth/2 + 2;
-			int thisy = yMid - pheight/2 + 1;
-
-			// query text
-			render.put(thisx, thisy, CellString{inputPopupTextDisplayed});
-
-			// input from tha user
-			CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
-			render.put(thisx, thisy+1, userIn);
-
-			// finished yet?
-			render.put(thisx, thisy+3, CellString{"[Enter] when done"});
 		}
 
 
@@ -1073,6 +1195,7 @@ int main() {
 			render.put(0, 0, CellString{"SCREEN"});
 			render.put(0, 1, CellString{"TOO SMALL"});
 			// TODO add debug thing here
+			// also TODO this sucks
 		} else if (sidePanelMode == -1) {
 			sidePanelMode = 0;
 		}
@@ -1089,10 +1212,14 @@ int main() {
 			));
 		}
 		frame++;
+		ignoreInputFrames--;
+		if (ignoreInputFrames < 0) ignoreInputFrames = 0;
 	}
 
 
-	//  -- CLEAN -- 
+	// -- CLEAN -- 
+
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Cleaning up...");
 
 	//clear()
 	// TODO: needed?
@@ -1116,7 +1243,7 @@ int main() {
 
 	if (INPUT_SAFE_MODE) {}
 
-	reportLog("\tEND SESSION");
+	reportLog("END SESSION");
 
 	return 0;
 }

@@ -20,7 +20,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	
 	std::ifstream file(path);
 	if (!file.is_open()) {
-		if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to import file: could not open \"" + path + "\"");
+		reportLog("!!! Failure to import file: could not open \"" + path + "\"");
 		return false;
 	}
 	
@@ -163,7 +163,10 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 	std::string built = "";
 	
 	std::ofstream file(path);
-	if (!file.is_open()) return false;
+	if (!file.is_open()) {
+		reportLog("!!! Failure to import file: could not open \"" + path + "\"");
+		return false;
+	}
 
 	for (size_t i = 0; i < static_cast<size_t>(art.height); ++i) {
 		for (size_t x = 0; x < static_cast<size_t>(art.width); ++x) {
