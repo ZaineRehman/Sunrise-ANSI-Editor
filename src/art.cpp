@@ -11,6 +11,7 @@
 #include "art.hpp"
 #include "output.hpp"
 #include "settings.hpp"
+#include "lib.hpp"
 
 
 void Art::set(int x, int y, const Cell& cell) {
@@ -66,5 +67,24 @@ void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
 			map.insert(map.begin()+e*width + width + e, defaultCell);
 		}
 		width++;
+	}
+}
+
+void Art::trim() {
+	// check for empty rows
+	for (size_t r = 0; r < height; ++r) {
+		bool empty = false;
+		for (size_t c = 0; c < width; ++c) {
+			// char and background empty = empty cell
+			Cell current = map[r*width + c];
+			if (current.ch == " " && current.color_back == "") {
+				empty = true;
+				break;
+			}
+		}
+		if (empty) {
+			// remove line
+			LOOP(width) map.erase(map.begin());
+		}
 	}
 }

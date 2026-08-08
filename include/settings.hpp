@@ -236,16 +236,3 @@ inline std::string HOTKEY_CHAR_7 = "▒";
 inline std::string HOTKEY_CHAR_8 = "░";
 inline std::string HOTKEY_CHAR_9 = "■";
 inline std::string HOTKEY_CHAR_0 = " ";
-
-inline std::string HOTKEY_COLOR_Q = ANSI::red;
-inline std::string HOTKEY_COLOR_A = ANSI::red_back;
-inline std::string HOTKEY_COLOR_W = ANSI::blue;
-inline std::string HOTKEY_COLOR_S = ANSI::blue_back;
-inline std::string HOTKEY_COLOR_E = ANSI::green;
-inline std::string HOTKEY_COLOR_D = ANSI::green_back;
-inline std::string HOTKEY_COLOR_R = ANSI::yellow;
-inline std::string HOTKEY_COLOR_F = ANSI::yellow_back;
-inline std::string HOTKEY_COLOR_T = ANSI::white;
-inline std::string HOTKEY_COLOR_G = ANSI::white_back;
-inline std::string HOTKEY_COLOR_Y = ANSI::black;
-inline std::string HOTKEY_COLOR_H = ANSI::black_back;

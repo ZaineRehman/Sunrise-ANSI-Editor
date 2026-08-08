@@ -43,7 +43,7 @@ public:
 	}
 
 	// global space -> art space
-	inline constexpr std::pair<int,int> toArtSpace(int _x, int _y) {
+	inline constexpr std::pair<int,int> toArtSpace(int _x, int _y) const {
 		//assert(inBounds(x, y));
 		return std::make_pair<int,int>(_x - x, _y - y);
 	}
@@ -55,4 +55,7 @@ public:
 		x = newX;
 		y = newY;
 	}
+
+	// removes empty lines of cells from the borders of the art
+	void trim();
 };
