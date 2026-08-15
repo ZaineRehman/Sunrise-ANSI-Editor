@@ -20,7 +20,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	
 	std::ifstream file(path);
 	if (!file.is_open()) {
-		reportLog("!!! Failure to import file: could not open \"" + path + "\"");
+		reportLog("!!! Failure to import art file: could not open \"" + path + "\"");
 		return false;
 	}
 	
@@ -124,7 +124,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			for (const Cell& i : tempMap[y]) {
 				linee += "{" + i.color_fore + i.color_back + i.ch + "}";
 			}
-			reportLog("Line " + std::to_string(y) + ": " + linee);
+			reportLog("\tline " + std::to_string(y) + ": " + linee);
 		}
 
 		largestFoundWidth = max(static_cast<size_t>(largestFoundWidth), tempMap[y].size());
@@ -155,6 +155,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	art.height = newY;
 
 	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tnew size: " + std::to_string(art.width) + "x" + std::to_string(art.height));
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Loaded art from file: \"" + path + "\"");
 
 	return true;
 }
@@ -164,7 +165,7 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 	
 	std::ofstream file(path);
 	if (!file.is_open()) {
-		reportLog("!!! Failure to import file: could not open \"" + path + "\"");
+		reportLog("!!! Failure to export file: could not open \"" + path + "\"");
 		return false;
 	}
 
@@ -186,5 +187,54 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 	file << built;
 	file.close();
 
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Loaded art into file: \"" + path + "\"");
+
+	return true;
+}
+
+
+
+bool loadPaletteFromFile(const std::string& path, std::string palette[PALETTE_SIZE], bool swap) {
+	// .plt file
+	// each line is an ANSI code for a color
+
+	// TODO safeguard against: non .plt files, improper file syntax
+
+	std::ifstream file(path);
+	if (!file.is_open()) {
+		reportLog("!!! Failure to import palette file: could not open \"" + path + "\"");
+		return false;
+	}
+
+	//std::string built[PALETTE_SIZE];
+
+	std::string line;
+	int i = 0;
+	while (std::getline(file, line)) {
+		if (i == PALETTE_SIZE) break;
+		if (DEBUG_REPORT_LEVEL >= 3) reportLog("\timporting color: " + line);
+		palette[i] = (swap ? ANSI::invertColor(line) : line);  // grab all except \n?
+		if (DEBUG_REPORT_LEVEL >= 3) reportLog("\timporED: " + palette[i]);
+		i++;
+	}
+
+
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Loaded palette from file: \"" + path + "\"");
+	return true;
+}
+
+bool loadPaletteIntoFile(const std::string palette[PALETTE_SIZE], const std::string& path, bool swap) {
+	std::ofstream file(path);
+	if (!file.is_open()) {
+		reportLog("!!! Failure to export palette: could not open \"" + path + "\"");
+		return false;
+	}
+
+	for (size_t i = 0; i < PALETTE_SIZE; ++i) {
+		if (DEBUG_REPORT_LEVEL >= 3) reportLog("\texporting color: " + palette[i]);
+		file << (swap ? ANSI::invertColor(palette[i]) : palette[i]) << '\n';
+	}
+
+	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Loaded palette into file: \"" + path + "\"");
 	return true;
 }

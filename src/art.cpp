@@ -72,19 +72,25 @@ void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
 
 void Art::trim() {
 	// check for empty rows
-	for (size_t r = 0; r < height; ++r) {
-		bool empty = false;
-		for (size_t c = 0; c < width; ++c) {
+	for (size_t r = 0; r < static_cast<size_t>(height); ++r) {
+		int empty = 0;
+		for (size_t c = 0; c < static_cast<size_t>(width); ++c) {
 			// char and background empty = empty cell
 			Cell current = map[r*width + c];
 			if (current.ch == " " && current.color_back == "") {
-				empty = true;
-				break;
+				empty++;
+				if (empty == width) {
+					// whole line empty
+					break;
+				}
 			}
 		}
+
 		if (empty) {
 			// remove line
-			LOOP(width) map.erase(map.begin());
+			LOOP(static_cast<size_t>(width)) map.erase(map.begin() + r);
+			// make sure index is right
+			r -= width;
 		}
 	}
 }

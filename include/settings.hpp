@@ -6,6 +6,20 @@
 
 
 /*
+ * DIRECTORIES
+ * 
+ * /Export/Art/      --  exported .ans files
+ * /Export/Palette/  --  exported .plt files
+ * /Sessions/        --  session directories
+ * 
+ * 
+ * SPECIFICATIONS
+ * 
+ * - .ans files can be CP437 or UTF-8, but everything internally is handled as UTF-8
+ * - .plt files always store foreground colors
+**/
+
+/*
  *  == TODO ==
  * [x] extend art bounds when inserting outside of range
  * [x] clean up main.cpp
@@ -22,21 +36,25 @@
  * [x] render borders last
  * [x] ASCII mode
  * [x] GPL -> AGPL
+ * [x] load palettes to/from file
+ * 		[ ] safeguard fore/back palettes
  * [ ] trim empty spaces from art
- * [ ] load palettes to/from file
+ * [ ] cmake program version
+ * [ ] assure proper filetypes for importing
  * [ ] proper linux input support
  * [ ] autosaves for rollbacks
  *      [ ] automatic autosave deletion on termination
+ * [ ] undo/redo
  * [ ] highlighting sections for copy/paste
  * [ ] export file location picker
  * [ ] mouse input
  * [ ] saving preferences
  * [ ] custom session IDs
  * [ ] finalize window sizes
- * [ ] minimum screen size
+ * [ ] better "screen too small" screen
  * [ ] support mode for only 4-bit color
- * [ ] editor ASCII mode
  * [ ] changing to/from input safe mode
+ * [ ] editor ASCII mode
  * [ ] gradient maker
  * [ ] only re-render when needed
  * [ ] music
@@ -103,7 +121,7 @@
 
 
 // version
-inline constexpr const char* VERSION = "v0.1.0-a";
+inline constexpr const char* VERSION = "0.1.0-alpha";
 
 
 inline std::string DEBUG_STR = "";
@@ -140,6 +158,10 @@ inline float ANIM_CURSOR = 0.5f;
 // how often (in frames) to do a more expensive analysis frame
 inline int ANALYSIS_FREQUENCY = 10; 
 
+// frames in between fast keystate updates, just for arrow keys
+// (these frames will hold arrow keystates at false)
+inline int FAST_KEYSTATE_ARROW_DELAY = 1;
+
 
 // screen width
 inline int SCREEN_WIDTH = 75;
@@ -153,7 +175,7 @@ inline constexpr int PANEL_SIZE = 35;
 inline constexpr int BOTTOM_PANEL_SIZE = 2;
 
 // colors in palette
-inline constexpr int PALETTE_SIZE = 16;
+inline constexpr size_t PALETTE_SIZE = 16;
 
 inline constexpr int COLOR_CATALOGUE_4B_X =  8;
 inline constexpr int COLOR_CATALOGUE_4B_Y =  2;

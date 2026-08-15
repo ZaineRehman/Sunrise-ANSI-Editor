@@ -39,6 +39,12 @@ int main() {
 	if (!std::filesystem::is_directory("Export")) {
 		std::filesystem::create_directory("Export");
 	}
+	if (!std::filesystem::is_directory("Export/Art")) {
+		std::filesystem::create_directory("Export/Art");
+	}
+	if (!std::filesystem::is_directory("Export/Palette")) {
+		std::filesystem::create_directory("Export/Palette");
+	}
 	if (!std::filesystem::is_directory("Sessions")) {
 		std::filesystem::create_directory("Sessions");
 	}
@@ -99,6 +105,8 @@ int main() {
 	int frame = 0;
 	// ignore input for this many frames
 	int ignoreInputFrames = 6;
+	// ignore JUST fast keystate updates
+	int ignoreArrowFrames = 0;
 
 	// animation stage of the cursor
 	int cursorAnim = 0;
@@ -110,14 +118,18 @@ int main() {
 	// double check for program exitg
 	bool exitingProgram = false;
 
-	// if true, failed on export, so say that
-	bool showExportFail = false;
+	// 0 = no fail,  1 = exporting art fail,  2 = exporting palette fail
+	int showExportFail = 0;
+	// 0 = exporting art,  1 = exporting foreground palette,  2 = exporting foreground palette
+	int exportMode = 0;
 
 	// path for import
 	std::string importPathString = "";
-	// if true, failed on import, so say that
-	bool showImportFail = false;
-
+	// 0 = no fail,  1 = importing art fail,  2 = importing palette fail
+	int showImportFail = 0;
+	// 0 = importing art,  1 = importing foreground palette,  2 = importing foreground palette
+	int importMode = 0;
+	
 	// settings index
 	// 0 = color mode
 	// 1 = encoding
@@ -144,7 +156,7 @@ int main() {
 		ANSI::red_back_bright,     ANSI::green_back_bright, ANSI::blue_back_bright,  ANSI::yellow_back_bright, 
 		ANSI::magenta_back_bright, ANSI::cyan_back_bright,  ANSI::white_back_bright, ANSI::black_back_bright
 	};
-	int colorForeIndex = 0, colorBackIndex = 0;
+	size_t colorForeIndex = 0, colorBackIndex = 0;
 
 	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Initialized basic variables in main()");
 
@@ -279,6 +291,7 @@ int main() {
 		/*
 		* [←↕→] OR [HJKL]: cursor
 		* holding [Alt]: fast cursor
+		* holding [Ctrl]: move art
 		* 
 		* [0-9]: set character
 		* 
@@ -304,8 +317,10 @@ int main() {
 		* 		[↕]: change which setting
 		* 
 		* [/]: export
+		* 		[Space]: change mode
 		* 		[Entr]: confirm
 		* [\]: import
+		* 		[Space]: change mode
 		* 		[Z]: edit path
 		* 		[Entr]: confirm
 		* 
@@ -323,13 +338,20 @@ int main() {
 		// ignore inputs if window not in focus
 		// TODO linux implementation
 		#ifdef _WIN32
-			if (!windowIsFocused(GetConsoleWindow()) 
+			if ((!windowIsFocused(GetConsoleWindow()) && false)  // TODO this is broken??
 		#else
 			if (false 
 		#endif
 		|| ignoreInputFrames) {  // ignore first couple inputs, trust me ok
 			setKeyStatesOff(keyStates);
 			setKeyStatesOff(keyStates_slow);
+			reportLog("Ignoring input... " + std::to_string(ignoreInputFrames));
+		}
+		if (ignoreArrowFrames) {
+			keyStates[Key::UP] = false;
+			keyStates[Key::DOWN] = false;
+			keyStates[Key::LEFT] = false;
+			keyStates[Key::RIGHT] = false;
 		}
 
 		std::pair<int,int> upd = ART.toArtSpace(cursorX, cursorY);
@@ -372,7 +394,11 @@ int main() {
 
 		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::H]) || keyStates[Key::LEFT]  : (!ASCII_MODE && keyStates_slow[Key::H]) || keyStates_slow[Key::LEFT])  {
 			if (sidePanelMode == 0) {
-				cursorX--; cursorAnim = 3;
+				if (keyStates[Key::CTRL]) {
+					ART.x++; cursorAnim = 3; //cursorX++;
+				} else {
+					cursorX--; cursorAnim = 3;
+				}
 			} else if (sidePanelMode == 1) {
 				if      (colorCatalogueType == 0) catalogue4bIndexX--;
 				else if (colorCatalogueType == 1) catalogue8bIndexX--;
@@ -382,7 +408,11 @@ int main() {
 		}
 		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::L]) || keyStates[Key::RIGHT] : (!ASCII_MODE && keyStates_slow[Key::L]) || keyStates_slow[Key::RIGHT]) {
 			if (sidePanelMode == 0) {
-				cursorX++; cursorAnim = 3;
+				if (keyStates[Key::CTRL]) {
+					ART.x--; cursorAnim = 3; //cursorX--;
+				} else {
+					cursorX++; cursorAnim = 3;
+				}
 			} else if (sidePanelMode == 1) {
 				if      (colorCatalogueType == 0) catalogue4bIndexX++;
 				else if (colorCatalogueType == 1) catalogue8bIndexX++;
@@ -392,7 +422,11 @@ int main() {
 		}
 		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::J]) || keyStates[Key::UP]    : (!ASCII_MODE && keyStates_slow[Key::J]) || keyStates_slow[Key::UP])    {
 			if (sidePanelMode == 0) {
-				cursorY--; cursorAnim = 3;
+				if (keyStates[Key::CTRL]) {
+					ART.y++; cursorAnim = 3; //cursorY++;
+				} else {
+					cursorY--; cursorAnim = 3;
+				}
 			} else if (sidePanelMode == 1) {
 				if      (colorCatalogueType == 0) catalogue4bIndexY--;
 				else if (colorCatalogueType == 1) catalogue8bIndexY--;
@@ -402,7 +436,11 @@ int main() {
 		}
 		if (keyStates[Key::ALT] ? (!ASCII_MODE && keyStates[Key::K]) || keyStates[Key::DOWN]  : (!ASCII_MODE && keyStates_slow[Key::K]) || keyStates_slow[Key::DOWN])  {
 			if (sidePanelMode == 0) {
-				cursorY++; cursorAnim = 3;
+				if (keyStates[Key::CTRL]) {
+					ART.y--; cursorAnim = 3; //cursorY--;
+				} else {
+					cursorY++; cursorAnim = 3;
+				}
 			} else if (sidePanelMode == 1) {
 				if      (colorCatalogueType == 0) catalogue4bIndexY++;
 				else if (colorCatalogueType == 1) catalogue8bIndexY++;
@@ -453,8 +491,8 @@ int main() {
 				if (sidePanelMode == 0) ART.edit(upd.first, upd.second, HOTKEY_CHAR_0, 2);
 				else if (sidePanelMode == 2) HOTKEY_CHAR_0 = charCatalogue[charCatalogueIndexY*32 + charCatalogueIndexX].ch;
 			}
-
-			if (keyStates_slow[Key::Q] && popupShowing == 0) { colorForeIndex--; if (colorForeIndex < 0) colorForeIndex = PALETTE_SIZE-1; }
+																					// TODO this is sloppy
+			if (keyStates_slow[Key::Q] && popupShowing == 0) { colorForeIndex--; if (colorForeIndex > 500) colorForeIndex = PALETTE_SIZE-1; }
 			if (keyStates_slow[Key::E] && popupShowing == 0) { colorForeIndex++; if (colorForeIndex > PALETTE_SIZE-1) colorForeIndex = 0; }
 			if (keyStates[Key::W] && popupShowing == 0) {
 				if (sidePanelMode == 0) {
@@ -474,8 +512,8 @@ int main() {
 					}
 				}
 			}
-			
-			if (keyStates_slow[Key::A] && popupShowing == 0) { colorBackIndex--; if (colorBackIndex < 0) colorBackIndex = PALETTE_SIZE-1; }
+																					// TODO this is sloppy
+			if (keyStates_slow[Key::A] && popupShowing == 0) { colorBackIndex--; if (colorBackIndex > 500) colorBackIndex = PALETTE_SIZE-1; }
 			if (keyStates_slow[Key::D] && popupShowing == 0) { colorBackIndex++; if (colorBackIndex > PALETTE_SIZE-1) colorBackIndex = 0; }
 			if (keyStates[Key::S] && popupShowing == 0) {
 				if (sidePanelMode == 0) {
@@ -581,6 +619,17 @@ int main() {
 					popupFlag = 3;
 				}
 			}
+			if (keyStates_slow[Key::SPACE]) {
+				if (sidePanelMode == 3 && popupShowing == 0) {
+					// change export mode
+					exportMode++;
+					clamp_rollover(exportMode, 0, 2);
+				} else if (sidePanelMode == 4 && popupShowing == 0) {
+					// change import mode
+					importMode++;
+					clamp_rollover(importMode, 0, 2);
+				}
+			}
 		}  // ASCII mode check
 
 		if (keyStates_slow[Key::BACKSPACE] && popupShowing == 0) {
@@ -655,25 +704,43 @@ int main() {
 					inputPopupText = "";
 				}
 			} else if (sidePanelMode == 3) {
-				// export art
-				std::string filename = "Export/Exported_Art_" + getTimestamp() + ".ans";
-				
-				if (!loadArtIntoFile(ART, filename)) {
-					showExportFail = true;
-					//if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to export file: " + filename);
-				} else {
-					sidePanelMode = 0;
+				if (exportMode == 0) {
+					// export art
+					std::string filename = "Export/Art/Exported_Art_" + getTimestamp() + ".ans";
+					
+					if (!loadArtIntoFile(ART, filename)) {
+						showExportFail = 1;
+						//if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to export file: " + filename);
+					} else {
+						sidePanelMode = 0;
+					}
+				} else if (exportMode == 1 || exportMode == 2) {
+					// export palette
+					std::string filename = "Export/Palette/Exported_Palette_" + getTimestamp() + ".plt";
+
+					if (!loadPaletteIntoFile(exportMode == 1 ? colorForePalette : colorBackPalette, filename, exportMode == 2)) {
+						showExportFail = 2;
+					} else {
+						sidePanelMode = 0;
+					}
 				}
 			} else if (sidePanelMode == 4) {
 				if (popupShowing) {
 					popupShowing = 0;
 					importPathString = inputPopupText;
 				} else {
-					if (!loadArtFromFile(importPathString, ART)) {
-						showImportFail = true;
-						//if (DEBUG_REPORT_LEVEL >= 1) reportLog("!!! Failure to import file: " + importPathString);
-					} else {
-						sidePanelMode = 0;
+					if (importMode == 0) {
+						if (!loadArtFromFile(importPathString, ART)) {
+							showImportFail = 1;
+						} else {
+							sidePanelMode = 0;
+						}
+					} else if (importMode == 1 || importMode == 2) {
+						if (!loadPaletteFromFile(importPathString, importMode == 1 ? colorForePalette : colorBackPalette, importMode == 2)) {
+							showImportFail = 2;
+						} else {
+							sidePanelMode = 0;
+						}
 					}
 				}
 			} else if (sidePanelMode == 5) sidePanelMode = 0;
@@ -733,15 +800,15 @@ int main() {
 			cursorX = SCREEN_WIDTH - PANEL_SIZE-2;
 		}
 		else if (cursorX >= SCREEN_WIDTH - PANEL_SIZE-1) {
-			ART.x -= SCREEN_WIDTH-1 - PANEL_SIZE-2;
+			ART.x -= SCREEN_WIDTH - PANEL_SIZE-2;
 			cursorX = 1;
 		}
 		if (cursorY < 1) {
-			ART.y += SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE-2;
+			ART.y += SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-2;
 			cursorY = SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-2;
 		}
 		else if (cursorY >= SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-1) {
-			ART.y -= SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE-2;
+			ART.y -= SCREEN_HEIGHT - BOTTOM_PANEL_SIZE-2;
 			cursorY = 1;
 		}
 
@@ -1146,44 +1213,70 @@ int main() {
 			yLevel += 3;
 
 
-			// art size
-			text.clear(); text += "Dimensions: ";
-			text += std::to_string(SCREEN_WIDTH);
-			text += "x";
-			text += std::to_string(SCREEN_HEIGHT);
-			render.put(thisX, yLevel, text);
-			yLevel++;
-
-			// encoding
-			text.clear(); text += "Encoding: ";
-			text += ART_ENCODING ? CellString{"CP437", DISPLAY_ENCODING_CP437, ""} : CellString{"UTF-8", DISPLAY_ENCODING_UTF8, ""};
-			render.put(thisX, yLevel, text);
-			yLevel++;
-
-			// color mode
-			CellString artColorCellstr;
-				 if (ART_COLOR_MODE == 0) { artColorCellstr = CellString{"NONE"}; }
-			else if (ART_COLOR_MODE == 1) { artColorCellstr = CellString{"4-BIT",  DISPLAY_COLOR_4BIT};  }
-			else if (ART_COLOR_MODE == 2) { artColorCellstr = CellString{"8-BIT",  DISPLAY_COLOR_8BIT};  }
-			else { artColorCellstr = CellString{"24-BIT", DISPLAY_COLOR_24BIT}; }
-
-			text.clear(); text += "Color (highest): ";
-			text += artColorCellstr;
+			text += "Mode: ";
+			switch (exportMode) {
+				case 0: text += CellString{"ART (.ans)", ANSI::underline}; break;
+				case 1: text += CellString{"FORE PLT (.plt)", ANSI::underline}; break;
+				case 2: text += CellString{"BACK PLT (.plt)", ANSI::underline}; break;
+			}
 			render.put(thisX, yLevel, text);
 			yLevel += 2;
 
 
+			if (exportMode == 0) {
+				// art size
+				text.clear(); text += "Dimensions: ";
+				text += std::to_string(SCREEN_WIDTH);
+				text += "x";
+				text += std::to_string(SCREEN_HEIGHT);
+				render.put(thisX, yLevel, text);
+				yLevel++;
+
+				// encoding
+				text.clear(); text += "Encoding: ";
+				text += ART_ENCODING ? CellString{"CP437", DISPLAY_ENCODING_CP437, ""} : CellString{"UTF-8", DISPLAY_ENCODING_UTF8, ""};
+				render.put(thisX, yLevel, text);
+				yLevel++;
+
+				// color mode
+				CellString artColorCellstr;
+					 if (ART_COLOR_MODE == 0) { artColorCellstr = CellString{"NONE"}; }
+				else if (ART_COLOR_MODE == 1) { artColorCellstr = CellString{"4-BIT",  DISPLAY_COLOR_4BIT};  }
+				else if (ART_COLOR_MODE == 2) { artColorCellstr = CellString{"8-BIT",  DISPLAY_COLOR_8BIT};  }
+				else { artColorCellstr = CellString{"24-BIT", DISPLAY_COLOR_24BIT}; }
+
+				text.clear(); text += "Color (highest): ";
+				text += artColorCellstr;
+				render.put(thisX, yLevel, text);
+				yLevel += 2;
+			} else if (exportMode == 1 || exportMode == 2) {
+				text.clear();
+				text += Cell{"↓", "", ""};
+				text += " Palette ";
+				text += Cell{"↓", "", ""};
+				render.put(thisX, yLevel, text);
+				yLevel++;
+
+				text.clear();
+				for (size_t c = 0; c < PALETTE_SIZE; ++c) {
+					text += Cell{" ", "", ANSI::invertColor((exportMode == 1 ? colorForePalette : colorBackPalette)[c])};
+				}
+				render.put(thisX, yLevel, text);
+				yLevel += 2;
+			}
+
 			// do it?
 			text.clear();
 			text += CellString{"[Entr]", KEY_COLOR};
-			text += " to export to .ans";
+			text += " to export to ";
+			text += exportMode == 0 ? ".ans" : ".plt";
 			render.put(thisX, yLevel, text);
 			yLevel += 2;
 
 
 			// export failure
 			if (showExportFail) {
-				render.put(thisX, yLevel, CellString{"EXPORT FAILURE!", "", ERROR_COLOR});  // TODO put color in settings
+				render.put(thisX, yLevel, CellString{"EXPORT FAILURE!", "", ERROR_COLOR});  // TODO diff error for plt/ans?
 			}
 		} else if (sidePanelMode == 4) {  // importing
 			CellString text {};
@@ -1191,6 +1284,16 @@ int main() {
 			
 			render.put(thisX, yLevel, CellString{"== IMPORTING ==", PANEL_HEADER_COLOR});
 			yLevel += 3;
+
+			text += "Mode: ";
+			switch (importMode) {
+				// TODO this AND export, standardize color here
+				case 0: text += CellString{"ART (.ans)", ANSI::underline}; break;
+				case 1: text += CellString{"FORE PLT (.plt)", ANSI::underline}; break;
+				case 2: text += CellString{"BACK PLT (.plt)", ANSI::underline}; break;
+			}
+			render.put(thisX, yLevel, text);
+			yLevel += 2;
 
 
 			// import path
@@ -1210,7 +1313,7 @@ int main() {
 			yLevel++;
 
 			// import
-			render.put(thisX, yLevel, CellString{"[Enter]", KEY_COLOR} + CellString{" to import .ans file"});
+			render.put(thisX, yLevel, CellString{"[Enter]", KEY_COLOR} + CellString{" to import file"});
 			yLevel += 2;
 
 
@@ -1235,7 +1338,7 @@ int main() {
 			render.put(thisX, 4, CellString{std::string(settingsIndex == 1 ? ">" : " ") + " Encoding: "} + CellString{ART_ENCODING == 0 ? "UTF-8" : "CP437", SETTINGS_OPTION_COLOR});
 
 			// input safe mode
-			render.put(thisX, 5, CellString{"Input safemode: "} + CellString{INPUT_SAFE_MODE ? "ON" : "OFF", INPUT_SAFE_MODE ? SETTINGS_COLOR_ON : SETTINGS_COLOR_OFF});
+			render.put(thisX, 5, CellString{std::string(settingsIndex == 2 ? ">" : " ") + " Input safemode: "} + CellString{INPUT_SAFE_MODE ? "ON" : "OFF", INPUT_SAFE_MODE ? SETTINGS_COLOR_ON : SETTINGS_COLOR_OFF});
 		}
 
 		
@@ -1269,7 +1372,7 @@ int main() {
 			colors += Cell{"W", KEY_COLOR, ""};
 			colors += "]: ";
 		}
-		for (int c = 0; c < PALETTE_SIZE; ++c) {
+		for (size_t c = 0; c < PALETTE_SIZE; ++c) {
 			colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
 		} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
 		
@@ -1281,7 +1384,7 @@ int main() {
 			colors += Cell{"S", KEY_COLOR, ""};
 			colors += "]: ";
 		}
-		for (int c = 0; c < PALETTE_SIZE; ++c) {
+		for (size_t c = 0; c < PALETTE_SIZE; ++c) {
 			colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
 		} colors += Cell{" ", ANSI::reset, ""};
 		if (mode < 2) colors += "   ";
@@ -1451,6 +1554,8 @@ int main() {
 		}
 		frame++;
 		ignoreInputFrames--;
+		ignoreArrowFrames--;
+		if (ignoreArrowFrames < 0) ignoreArrowFrames = FAST_KEYSTATE_ARROW_DELAY;
 		if (ignoreInputFrames < 0) ignoreInputFrames = 0;
 	}
 
@@ -1497,3 +1602,5 @@ int main() {
 
 	return 0;
 }
+
+// phew!
