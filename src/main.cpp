@@ -298,8 +298,11 @@ int main() {
 		* [QE/W]: change/set background color
 		* [AD/S]: change/set foreground color
 		* 
+		* [N]: pick color into foreground palette
+		* [M]: pick color into background palette
+		* 
 		* [C]: clear color
-		* [Del]: clear character
+		* [Bksp]: clear character
 		* 
 		* [}]: open color catalogue
 		* 		[,]: change catalogue left
@@ -310,7 +313,7 @@ int main() {
 		* 		[A/D]: change active background palette color
 		* [{]: open character catalogue
 		* 
-		* [Bksp]: reset art
+		* [Del]: reset art
 		* 
 		* [Entr]: settings
 		* 		[←→]: edit setting
@@ -388,7 +391,7 @@ int main() {
 			}
 		}
 
-		if (keyStates[Key::DEL]) {
+		if (keyStates[Key::BACKSPACE]) {
 			ART.edit(upd.first, upd.second, " ", 2);
 		}
 
@@ -535,8 +538,8 @@ int main() {
 			}
 
 			if (keyStates[Key::C] && popupShowing == 0) {
-				ART.edit(upd.first, upd.second, ANSI::reset, 0);
-				ART.edit(upd.first, upd.second, ANSI::reset, 1);
+				ART.edit(upd.first, upd.second, "", 0);
+				ART.edit(upd.first, upd.second, "", 1);
 				cursorAnim = 1;
 			}
 
@@ -619,6 +622,18 @@ int main() {
 					popupFlag = 3;
 				}
 			}
+			if (keyStates_slow[Key::N]) {
+				if (sidePanelMode == 0) {
+					if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_fore);
+					colorForePalette[colorForeIndex] = ART.get(upd.first, upd.second).color_fore;
+				}
+			}
+			if (keyStates_slow[Key::M]) {
+				if (sidePanelMode == 0) {
+					if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_back);
+					colorBackPalette[colorBackIndex] = ART.get(upd.first, upd.second).color_back;
+				}
+			}
 			if (keyStates_slow[Key::SPACE]) {
 				if (sidePanelMode == 3 && popupShowing == 0) {
 					// change export mode
@@ -632,7 +647,7 @@ int main() {
 			}
 		}  // ASCII mode check
 
-		if (keyStates_slow[Key::BACKSPACE] && popupShowing == 0) {
+		if (keyStates_slow[Key::DEL] && popupShowing == 0) {
 			if (!killingArt) {
 				killingArt = true;
 				popupShowing = 2;
@@ -658,6 +673,7 @@ int main() {
 						// TODO center of screen instead?
 						ART.reset(cursorX, cursorY);
 						popupShowing = 0;
+						killingArt = false;
 					}
 				} else {
 					// settings

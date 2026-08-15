@@ -39,6 +39,7 @@
  * [x] load palettes to/from file
  * 		[ ] safeguard fore/back palettes
  * [ ] trim empty spaces from art
+ * [ ] import art with cursor in the middle
  * [ ] cmake program version
  * [ ] assure proper filetypes for importing
  * [ ] proper linux input support

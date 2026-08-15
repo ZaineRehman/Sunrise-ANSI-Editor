@@ -237,6 +237,8 @@ namespace ANSI {
 	}
 
 	std::string invertColor(const std::string& code) {
+		if (code.size() < 4) return "";
+
 		int section = std::stoi(code.substr(2, 2));
 		// in case of 100-107
 		if (section == 10) section = std::stoi(code.substr(2,3));

@@ -33,7 +33,11 @@ public:
 	void edit(int _x, int _y, const std::string& str, char col);
 	
 	void resize(int wLeft, int wRight, int hUp, int hDown);
-	
+
+
+	inline const Cell& get(int _x, int _y) const {
+		return map[_y * width + _x];
+	}
 
 	inline constexpr bool inBounds(int _x, int _y) {
 		return (

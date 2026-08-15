@@ -328,7 +328,7 @@ void thread_doKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int key
 	}
 }
 
-void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, int keyChecker) {
+void updateKeyStates(KeyStates& keyStates, KeyStates& keyStates_slow, [[maybe_unused]] int keyChecker) {
 	#ifdef _WIN32
 		for (const KeyMap& m : keyMappings) {
 			SHORT code = GetAsyncKeyState(m.code);
