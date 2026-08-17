@@ -1,14 +1,26 @@
 cmake_minimum_required(VERSION 3.23)
-project(Sunrise_ANSI_Editor VERSION 0.1.0 LANGUAGES CXX)
+project(Sunrise_ANSI_Editor LANGUAGES CXX)
+
+# version
+set(PROJECT_VERSION "0.1.0-alpha")
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 1)
+set(PROJECT_VERSION_PATCH 0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
+
+set_property(PROJECT PROPERTY DESCRIPTION "A terminal-based ANSI/ASCII-art editor")
+set_property(PROJECT PROPERTY HOMEPAGE_URL "https://github.com/ZaineRehman/Sunrise-ANSI-Editor")
+
 
 # set output directory for build objects
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
+# sources
 add_executable(Sunrise_ANSI_Editor 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
@@ -29,6 +41,9 @@ install(
 	RUNTIME_DEPENDENCY_SET program_deps
 	DESTINATION bin
 )
+
+
+# packaging
 
 set(CPACK_PACKAGE_NAME "Sunrise ANSI Editor")
 set(CPACK_PACKAGE_VENDOR "Zaine Rehman")

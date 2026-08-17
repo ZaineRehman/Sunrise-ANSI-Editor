@@ -117,6 +117,9 @@
  * [ ] change 8-bit color catalogue layout
  * [ ] in color picker, render a character onto the currently chosen color
  * [ ] more than just color codes
+ * 
+ *  == BUGS ==
+ * [ ] alt+HJKL for moving cursor is not affected by keystate delay
 **/
 
 
