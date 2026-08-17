@@ -20,6 +20,8 @@ void Art::set(int x, int y, const Cell& cell) {
 	assert(x < width && y < height);
 
 	map[y*width + x] = cell;
+
+	changeFlag = true;
 }
 
 // col = 0: edit foreground color,  col = 1: edit background color,  col = 2: edit character
@@ -44,6 +46,8 @@ void Art::edit(int _x, int _y, const std::string& str, char col) {
 	if (!col)          map[_y*width + _x].color_fore = str;
 	else if (col == 1) map[_y*width + _x].color_back = str;
 	else               map[_y*width + _x].ch = str;
+
+	changeFlag = true;
 }
 
 void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
@@ -70,9 +74,13 @@ void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
 		}
 		width++;
 	}
+
+	changeFlag = true;
 }
 
 void Art::trim() {
+	if (!map.size()) return;
+
 	auto cellIsEmpty = [](const Cell& cell) {
 		// no char AND no background: empty
 		return cell.ch == " " && cell.color_back == "";
@@ -110,6 +118,14 @@ void Art::trim() {
 		emptyBottom++;
 	}
 	if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tempty BOTTOM: " + std::to_string(emptyBottom));
+
+	// quick check if its completely empty
+	//if (emptyTop + emptyBottom == height) {
+	//	map.clear();
+	//	width = 0; height = 0;
+	//	changeFlag = true;
+	//	return;
+	//}
 
 	// check for emtpy rows on left
 	int emptyLeft = 0;
@@ -172,4 +188,10 @@ void Art::trim() {
 	x += emptyLeft;
 	y += emptyTop;
 	map = newvec;
+
+	// just in case
+	if (emptyLeft + emptyRight >= width) width = 0;
+	if (emptyTop + emptyBottom >= height) height = 0;
+
+	changeFlag = true;
 }

@@ -37,8 +37,7 @@
  * [x] ASCII mode
  * [x] GPL -> AGPL
  * [x] load palettes to/from file
- * 		[ ] safeguard fore/back palettes
- * [ ] trim empty spaces from art
+ * [x] trim empty spaces from art
  * [ ] import art with cursor in the middle
  * [ ] cmake program version
  * [ ] assure proper filetypes for importing
@@ -77,6 +76,7 @@
  * [ ] paste into popup text box
  * [ ] make popup text box cursor better
  * [ ] assure terminal scrolling is disabled
+ * [ ] assure proper palette formatting
  * SIDE PANEL: 
  *   [x] sunrise text
  *   [x] char hotkeys
@@ -117,6 +117,7 @@
  * [ ] change 8-bit color catalogue layout
  * [ ] in color picker, render a character onto the currently chosen color
  * [ ] more than just color codes
+ * [ ] halt program when not the focused window
  * 
  *  == BUGS ==
  * [ ] alt+HJKL for moving cursor is not affected by keystate delay

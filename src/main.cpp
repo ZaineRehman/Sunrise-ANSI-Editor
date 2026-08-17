@@ -38,12 +38,15 @@ int main() {
 	// make sure all directories exist
 	if (!std::filesystem::is_directory("Export")) {
 		std::filesystem::create_directory("Export");
-	}
-	if (!std::filesystem::is_directory("Export/Art")) {
 		std::filesystem::create_directory("Export/Art");
-	}
-	if (!std::filesystem::is_directory("Export/Palette")) {
 		std::filesystem::create_directory("Export/Palette");
+	} else {
+		if (!std::filesystem::is_directory("Export/Art")) {
+			std::filesystem::create_directory("Export/Art");
+		}
+		if (!std::filesystem::is_directory("Export/Palette")) {
+			std::filesystem::create_directory("Export/Palette");
+		}
 	}
 	if (!std::filesystem::is_directory("Sessions")) {
 		std::filesystem::create_directory("Sessions");
@@ -283,6 +286,7 @@ int main() {
 	}
 	while (RUNNING) {
 		std::chrono::time_point<std::chrono::steady_clock> timeStart = std::chrono::steady_clock::now();
+		ART.changeFlag = false;
 
 		SCREEN_TOO_SMALL = false;
 
@@ -341,7 +345,7 @@ int main() {
 		// ignore inputs if window not in focus
 		// TODO linux implementation
 		#ifdef _WIN32
-			if ((!windowIsFocused(GetConsoleWindow()) && false)  // TODO this is broken??
+			if (!windowIsFocused(GetConsoleWindow())  // TODO this is broken??
 		#else
 			if (false 
 		#endif
@@ -876,13 +880,17 @@ int main() {
 
 		// analysis frame
 		if (!(frame % ANALYSIS_FREQUENCY)) {
+			// find proper color mode
 			int foundColorMode = findHighestColorCode(CellString{ART.map});
 			
 			if (foundColorMode != ART_COLOR_MODE) {
 				reportLog("Analysis - color mode change: " + std::to_string(ART_COLOR_MODE) + " -> " + std::to_string(foundColorMode));
 			}
-
 			ART_COLOR_MODE = foundColorMode;
+		}
+		// if art changed, trim
+		if (ART.changeFlag) {
+			ART.trim();
 		}
 
 		render.clear();
@@ -893,6 +901,13 @@ int main() {
 
 		std::pair<int,int> check = getTerminalDimensions();
 		if (SCREEN_WIDTH != check.first || SCREEN_HEIGHT != check.second) {
+			if (DEBUG_REPORT_LEVEL >= 3) reportLog(
+				"Screen size changed from " + 
+				std::to_string(SCREEN_WIDTH)+"x"+std::to_string(SCREEN_HEIGHT) + 
+				" to " + 
+				std::to_string(check.first)+"x"+std::to_string(check.second)
+			);
+
 			// minuz 1  << OLD COMMENT, NOT ANYMORE!!!
 			SCREEN_WIDTH = check.first;
 			SCREEN_HEIGHT = check.second;
@@ -1615,9 +1630,11 @@ int main() {
 		close(keyChecker);
 	#endif
 	if (DEBUG_REPORT_LEVEL >= 2) reportLog("\tConsole mode reverted");
-
+	
 	if (INPUT_SAFE_MODE) {}
-
+	
+	
+	if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tHave a pleasant day ☺");
 	reportLog("END SESSION");
 
 	return 0;

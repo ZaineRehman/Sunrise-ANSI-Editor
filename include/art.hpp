@@ -21,10 +21,12 @@ public:
 	int width, height;
 	Cell defaultCell;
 	int x, y;
+	bool changeFlag;
 
 	Art() = default;
 	Art(int w, int h, const Cell& def) : width(w), height(h), defaultCell(def) {
 		map.resize(w*h, def);
+		changeFlag = true;
 	}
 
 	void set(int x, int y, const Cell& cell);
@@ -44,7 +46,7 @@ public:
 		return map[_y * width + _x];
 	}
 
-	inline constexpr bool inBounds(int _x, int _y) {
+	inline constexpr bool inBounds(int _x, int _y) const {
 		return (
 			_x >= x && _x < x+width &&
 			_y >= y && _y < y+height
@@ -63,5 +65,7 @@ public:
 		height = 0;
 		x = newX;
 		y = newY;
+
+		changeFlag = true;
 	}
 };
