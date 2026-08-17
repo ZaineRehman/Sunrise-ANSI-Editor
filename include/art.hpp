@@ -32,7 +32,12 @@ public:
 	// col = 0: edit foreground color,  col = 1: edit background color,  col = 2: edit character
 	void edit(int _x, int _y, const std::string& str, char col);
 	
+	// resizes the art bounds
+	// ONLY ADDS, DOES NOT REMOVE
 	void resize(int wLeft, int wRight, int hUp, int hDown);
+
+	// removes empty lines of cells from the borders of the art
+	void trim();
 
 
 	inline const Cell& get(int _x, int _y) const {
@@ -59,7 +64,4 @@ public:
 		x = newX;
 		y = newY;
 	}
-
-	// removes empty lines of cells from the borders of the art
-	void trim();
 };

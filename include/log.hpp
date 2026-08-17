@@ -1,6 +1,7 @@
 /*
  * Logging
 **/
+
 #pragma once
 
 #include <string>

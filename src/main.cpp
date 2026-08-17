@@ -348,7 +348,7 @@ int main() {
 		|| ignoreInputFrames) {  // ignore first couple inputs, trust me ok
 			setKeyStatesOff(keyStates);
 			setKeyStatesOff(keyStates_slow);
-			reportLog("Ignoring input... " + std::to_string(ignoreInputFrames));
+			if (DEBUG_REPORT_LEVEL >= 4) reportLog("Ignoring input... " + std::to_string(ignoreInputFrames));
 		}
 		if (ignoreArrowFrames) {
 			keyStates[Key::UP] = false;
@@ -763,6 +763,10 @@ int main() {
 			//#ifndef NDEBUG
 			//	}
 			//#endif
+		}
+
+		if (keyStates_slow[Key::INSERT]) {
+			ART.trim();
 		}
 
 		//if (keyStates_slow[Key::HOME]) {

@@ -1,6 +1,7 @@
 /*
  * Logging
 **/
+
 #include "log.hpp"
 
 #include <fstream>

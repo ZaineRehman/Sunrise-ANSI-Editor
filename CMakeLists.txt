@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
-set_property(PROJECT PROPERTY DESCRIPTION "A terminal-based ANSI/ASCII-art editor")
-set_property(PROJECT PROPERTY HOMEPAGE_URL "https://github.com/ZaineRehman/Sunrise-ANSI-Editor")
+set_property(DIRECTORY PROPERTY DESCRIPTION "A terminal-based ANSI/ASCII-art editor")
+set_property(DIRECTORY PROPERTY HOMEPAGE_URL "https://github.com/ZaineRehman/Sunrise-ANSI-Editor")
 
 
 # set output directory for build objects

@@ -132,8 +132,9 @@ inline std::string DEBUG_STR = "";
 
 // 1 = report crashes, errors
 // 2 = also report major events (export, etc.)
-// 3 = you wish for too much knowledge
-inline int DEBUG_REPORT_LEVEL = 3;
+// 3 = good amount of stuff reported (very useful!)
+// 4 = you wish for too much knowledge (EXTRA VERBOSE)
+inline int DEBUG_REPORT_LEVEL = 4;
 
 
 // if true, uses buffered terminal inputs instead of raw keyboard keystates
