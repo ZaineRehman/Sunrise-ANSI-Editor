@@ -352,7 +352,7 @@ int main() {
 		|| ignoreInputFrames) {  // ignore first couple inputs, trust me ok
 			setKeyStatesOff(keyStates);
 			setKeyStatesOff(keyStates_slow);
-			if (DEBUG_REPORT_LEVEL >= 4) reportLog("Ignoring input... " + std::to_string(ignoreInputFrames));
+			//if (DEBUG_REPORT_LEVEL >= 4) reportLog("Ignoring input... " + std::to_string(ignoreInputFrames));
 		}
 		if (ignoreArrowFrames) {
 			keyStates[Key::UP] = false;
@@ -628,14 +628,28 @@ int main() {
 			}
 			if (keyStates_slow[Key::N]) {
 				if (sidePanelMode == 0) {
-					if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_fore);
-					colorForePalette[colorForeIndex] = ART.get(upd.first, upd.second).color_fore;
+					if (inRange(upd.first, 0, ART.width-1) && inRange(upd.second, 0, ART.height-1)) {
+						// inside art
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_fore);
+						colorForePalette[colorForeIndex] = ART.get(upd.first, upd.second).color_fore;
+					} else {
+						// picked outside of art
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: BLANK (outside bounds)");
+						colorForePalette[colorForeIndex] = ANSI::black;
+					}
 				}
 			}
 			if (keyStates_slow[Key::M]) {
 				if (sidePanelMode == 0) {
-					if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_back);
-					colorBackPalette[colorBackIndex] = ART.get(upd.first, upd.second).color_back;
+					if (inRange(upd.first, 0, ART.width-1) && inRange(upd.second, 0, ART.height-1)) {
+						// inside art
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: " + ART.get(upd.first, upd.second).color_back);
+						colorBackPalette[colorBackIndex] = ART.get(upd.first, upd.second).color_back;
+					} else {
+						// picked outside of art
+						if (DEBUG_REPORT_LEVEL >= 2) reportLog("Picking color: BLANK (outside bounds)");
+						colorBackPalette[colorBackIndex] = ANSI::black_back;
+					}
 				}
 			}
 			if (keyStates_slow[Key::SPACE]) {
@@ -890,7 +904,7 @@ int main() {
 		}
 		// if art changed, trim
 		if (ART.changeFlag) {
-			ART.trim();
+			//ART.trim();
 		}
 
 		render.clear();

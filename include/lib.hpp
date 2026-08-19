@@ -53,6 +53,15 @@ constexpr void clamp_rollover(T& num, const T& lower, const T& upper) {
 	else if (num > upper) num = lower;
 }
 
+
+// inclusive
+template <typename T>
+constexpr bool inRange(const T& num, const T& lower, const T& upper) {
+	if (num < lower || num > upper) return false;
+	return true;
+}
+
+
 template <typename T>
 constexpr T max(const T& num1, const T& num2) {
 	return num1 > num2 ? num1 : num2;

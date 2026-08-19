@@ -120,6 +120,8 @@
  * [ ] halt program when not the focused window
  * 
  *  == BUGS ==
+ * [x] 'pick to palette' crashes
+ * [x] Art::trim() does some weird shit
  * [ ] alt+HJKL for moving cursor is not affected by keystate delay
 **/
 

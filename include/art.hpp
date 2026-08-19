@@ -14,6 +14,9 @@
 #include "output.hpp"
 #include "settings.hpp"
 
+void reportLog(const std::string& str);
+#include "log.hpp"
+
 
 class Art {
 public: 
@@ -27,6 +30,7 @@ public:
 	Art(int w, int h, const Cell& def) : width(w), height(h), defaultCell(def) {
 		map.resize(w*h, def);
 		changeFlag = true;
+		//reportLog("FLAG CHANGED Art()");
 	}
 
 	void set(int x, int y, const Cell& cell);
@@ -67,5 +71,6 @@ public:
 		y = newY;
 
 		changeFlag = true;
+		//reportLog("FLAG CHANGED reset()");
 	}
 };

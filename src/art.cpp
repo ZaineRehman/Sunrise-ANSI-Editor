@@ -22,6 +22,7 @@ void Art::set(int x, int y, const Cell& cell) {
 	map[y*width + x] = cell;
 
 	changeFlag = true;
+	//reportLog("FLAG CHANGED set()");
 }
 
 // col = 0: edit foreground color,  col = 1: edit background color,  col = 2: edit character
@@ -48,9 +49,12 @@ void Art::edit(int _x, int _y, const std::string& str, char col) {
 	else               map[_y*width + _x].ch = str;
 
 	changeFlag = true;
+	//reportLog("FLAG CHANGED edit()");
 }
 
 void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
+	if (DEBUG_REPORT_LEVEL >= 3) reportLog("Resizing art: " + std::to_string(wLeft)+","+std::to_string(wRight)+","+std::to_string(hUp)+","+std::to_string(hDown));
+
 	for (int i = 0; i < hUp; ++i) {
 		for (int e = 0; e < width; ++e) map.insert(map.begin(), defaultCell);
 	}
@@ -76,10 +80,16 @@ void Art::resize(int wLeft, int wRight, int hUp, int hDown) {
 	}
 
 	changeFlag = true;
+	//reportLog("FLAG CHANGED resize()");
 }
 
 void Art::trim() {
-	if (!map.size()) return;
+	if (!map.size() || !width || !height) {  // empty map or weird edge case
+		map.clear();
+		width = 0;
+		height = 0;
+		return;
+	}
 
 	auto cellIsEmpty = [](const Cell& cell) {
 		// no char AND no background: empty
@@ -88,9 +98,9 @@ void Art::trim() {
 
 	// check for empty rows at beginning
 	int emptyTop = 0;
-	for (size_t r = 0; r < static_cast<size_t>(height); ++r) {
+	for (int r = 0; r < height; ++r) {
 		bool rowEmpty = true;
-		for (size_t c = 0; c < static_cast<size_t>(width); ++c) {
+		for (int c = 0; c < width; ++c) {
 			if (!cellIsEmpty(map[r*width + c])) {
 				rowEmpty = false;
 				break;
@@ -105,10 +115,13 @@ void Art::trim() {
 	// check for empty rows at end
 	// probably there is some smart way to not have to repeat all this code i dunno
 	int emptyBottom = 0;
-	for (size_t r = static_cast<size_t>(height)-1; r != 0; --r) {
+	for (int r = height-1; r >= 0; --r) {
+		//reportLog("\t\t" + std::to_string(r));
 		bool rowEmpty = true;
-		for (size_t c = static_cast<size_t>(width)-1; c != 0; --c) {
+		for (int c = width-1; c >= 0; --c) {
+			//reportLog("\t\t\t" + std::to_string(c));
 			if (!cellIsEmpty(map[r*width + c])) {
+				//reportLog("\t\t\tFOUND");
 				rowEmpty = false;
 				break;
 			}
@@ -129,9 +142,9 @@ void Art::trim() {
 
 	// check for emtpy rows on left
 	int emptyLeft = 0;
-	for (size_t c = 0; c < static_cast<size_t>(width); ++c) {
+	for (int c = 0; c < width; ++c) {
 		bool columnEmpty = true;
-		for (size_t r = 0; r < static_cast<size_t>(height); ++r) {
+		for (int r = 0; r < height; ++r) {
 			if (!cellIsEmpty(map[r*width + c])) {
 				columnEmpty = false;
 				break;
@@ -145,9 +158,9 @@ void Art::trim() {
 
 	// check for emtpy rows on right
 	int emptyRight = 0;
-	for (size_t c = static_cast<size_t>(width)-1; c != 0; --c) {
+	for (int c = width-1; c >= 0; --c) {
 		bool columnEmpty = true;
-		for (size_t r = static_cast<size_t>(height)-1; r != 0; --r) {
+		for (int r = height-1; r >= 0; --r) {
 			if (!cellIsEmpty(map[r*width + c])) {
 				columnEmpty = false;
 				break;
@@ -168,10 +181,13 @@ void Art::trim() {
 	// build new vector
 	std::vector<Cell> newvec {};
 
-	for (size_t r = emptyTop; r < static_cast<size_t>(height) - emptyBottom; ++r) {
-		for (size_t c = emptyLeft; c < static_cast<size_t>(width) - emptyRight; ++c) {
+	for (int r = emptyTop; r < (height - emptyBottom); ++r) {
+		std::string debugstr = "";
+		for (int c = emptyLeft; c < (width - emptyRight); ++c) {
 			newvec.push_back(map[r*width + c]);
+			debugstr += map[r*width + c].ch;
 		}
+		reportLog("Added: >" + debugstr + "<");
 	}
 
 	if (DEBUG_REPORT_LEVEL >= 2) reportLog(
@@ -189,9 +205,12 @@ void Art::trim() {
 	y += emptyTop;
 	map = newvec;
 
-	// just in case
-	if (emptyLeft + emptyRight >= width) width = 0;
-	if (emptyTop + emptyBottom >= height) height = 0;
+	for (const Cell& i : map) reportLog("New cell: " + i.ch);
+
+	// just in case (too lazy to fix)
+	if (width < 0) width = 0;
+	if (height < 0) height = 0;
 
 	changeFlag = true;
+	//reportLog("FLAG CHANGED trim()");
 }
