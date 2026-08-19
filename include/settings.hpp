@@ -39,7 +39,6 @@
  * [x] load palettes to/from file
  * [x] trim empty spaces from art
  * [ ] import art with cursor in the middle
- * [ ] cmake program version
  * [ ] assure proper filetypes for importing
  * [ ] proper linux input support
  * [ ] autosaves for rollbacks
@@ -65,7 +64,7 @@
  * [ ] downgrading color mode -> remove those codes from art
  *      [ ] recognize the colors and appropriately downgrade?
  * [ ] make input checkers use separate thread (mutex?)
- * [ ] win terminal shift+arrow and ctrl+arrow
+ * [ ] disable win terminal shift+arrow and ctrl+arrow
  * [ ] clean up files
  *      [ ] put CellString builds into separate file
  *      [ ] organize inputs
@@ -122,6 +121,9 @@
  *  == BUGS ==
  * [x] 'pick to palette' crashes
  * [x] Art::trim() does some weird shit
+ * [ ] importing is completely broken
+ * 		[ ] color codes do not cross over properly
+ * 		[ ] multiple codes not recognized properly (ex. \033[1;30m)
  * [ ] alt+HJKL for moving cursor is not affected by keystate delay
 **/
 

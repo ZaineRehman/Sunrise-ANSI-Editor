@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdint>
 #include <cassert>
+#include <vector>
 #include <cmath>
 
 #include "ANSI.hpp"
@@ -208,9 +209,18 @@ namespace ANSI {
 			<< ANSI::white_back_bright   << "###" << ANSI::reset << std::endl;
 	}
 
-	int findColorType(const std::string& code) {
+	int findCodeType(const std::string& code) {
 		if (!code.size() || code[0] != '\033') return -1;
-		int section = std::stoi(code.substr(2,2));
+
+		if (code == ANSI::reset) return 8;
+
+		int section;
+		try {
+			section = std::stoi(code.substr(2,2));
+		} catch (...) {
+			return -2;
+		}
+
 		// in case of 100-107
 		if (section == 10) section = std::stoi(code.substr(2,3));
 
@@ -236,10 +246,23 @@ namespace ANSI {
 		return -1;
 	}
 
+	// splits a code into parts, if it has any
+	// ex. "\033[1;30m" -> {"\033[1m", "\033[30m"}
+	std::vector<std::string> splitCode(const std::string& code) {
+		if (!code.size() || code[0] != '\033') return {code};
+
+		
+	}
+
 	std::string invertColor(const std::string& code) {
 		if (code.size() < 4) return "";
 
-		int section = std::stoi(code.substr(2, 2));
+		int section;
+		try {
+			section = std::stoi(code.substr(2, 2));
+		} catch (...) {
+			return code;
+		}
 		// in case of 100-107
 		if (section == 10) section = std::stoi(code.substr(2,3));
 

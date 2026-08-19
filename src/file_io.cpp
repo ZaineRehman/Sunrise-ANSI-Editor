@@ -52,17 +52,19 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			if (line[i] == '\033') {
 				// start of ANSI code
 				codeStart = i;
-			} else if (line[i] == 'm' && codeStart != -1) {  // TODO this only works for color codes
+			} else if ((line[i] == 'm' || line[i] == 'h' || line[i] == 'l') && codeStart != -1) {  // TODO this only works for some codes
 				// end of ANSI (color) code
 				std::string code = line.substr(codeStart, i-codeStart+1);
 
-				if (code == ANSI::reset) {
+				int type = ANSI::findCodeType(code);
+
+				if (type == 8) { // reset
 					build.color_fore = "";
 					build.color_back = "";
-				} else if (ANSI::findColorType(code) % 2) {  // findColorType always returns odd numbers on backgrounds
-					build.color_back = code;
+				} else if (type ) {
+					build.color_back += code;
 				} else {
-					build.color_fore = code;
+					build.color_fore += code;
 				}
 
 				codeStart = -1;
@@ -123,7 +125,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 		if (DEBUG_REPORT_LEVEL >= 3) {
 			std::string linee = "";
 			for (const Cell& i : tempMap[y]) {
-				linee += "{" + i.color_fore + i.color_back + i.ch + "}";
+				linee += "("+i.color_fore+")" + "["+i.color_back+"]" + "{"+(encodingFound == 1 ? convert_cp437_utf8(i.ch) : i.ch) + "}";
 			}
 			reportLog("\tline " + std::to_string(y) + ": " + linee);
 		}

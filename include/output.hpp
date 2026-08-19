@@ -41,9 +41,10 @@ std::pair<int,int> getTerminalDimensions();
 // contains strings for a character along with 2 color strings (fore/back)
 // do NOT put more than 1 character in 'ch' (you WILL be found)
 struct Cell {
-	std::string ch;
-	std::string color_fore;
-	std::string color_back;
+	std::string ch = "";
+	std::string color_fore = "";
+	std::string color_back = "";
+	std::string extra_codes = "";
 };
 
 struct CellString {
@@ -142,7 +143,7 @@ public:
 	// puts a cell onto the buffer
 	void put(uint32_t x, uint32_t y, const Cell& cell);
 	// edits a cell in the buffer
-	// col = 0 (default): edit foreground color,  col = 1: edit background color,  col = 2: edit character
+	// col = 0 (default): edit foreground color,  col = 1: edit background color,  2: edit character  3: edit extra codes
 	void edit(uint32_t x, uint32_t y, const std::string& str, char col = 0);
 	// puts a string of cells onto the buffer
 	void put(uint32_t x, uint32_t y, const CellString& str);
@@ -158,7 +159,7 @@ public:
 
 	// sets all cells to spaces
 	inline void clear() {
-		fill(Cell{" ","", ""});
+		fill(Cell{" "});
 	}
 
 	// resizes the cell bounds

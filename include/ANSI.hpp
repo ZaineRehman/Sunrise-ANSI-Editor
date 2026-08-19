@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 
 // ANSI escape codes
@@ -126,11 +127,17 @@ namespace ANSI {
 	// tests the standard ANSI 4-bit color codes
 	void colorTest();
 
-	// returns the type of color code given
-	// 4-bit: 0=foreground, 1=background, 2=foreground (bright), 3=background (bright)
-	// 8-bit: 4=foreground, 5=background
-	// 24-bit: 6=foreground, 7=background
-	int findColorType(const std::string& code);
+	// returns the type of code given
+	// color 4-bit: 0=foreground, 1=background, 2=foreground (bright), 3=background (bright)
+	// color 8-bit: 4=foreground, 5=background
+	// color 24-bit: 6=foreground, 7=background
+	// 8 = reset
+	// -1=not a color code, -2=other code
+	int findCodeType(const std::string& code);
+
+	// splits a code into parts, if it has any
+	// ex. "\033[1;30m" -> {"\033[1m", "\033[30m"}
+	std::vector<std::string> splitCode(const std::string& code);
 
 	// inverts a color-code string from foreground to background and vice versa
 	std::string invertColor(const std::string& code);

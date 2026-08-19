@@ -34,6 +34,10 @@ add_executable(Sunrise_ANSI_Editor
 	${CMAKE_CURRENT_SOURCE_DIR}/src/encodings.cpp
 )
 
+set_target_properties(Sunrise_ANSI_Editor PROPERTIES 
+	OUTPUT_NAME "sunrise"
+)
+
 target_include_directories(Sunrise_ANSI_Editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 install(

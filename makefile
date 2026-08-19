@@ -15,16 +15,16 @@ all: debug
 run: run_d
 run_d: 
 ifeq ($(OS), Windows_NT)
-	./build/Debug/Sunrise_ANSI_Editor
+	./build/Debug/sunrise
 else
-	sudo ./build/Debug/Sunrise_ANSI_Editor
+	sudo ./build/Debug/sunrise
 endif
 
 run_r: 
 ifeq ($(OS), Windows_NT)
-	./build/Debug/Sunrise_ANSI_Editor
+	./build/Debug/sunrise
 else
-	sudo ./build/Debug/Sunrise_ANSI_Editor
+	sudo ./build/Debug/sunrise
 endif
 
 

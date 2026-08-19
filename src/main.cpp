@@ -69,7 +69,7 @@ int main() {
 
 	bool SCREEN_TOO_SMALL = false;
 
-	Art ART {1, 1, Cell{DEFAULT_BACK, "", ""}};
+	Art ART {1, 1, Cell{DEFAULT_BACK}};
 	Renderer render {static_cast<uint32_t>(SCREEN_WIDTH), static_cast<uint32_t>(SCREEN_HEIGHT)};
 	int cursorX = SCREEN_WIDTH/2, cursorY = SCREEN_HEIGHT/2;
 
@@ -963,16 +963,16 @@ int main() {
 
 			// char hotkeys
 			text.clear(); text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_1, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_2, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_3, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_4, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_5, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_6, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_7, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_8, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_9, KEY_COLOR, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_0, KEY_COLOR, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_1, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_2, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_3, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_4, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_5, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_6, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_7, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_8, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_9, KEY_COLOR}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_0, KEY_COLOR}; text += " ";
 			render.put(thisX, yLevel, text);
 			yLevel += 2;
 
@@ -980,9 +980,9 @@ int main() {
 			// color mode
 			text.clear(); text += "Color mode: ";
 				 if (ART_COLOR_MODE == 0) text += "NONE";
-			else if (ART_COLOR_MODE == 1) text += CellString{"4-BIT", DISPLAY_COLOR_4BIT, ""};
-			else if (ART_COLOR_MODE == 2) text += CellString{"8-BIT", DISPLAY_COLOR_8BIT, ""};
-			else if (ART_COLOR_MODE == 3) text += CellString{"24-BIT", DISPLAY_COLOR_24BIT, ""};
+			else if (ART_COLOR_MODE == 1) text += CellString{"4-BIT", DISPLAY_COLOR_4BIT};
+			else if (ART_COLOR_MODE == 2) text += CellString{"8-BIT", DISPLAY_COLOR_8BIT};
+			else if (ART_COLOR_MODE == 3) text += CellString{"24-BIT", DISPLAY_COLOR_24BIT};
 			render.put(thisX, yLevel, text);
 			yLevel++;
 
@@ -1095,11 +1095,11 @@ int main() {
 				//if (SCREEN_HEIGHT > colorCatalogueLineNo + COLOR_CATALOGUE_LARGEST_Y + 2) {}
 
 				// X arrows
-				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold, ""});  // TODO make settings color
-				render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold, ""});
+				render.put(thisX + catIndexX, colorCatalogueLineNo-1, Cell{"▼", ANSI::bold});  // TODO make settings color
+				render.put(thisX + catIndexX, colorCatalogueLineNo+catSizeY, Cell{"▲", ANSI::bold});
 				// Y arrows
-				render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold, ""});
-				render.put(thisX+catSizeX, colorCatalogueLineNo + catIndexY, Cell{"◄", ANSI::bold, ""});
+				render.put(thisX-1, colorCatalogueLineNo + catIndexY, Cell{"►", ANSI::bold});
+				render.put(thisX+catSizeX, colorCatalogueLineNo + catIndexY, Cell{"◄", ANSI::bold});
 
 				// render catalogue
 				for (int yc = 0; yc < catSizeY; ++yc) {
@@ -1225,16 +1225,16 @@ int main() {
 			render.put(thisX, 4, text);
 
 			text.clear(); text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_1, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_2, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_3, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_4, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_5, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_6, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_7, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_8, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_9, ANSI::bold, ""}; text += " ";
-			text += " "; text += Cell{HOTKEY_CHAR_0, ANSI::bold, ""}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_1, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_2, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_3, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_4, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_5, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_6, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_7, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_8, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_9, ANSI::bold}; text += " ";
+			text += " "; text += Cell{HOTKEY_CHAR_0, ANSI::bold}; text += " ";
 			render.put(thisX, 5, text);
 
 			// character table
@@ -1300,9 +1300,9 @@ int main() {
 				yLevel += 2;
 			} else if (exportMode == 1 || exportMode == 2) {
 				text.clear();
-				text += Cell{"↓", "", ""};
+				text += Cell{"↓"};
 				text += " Palette ";
-				text += Cell{"↓", "", ""};
+				text += Cell{"↓"};
 				render.put(thisX, yLevel, text);
 				yLevel++;
 
@@ -1346,9 +1346,9 @@ int main() {
 
 
 			// import path
-			text.clear(); text += Cell{"↓", "", ""};
+			text.clear(); text += Cell{"↓"};
 			text += "  Import Path  ";
-			text += Cell{"↓", "", ""};
+			text += Cell{"↓"};
 			render.put(thisX, yLevel, text);
 			yLevel++;
 
@@ -1415,15 +1415,15 @@ int main() {
 
 		if (mode < 3) {
 			colors += "[";
-			colors += Cell{"Q", KEY_COLOR, ""};
-			colors += Cell{"E", KEY_COLOR, ""};
+			colors += Cell{"Q", KEY_COLOR};
+			colors += Cell{"E", KEY_COLOR};
 			colors += "/";
-			colors += Cell{"W", KEY_COLOR, ""};
+			colors += Cell{"W", KEY_COLOR};
 			colors += "]: ";
 		}
 		for (size_t c = 0; c < PALETTE_SIZE; ++c) {
-			colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c], ""};
-		} colors += Cell{" ", ANSI::reset, ""}; colors += "   ";
+			colors += Cell{colorForeIndex == c ? "█" : "▄", colorForePalette[c]};
+		} colors += Cell{" ", ANSI::reset}; colors += "   ";
 		
 		if (mode < 3) {
 			colors += "[";
@@ -1434,22 +1434,22 @@ int main() {
 			colors += "]: ";
 		}
 		for (size_t c = 0; c < PALETTE_SIZE; ++c) {
-			colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c]), ""};
-		} colors += Cell{" ", ANSI::reset, ""};
+			colors += Cell{colorBackIndex == c ? "█" : "▄", ANSI::invertColor(colorBackPalette[c])};
+		} colors += Cell{" ", ANSI::reset};
 		if (mode < 2) colors += "   ";
 
 
 		if (mode < 1) {
 			colors += "        [";
-			colors += Cell{"{", KEY_COLOR, ""}; 
+			colors += Cell{"{", KEY_COLOR}; 
 			colors += "]: color catalogue    [";
-			colors += Cell{"}", KEY_COLOR, ""};
+			colors += Cell{"}", KEY_COLOR};
 			colors += "]: char catalogue";
 		} else if (mode < 2) {
 			colors += "        [";
-			colors += Cell{"{", KEY_COLOR, ""}; 
+			colors += Cell{"{", KEY_COLOR}; 
 			colors += "]  [";
-			colors += Cell{"}", KEY_COLOR, ""};
+			colors += Cell{"}", KEY_COLOR};
 			colors += "]";
 		}
 		
@@ -1493,25 +1493,25 @@ int main() {
 				// TODO restructure this
 
 				if (y == 0) {
-					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, 0, Cell{"╗", BORDER_COLOR, ""});
-					else                                       render.put(x, 0, Cell{"═", BORDER_COLOR, ""});
+					if (x == 0)                                render.put(0, 0, Cell{"╔", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, 0, Cell{"╦", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, 0, Cell{"╗", BORDER_COLOR});
+					else                                       render.put(x, 0, Cell{"═", BORDER_COLOR});
 				}
 				else if (y == SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE) {
-					if (x == 0)                                render.put(0, y, Cell{"╠", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣", BORDER_COLOR, ""});
-					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE)  render.put(x, y, Cell{"═", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+					if (x == 0)                                render.put(0, y, Cell{"╠", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╣", BORDER_COLOR});
+					else if (x < SCREEN_WIDTH-1 - PANEL_SIZE)  render.put(x, y, Cell{"═", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"║", BORDER_COLOR});
 				}
 				else if (y == SCREEN_HEIGHT-1) {
-					if (x == 0)                                render.put(0, y, Cell{"╚", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR, ""});
-					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"╝", BORDER_COLOR, ""});
-					else                                       render.put(x, y, Cell{"═", BORDER_COLOR, ""});
+					if (x == 0)                                render.put(0, y, Cell{"╚", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1 - PANEL_SIZE) render.put(x, y, Cell{"╩", BORDER_COLOR});
+					else if (x == SCREEN_WIDTH-1)              render.put(x, y, Cell{"╝", BORDER_COLOR});
+					else                                       render.put(x, y, Cell{"═", BORDER_COLOR});
 				}
 				else if (x == 0 || x == SCREEN_WIDTH-1 || x == SCREEN_WIDTH-1 - PANEL_SIZE) {
-					render.put(x, y, Cell{"║", BORDER_COLOR, ""});
+					render.put(x, y, Cell{"║", BORDER_COLOR});
 				}
 			}
 		}
@@ -1531,21 +1531,21 @@ int main() {
 			int xMid = SCREEN_WIDTH/2, yMid = SCREEN_HEIGHT/2;
 			int pwidth = SCREEN_WIDTH * POPUP_WIDTH_SCALE, pheight = SCREEN_HEIGHT * POPUP_HEIGHT_SCALE;
 			
-			CellString topBar {Cell{"╔", "", ""}};
-			LOOP(static_cast<size_t>(pwidth-2)) topBar += Cell{"═", "", ""};
-			topBar += Cell{"╗", "", ""};
+			CellString topBar {Cell{"╔"}};
+			LOOP(static_cast<size_t>(pwidth-2)) topBar += Cell{"═"};
+			topBar += Cell{"╗"};
 			render.put(xMid - pwidth/2, yMid - pheight/2, topBar);
 
 			for (int i = 1; i < pheight-1; ++i) {
-				CellString midBar = {Cell{"║", "", ""}};
+				CellString midBar = {Cell{"║"}};
 				LOOP(static_cast<size_t>(pwidth-2)) midBar += " ";
-				midBar += Cell{"║", "", ""};
+				midBar += Cell{"║"};
 				render.put(xMid - pwidth/2, yMid - pheight/2 + i, midBar);
 			}
 
-			CellString endBar {Cell{"╚", "", ""}};
-			LOOP(static_cast<size_t>(pwidth-2)) endBar += Cell{"═", "", ""};
-			endBar += Cell{"╝", "", ""};
+			CellString endBar {Cell{"╚"}};
+			LOOP(static_cast<size_t>(pwidth-2)) endBar += Cell{"═"};
+			endBar += Cell{"╝"};
 			render.put(xMid - pwidth/2, yMid + pheight/2 - 1, endBar);
 
 			if (popupShowing == 1) {
@@ -1560,7 +1560,7 @@ int main() {
 				render.put(thisx, thisy, CellString{inputPopupTextDisplayed});
 
 				// input from tha user
-				CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_", "", ""}};
+				CellString userIn = CellString{limitString(inputPopupText, pwidth-4)} + CellString{Cell{cursorAnim > 1 ? "▄" : "_"}};
 				render.put(thisx, thisy+1, userIn);
 
 				// finished yet?

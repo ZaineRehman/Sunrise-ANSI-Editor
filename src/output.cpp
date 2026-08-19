@@ -55,6 +55,7 @@ void Renderer::edit(uint32_t x, uint32_t y, const std::string& str, char col) {
 
 	     if (col == 0) buffer[y*width + x].color_fore = str;
 	else if (col == 1) buffer[y*width + x].color_back = str;
+	else if (col == 3) buffer[y*width + x].extra_codes = str;
 	else buffer[y*width + x].ch    = str;
 }
 
@@ -80,9 +81,9 @@ void Renderer::render() const {
 		//std::string prevColor;
 		for (uint32_t x = 0; x < width; ++x) {
 			Cell c = buffer[y*width + x];
-			frame += c.color_fore + c.color_back + c.ch;
+			frame += c.color_fore + c.color_back + c.extra_codes + c.ch;
 
-			if (c.color_fore.size() || c.color_back.size() /*&& prevColor != c.color*/) frame += ANSI::reset;
+			//if (c.color_fore.size() || c.color_back.size()) frame += ANSI::reset;
 			//prevColor = c.color;
 		}
 		frame += ANSI::reset + (y != height-1 ? '\n' : '\0');
@@ -122,8 +123,8 @@ void clear() {
 int findHighestColorCode(const CellString& cells) {
 	int highest = -1;
 	for (size_t c = 0; c < cells.size(); ++c) {
-		int type1 = ANSI::findColorType(cells[c].color_fore);
-		int type2 = ANSI::findColorType(cells[c].color_back);
+		int type1 = ANSI::findCodeType(cells[c].color_fore);
+		int type2 = ANSI::findCodeType(cells[c].color_back);
 		if (type1 > highest) highest = type1;
 		if (type2 > highest) highest = type2;
 
@@ -145,6 +146,6 @@ Cell clampColor(const Cell& cell, int maxColor) {
 		else return 3;  // 24-bit
 	};
 
-	if (max(convert(ANSI::findColorType(cell.color_fore)), convert(ANSI::findColorType(cell.color_back))) > maxColor) return Cell{cell.ch, "", ""};
+	if (max(convert(ANSI::findCodeType(cell.color_fore)), convert(ANSI::findCodeType(cell.color_back))) > maxColor) return Cell{cell.ch, "", ""};
 	return cell;
 }
