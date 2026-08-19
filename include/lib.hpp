@@ -40,7 +40,7 @@ std::string limitString(const std::string& str, size_t limit);
 
 // inclusive
 template <typename T>
-inline constexpr void clamp(T& num, const T& lower, const T& upper) {
+constexpr void clamp(T& num, const T& lower, const T& upper) {
 		 if (num < lower) num = lower;
 	else if (num > upper) num = upper;
 }
@@ -48,16 +48,16 @@ inline constexpr void clamp(T& num, const T& lower, const T& upper) {
 // inclusive
 // rolls values over (min -> max, vice versa)
 template <typename T>
-inline constexpr void clamp_rollover(T& num, const T& lower, const T& upper) {
+constexpr void clamp_rollover(T& num, const T& lower, const T& upper) {
 		 if (num < lower) num = upper;
 	else if (num > upper) num = lower;
 }
 
 template <typename T>
-inline constexpr T max(const T& num1, const T& num2) {
+constexpr T max(const T& num1, const T& num2) {
 	return num1 > num2 ? num1 : num2;
 }
 template <typename T>
-inline constexpr T min(const T& num1, const T& num2) {
+constexpr T min(const T& num1, const T& num2) {
 	return num1 < num2 ? num1 : num2;
 }

@@ -46,7 +46,7 @@ public:
 		return map[_y * width + _x];
 	}
 
-	inline constexpr bool inBounds(int _x, int _y) const {
+	constexpr bool inBounds(int _x, int _y) const {
 		return (
 			_x >= x && _x < x+width &&
 			_y >= y && _y < y+height
@@ -54,7 +54,7 @@ public:
 	}
 
 	// global space -> art space
-	inline constexpr std::pair<int,int> toArtSpace(int _x, int _y) const {
+	constexpr std::pair<int,int> toArtSpace(int _x, int _y) const {
 		//assert(inBounds(x, y));
 		return std::make_pair<int,int>(_x - x, _y - y);
 	}
