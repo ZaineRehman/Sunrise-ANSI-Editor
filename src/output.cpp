@@ -81,9 +81,9 @@ void Renderer::render() const {
 		//std::string prevColor;
 		for (uint32_t x = 0; x < width; ++x) {
 			Cell c = buffer[y*width + x];
-			frame += c.color_fore + c.color_back + c.extra_codes + c.ch;
+			frame += c.extra_codes + c.color_fore + c.color_back + c.ch;
 
-			//if (c.color_fore.size() || c.color_back.size()) frame += ANSI::reset;
+			if (c.color_fore.size() || c.color_back.size()) frame += ANSI::reset;
 			//prevColor = c.color;
 		}
 		frame += ANSI::reset + (y != height-1 ? '\n' : '\0');

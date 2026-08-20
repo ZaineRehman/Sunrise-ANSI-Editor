@@ -246,13 +246,61 @@ namespace ANSI {
 		return -1;
 	}
 
-	// splits a code into parts, if it has any
-	// ex. "\033[1;30m" -> {"\033[1m", "\033[30m"}
 	std::vector<std::string> splitCode(const std::string& code) {
-		if (!code.size() || code[0] != '\033') return {code};
+	if (!code.size() || code[0] != '\033' || code[code.size()-1] != 'm') return {code};
 
-		
+	//                              "\033[1;30m" -> {"\033[1m", "\033[30m"}
+	//                   "\033[38;5;51;48;5;53m" -> {"\033[38;5;51m", "\033[48;5;53m"}
+	// "\033[38;2;255;255;100;48;2;100;255;100m" -> {"\033[38;2;255;255;100m", "\033[48;2;100;255;100m"}
+
+	// 0 = standard code (split at ;)  1 = 8-bit color (split after 3x;)  2 = 24-bit color (split after 5x;)
+	int mode = 0;
+	// counter for semicolons
+	int modeCheck = 1;
+	std::string built = "";
+	std::vector<std::string> vec {};
+
+	for (size_t i = 0; i < code.size(); ++i) {
+		if (code[i] == ';') {
+			if (mode == 0) {
+				// check previous 2 chars
+				std::string sub = code.substr(i-2, 2);
+				if (sub == "38" || sub == "48") {  // long color code
+					// check next char
+					if (i == code.size()-1) return {code};
+					std::string next = code.substr(i+1, 1);
+					
+					if (next == "5") {  // 8-bit
+						mode = 1;
+						modeCheck = 3;
+					} else if (next == "2") {  // 24-bit
+						mode = 2;
+						modeCheck = 5;
+					}
+				}
+			}
+
+			modeCheck--;
+			if (modeCheck == 0) {
+				// we have the full code now
+				vec.push_back("\033[" + built + "m");
+				mode = 0;
+				modeCheck = 1;
+				built = "";
+			} else {
+				built += ";";
+			}
+		} else if (code[i] == 'm') {
+		    // end of code
+		    vec.push_back("\033[" + built + "m");
+		    break;
+        } else if (code[i] != '\033' && code[i] != '[') {
+			built += code[i];
+		}
 	}
+	
+	return vec;
+}
 
 	std::string invertColor(const std::string& code) {
 		if (code.size() < 4) return "";

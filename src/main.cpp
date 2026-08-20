@@ -1484,6 +1484,8 @@ int main() {
 					if (ART.inBounds(x, y) && x < (SCREEN_WIDTH-1 - PANEL_SIZE) && y < (SCREEN_HEIGHT-1 - BOTTOM_PANEL_SIZE)) {
 						// in bounds of art
 						//reportLog("== x,y=" + std::to_string(x) + "," + std::to_string(y) + "  art: " + std::to_string(ART.x) + "," + std::to_string(ART.y) + "  (" + std::to_string(ART.width) + "x" + std::to_string(ART.height) + ")");
+						volatile size_t SAVETHIS = (y-ART.y)*ART.width + (x-ART.x);
+						volatile size_t SAVETHIS_TOO = ART.map.size();
 						render.put(x, y, ART.map[(y-ART.y)*ART.width + (x-ART.x)]);
 						//render.put(x, y, Cell{"!",ANSI::reset,""});
 					}

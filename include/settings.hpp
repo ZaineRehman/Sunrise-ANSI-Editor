@@ -38,11 +38,12 @@
  * [x] GPL -> AGPL
  * [x] load palettes to/from file
  * [x] trim empty spaces from art
+ * [ ] optimize export codes
  * [ ] import art with cursor in the middle
  * [ ] assure proper filetypes for importing
  * [ ] proper linux input support
  * [ ] autosaves for rollbacks
- *      [ ] automatic autosave deletion on termination
+ * 		[ ] automatic autosave deletion on termination
  * [ ] undo/redo
  * [ ] highlighting sections for copy/paste
  * [ ] export file location picker
@@ -58,18 +59,18 @@
  * [ ] only re-render when needed
  * [ ] music
  * [ ] creating animations
- *      [ ] animation time delay
- *      [ ] animations to gif
+ * 		[ ] animation time delay
+ * 		[ ] animations to gif
  * [ ] CHECK ALL TODO COMMENTS
  * [ ] downgrading color mode -> remove those codes from art
- *      [ ] recognize the colors and appropriately downgrade?
+ * 		[ ] recognize the colors and appropriately downgrade?
  * [ ] make input checkers use separate thread (mutex?)
  * [ ] disable win terminal shift+arrow and ctrl+arrow
  * [ ] clean up files
- *      [ ] put CellString builds into separate file
- *      [ ] organize inputs
- *      [ ] header comments
- *      [ ] make separate folder for I/O files
+ * 		[ ] put CellString builds into separate file
+ * 		[ ] organize inputs
+ * 		[ ] header comments
+ * 		[ ] make separate folder for I/O files
  * [ ] tutorial
  * [ ] autosave
  * [ ] paste into popup text box
@@ -125,6 +126,56 @@
  * 		[ ] color codes do not cross over properly
  * 		[ ] multiple codes not recognized properly (ex. \033[1;30m)
  * [ ] alt+HJKL for moving cursor is not affected by keystate delay
+**/
+
+
+/*
+ * CELL SYSTEM
+ * 
+ * Cell {
+ *      string: character
+ *      string: foreground color
+ *      string: background color
+ *      string: extra codes
+ * }
+ * 
+ * Cells are rendered in this order: 
+ *      add. + fore. + back. + char.
+ * 
+ * Importing yields obvious issues as codes are not always cleanly formatted in .ans. 
+ * Things that must be taken into account when converting to cells: 
+ *      1. Colors must bleed into succeeding cells
+ *      2. Redundant calls must be accounted for
+ * 
+ * Example (from PabloDraw README.ans)
+ *      
+ *      \033[7h\033[0;1;40;30m\033[?33h-- ---------
+ *      [  this section is all codes  ][ all chars ]
+ *      
+ *      this would be formatted into: 
+ *          foreground color: \033[30m
+ *          background color: \033[40m
+ *          extra codes: \033[7h\033[0m\033[1m\033[?33h
+ * 
+ *      the formatting then bleeds into the rest of the cells. they would look like: 
+ *          foreground color: \033[30m
+ *          background color: \033[40m
+ *          extra codes: 
+ * 
+ * Example
+ *      
+ *      \033[30m\033[0m#
+ *      
+ *      this would be formatted as a cell with no colors or codes. 
+ *      every color code before the reset is to be ignored
+ * 
+ * Example
+ * 
+ *      \033[34m\033[35m#
+ *      
+ *      this would be formatted as a cell with just the \033[35m code in the foreground. 
+ * 		color codes override prior color codes. 
+ * 
 **/
 
 

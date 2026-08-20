@@ -56,15 +56,25 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				// end of ANSI (color) code
 				std::string code = line.substr(codeStart, i-codeStart+1);
 
-				int type = ANSI::findCodeType(code);
+				// check for multiple codes
+				for (const std::string& codePart : ANSI::splitCode(code)) {
+					// find type of code
+					int type = ANSI::findCodeType(codePart);
 
-				if (type == 8) { // reset
-					build.color_fore = "";
-					build.color_back = "";
-				} else if (type ) {
-					build.color_back += code;
-				} else {
-					build.color_fore += code;
+					if (0 <= type && type <= 7) {
+						// color
+						// overrides prior codes
+						if (type % 2) build.color_back = code;
+						else          build.color_fore = code;
+					} else {
+						// other ANSI code
+						build.extra_codes += code;
+						if (code == ANSI::reset) {
+							// reset colors
+							build.color_fore = "";
+							build.color_back = "";
+						}
+					}
 				}
 
 				codeStart = -1;
@@ -125,7 +135,10 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 		if (DEBUG_REPORT_LEVEL >= 3) {
 			std::string linee = "";
 			for (const Cell& i : tempMap[y]) {
-				linee += "("+i.color_fore+")" + "["+i.color_back+"]" + "{"+(encodingFound == 1 ? convert_cp437_utf8(i.ch) : i.ch) + "}";
+				linee += "{"+i.color_fore+", ";
+				linee +=     i.color_back+", ";
+				linee +=     i.extra_codes+"}";
+				linee += "("+(encodingFound == 1 ? convert_cp437_utf8(i.ch) : i.ch) + ") ";
 			}
 			reportLog("\tline " + std::to_string(y) + ": " + linee);
 		}
@@ -136,11 +149,16 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tnew width: " + std::to_string(largestFoundWidth));
 
 	// put it all in
+	Cell priorColor {};
 	for (size_t i = 0; i < tempMap.size(); ++i) {
 		// fill in any blank spaces
-		LOOP(largestFoundWidth - tempMap[i].size()) {
-			tempMap[i].push_back(Cell{" ", "", ""});
+		while(tempMap[i].size() < largestFoundWidth) {
+			tempMap[i].push_back(Cell{" "});
 		}
+
+		//reportLog("New size: " + std::to_string(tempMap[i].size()));
+
+		std::string bleed = "Bleed: ";
 
 		for (size_t n = 0; n < tempMap[i].size(); ++n) {
 			Cell toAdd = tempMap[i][n];
@@ -149,9 +167,38 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			// TODO redundantly runs this when no extended characters are found
 			if (encodingFound == 1) toAdd.ch = convert_cp437_utf8(toAdd.ch);
 
+			// ! bleed colors !
+			// check if the new color slot is empty, 
+			// if it is (AND if there is no reset code) then fill it
+			if (toAdd.extra_codes.find(ANSI::reset) == std::string::npos) <%
+				// reset not found!
+				if (!toAdd.color_fore.size()) toAdd.color_fore = priorColor.color_fore; else priorColor.color_fore = toAdd.color_fore;
+				if (!toAdd.color_back.size()) toAdd.color_back = priorColor.color_back; else priorColor.color_back = toAdd.color_back;
+			%> else <%
+				// reset found, so reset
+				priorColor = Cell{};
+			%>
+			// lil digraphs
+
 			newMap.push_back(toAdd);
 		}
+
+		//reportLog(bleed);
 	}
+
+	//if (DEBUG_REPORT_LEVEL >= 3) {
+	//	std::string linee = "";
+	//	for (size_t i = 0; i < newMap.size(); ++i) {
+	//		if (i % largestFoundWidth == 0) {
+	//			linee += "\nFIN: ";
+	//		}
+	//		linee += "{"+newMap[i].color_fore+", ";
+	//		linee +=     newMap[i].color_back+", ";
+	//		linee +=     newMap[i].extra_codes+"}";
+	//		linee += "("+newMap[i].ch + ") ";
+	//	}
+	//	reportLog(linee);
+	//}
 
 	art.map = newMap;
 	art.width = largestFoundWidth;
@@ -182,6 +229,7 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 			}
 
 			built += thisCell.color_fore + thisCell.color_back + thisCell.ch;
+
 			if (thisCell.color_fore.size() || thisCell.color_back.size()) built += ANSI::reset;
 		}
 		if (i != static_cast<size_t>(art.height-1)) built += "\n";

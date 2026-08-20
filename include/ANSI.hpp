@@ -136,7 +136,11 @@ namespace ANSI {
 	int findCodeType(const std::string& code);
 
 	// splits a code into parts, if it has any
-	// ex. "\033[1;30m" -> {"\033[1m", "\033[30m"}
+	// ONLY USE ON COLOR CODES
+	// ex.  
+	// "\033[1;30m" -> {"\033[1m", "\033[30m"}
+	// "\033[38;5;51;48;5;53m" -> {"\033[38;5;51m", "\033[48;5;53m"}
+	// "\033[38;2;255;255;100;48;2;100;255;100m" -> {"\033[38;2;255;255;100m", "\033[48;2;100;255;100m"}
 	std::vector<std::string> splitCode(const std::string& code);
 
 	// inverts a color-code string from foreground to background and vice versa
