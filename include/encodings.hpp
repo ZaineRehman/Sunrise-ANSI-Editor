@@ -10,6 +10,10 @@
 #include <vector>
 
 
+// detetmines if a string is UTF-8 or CP437
+bool is_utf8(const std::string& str);
+
+
 // converts a CP437 character to UTF-8
 std::string convert_cp437_utf8(const std::string& ch);
 

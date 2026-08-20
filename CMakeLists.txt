@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(Sunrise_ANSI_Editor LANGUAGES CXX)
 
 # version
-set(PROJECT_VERSION "0.1.0-alpha")
+set(PROJECT_VERSION "0.1.0")
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 1)
 set(PROJECT_VERSION_PATCH 0)

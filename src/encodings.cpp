@@ -3,6 +3,7 @@
  * Converting between the two
  * 
  * used AI on parts of this file
+ * because encodings are hell
 **/
 
 #include "encodings.hpp"
@@ -30,6 +31,67 @@ constexpr uint32_t cp437_to_utf8[128] = {
 	0x2261, 0x00B1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00F7, 0x2248, // 240-247
 	0x00B0, 0x2219, 0x00B7, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0  // 248-255
 };
+
+
+// detetmines if a string is UTF-8 or CP437
+bool is_utf8(const std::string& str) {
+	size_t i = 0;
+	size_t len = str.length();
+
+	while (i < len) {
+		unsigned char lead = static_cast<unsigned char>(str[i]);
+
+		if (lead < 0x80) {
+			// 1-byte ASCII (0xxxxxxx)
+			i += 1;
+		} 
+		else if ((lead & 0xE0) == 0xC0) {
+			// 2-byte sequence (110xxxxx 10xxxxxx)
+			if (i + 1 >= len || (static_cast<unsigned char>(str[i + 1]) & 0xC0) != 0x80) {
+				return false; // Missing or invalid continuation byte
+			}
+			// Strict check: Avoid overlong encodings (values <= 0x7F encoded in 2 bytes)
+			if (lead < 0xC2) {
+				return false; 
+			}
+			i += 2;
+		} 
+		else if ((lead & 0xF0) == 0xE0) {
+			// 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
+			if (i + 2 >= len || 
+				(static_cast<unsigned char>(str[i + 1]) & 0xC0) != 0x80 ||
+				(static_cast<unsigned char>(str[i + 2]) & 0xC0) != 0x80) {
+				return false;
+			}
+			// Strict check: Avoid UTF-16 surrogates (0xD800-0xDFFF) and overlongs
+			unsigned char b1 = static_cast<unsigned char>(str[i + 1]);
+			if ((lead == 0xE0 && b1 < 0xA0) || (lead == 0xED && b1 >= 0xA0)) {
+				return false;
+			}
+			i += 3;
+		} 
+		else if ((lead & 0xF8) == 0xF0) {
+			// 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
+			if (i + 3 >= len || 
+				(static_cast<unsigned char>(str[i + 1]) & 0xC0) != 0x80 ||
+				(static_cast<unsigned char>(str[i + 2]) & 0xC0) != 0x80 ||
+				(static_cast<unsigned char>(str[i + 3]) & 0xC0) != 0x80) {
+				return false;
+			}
+			// Strict check: Avoid values out of Unicode range (> 0x10FFFF) and overlongs
+			unsigned char b1 = static_cast<unsigned char>(str[i + 1]);
+			if ((lead == 0xF0 && b1 < 0x90) || (lead == 0xF4 && b1 >= 0x90) || lead > 0xF4) {
+				return false;
+			}
+			i += 4;
+		} 
+		else {
+			// Forbidden bytes in UTF-8 (0x80-0xBF as lead bytes, or 0xFE, 0xFF)
+			return false;
+		}
+	}
+	return true;
+}
 
 
 // converts a CP437 character to UTF-8

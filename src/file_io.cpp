@@ -27,18 +27,22 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	
 	if (DEBUG_REPORT_LEVEL >= 2) reportLog("Importing file...");
 
-	/*
-	 *  v-----------CELL-----------v
-	 * [color_fore][color_back][char][reset]
-	 * 
-	 * all optional except char, 
-	 * ignore all reset codes
-	**/
+	// find file encoding
+
+	std::string smallLine;
+	std::string wholeFile;
+	while (std::getline(file, smallLine)) wholeFile += smallLine;
+	// reset file for parsing again
+	file.clear();
+	file.seekg(0, std::ios::beg);
+
+	// 0 = UTF-8, 1 = CP437
+	int encodingFound = is_utf8(wholeFile) ? 0 : 1;
+
 
 	std::string line;
 	int newY = 0;
-	// 0 = UTF-8, 1 = CP437
-	int encodingFound = 1;
+
 	while (std::getline(file, line)) {
 		newY++;
 		// ANSI code index
@@ -80,39 +84,32 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				codeStart = -1;
 			} else if (codeStart == -1) {
 				// normal character
-				// but its prolly UTF-8 so hah
-
 				std::string utf8_char = "";
 				unsigned char lead = static_cast<unsigned char>(line[i]);
 
-				if (lead < 0x80) {
-					// 1-byte ASCII (0xxxxxxx)
-					utf8_char += line[i];
-				} else if ((lead & 0xE0) == 0xC0) {
-					// 2-byte UTF-8 (110xxxxx)
-					if (i + 1 < line.size()) {
+				if (encodingFound == 0) {
+					if (lead < 0x80) {
+						// 1-byte ASCII (0xxxxxxx)
+						utf8_char += line[i];
+					} else if (i + 1 < line.size() && (lead & 0xE0) == 0xC0) {
+						// 2-byte UTF-8 (110xxxxx)
 						utf8_char = line.substr(i, 2);
-						i += 1; // advance outer loop counter
-						encodingFound = 0;
-					}
-				} else if ((lead & 0xF0) == 0xE0) {
-					// 3-byte UTF-8 (1110xxxx) - symbols, box-drawing, CJK
-					if (i + 2 < line.size()) {
+						i += 1;
+					} else if (i + 2 < line.size() && (lead & 0xF0) == 0xE0) {
+						// 3-byte UTF-8 (1110xxxx) - symbols, box-drawing, CJK
 						utf8_char = line.substr(i, 3);
 						i += 2;
-						encodingFound = 0;
-					}
-				} else if ((lead & 0xF8) == 0xF0) {
-					// 4-byte UTF-8 (11110xxx) - emojis
-					if (i + 3 < line.size()) {
+					} else if (i + 3 < line.size() && (lead & 0xF8) == 0xF0) {
+						// 4-byte UTF-8 (11110xxx) - emojis
 						utf8_char = line.substr(i, 4);
 						i += 3;
-						encodingFound = 0;
 						// TODO why the fuck are you using emojis
 					}
+				} else {
+					utf8_char += line[i];
 				}
 
-				// fallback
+				// fallback safety check
 				if (utf8_char.empty()) {
 					utf8_char += line[i];
 				}
@@ -124,7 +121,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 		}
 	}
 
-	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tencoding found: " + std::string(encodingFound ? "UTF-8" : "CP437"));
+	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tencoding found: " + std::string(encodingFound ? "CP437" : "UTF-8"));
 
 	// turn temp map into a real map
 	// pinnochio

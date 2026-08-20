@@ -181,7 +181,7 @@
 
 
 // version
-inline constexpr const char* VERSION = "0.1.0-alpha";
+inline constexpr const char* VERSION = "0.1.0";
 
 
 inline std::string DEBUG_STR = "";
