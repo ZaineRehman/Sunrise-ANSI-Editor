@@ -132,7 +132,10 @@ namespace ANSI {
 	// color 8-bit: 4=foreground, 5=background
 	// color 24-bit: 6=foreground, 7=background
 	// 8 = reset
-	// -1=not a color code,  -2=other code (changes graphics settings, codes 1-53),  -3 = other code
+	// -1 = not a color code,  
+	// -2 = other code (changes graphics settings, codes 1-53),
+	// -3 = other code
+	// -4 = move cursor code
 	int findCodeType(const std::string& code);
 
 	// splits a series of codes into separate codes
@@ -148,6 +151,17 @@ namespace ANSI {
 
 	// inverts a color-code string from foreground to background and vice versa
 	std::string invertColor(const std::string& code);
+
+	// for a given ANSI code that moves the cursor, determines where it is moved and by how much
+	// first value is type, second is value
+	// 0 = up,  1 = down,  2 = left,  3 = right
+	// 4 = next line,  5 = prev line
+	// 6 = set column
+	// 7 = set absolute position (does not return the amount value, use getCursorPositionCodeInfo())
+	std::pair<int, int> getCursorCodeInfo(const std::string& code);
+
+	// returns the x and y position for a given ANSI set cursor code
+	std::pair<int, int> getCursorPositionCodeInfo(const std::string& code);
 
 	// selection from 8-bit color codes
 	namespace Color_8bit {

@@ -215,6 +215,19 @@ namespace ANSI {
 
 		if (code == ANSI::reset) return 8;
 
+		switch (code[code.size()-1]) {
+			case 'A':  // up
+			case 'B':  // down
+			case 'C':  // right
+			case 'D':  // left
+			case 'E':  // next line
+			case 'F':  // prev line
+			case 'G':  // pick column
+			case 'H':  // specific
+			case 'f':  // specific
+				return -4;
+		}
+
 		// check digits
 		char firstDigit = code.substr(2,1).c_str()[0];
 		if ((!'0' <= firstDigit && firstDigit <= '9')) return -3;
@@ -393,6 +406,38 @@ namespace ANSI {
 		// TODO: idk
 		return ANSI::strike;
 	}
+
+	// for a given ANSI code that moves the cursor, determines where it is moved and by how much
+	// first value is type, second is value
+	// 0 = up,  1 = down,  2 = left,  3 = right
+	// 4 = next line,  5 = prev line
+	// 6 = set column
+	// 7 = set absolute position (does not return the amount value, use getCursorPositionCodeInfo())
+	std::pair<int, int> getCursorCodeInfo(const std::string& code) {
+		std::pair<int,int> info {-1, 0};
+
+		switch (code[code.size()-1]) {
+			case 'A':  info.first = 0; break;
+			case 'B':  info.first = 1; break;
+			case 'C':  info.first = 3; break;
+			case 'D':  info.first = 2; break;
+			case 'E':  info.first = 4; break;
+			case 'F':  info.first = 5; break;
+			case 'G':  info.first = 6; break;
+			case 'H': case 'f':  info.first = 7; return info;
+		}
+
+		// if no number is given, assume 1
+		if (code.size() == 3) {
+			info.second = 1;
+			return info;
+		}
+
+		return info;
+	}
+
+	// returns the x and y position for a given ANSI set cursor code
+	std::pair<int, int> getCursorPositionCodeInfo(const std::string& code);
 
 	std::string Color_8bit::makeColor(int r, int g, int b, bool background) {
 		assert(
