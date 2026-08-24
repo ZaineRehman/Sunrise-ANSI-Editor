@@ -61,19 +61,32 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				std::string code = line.substr(codeStart, i-codeStart+1);
 
 				// check for multiple codes
-				for (const std::string& codePart : ANSI::splitCode(code)) {
+				for (const std::string& codePart : ANSI::breakupColorCode(code)) {
+					//if (DEBUG_REPORT_LEVEL >= 4) reportLog("Split code: " + codePart);
+
+					/*
+					* [7h[0;1;40;30m[?33h-
+					* 
+					* Should be split like this: 
+					* 		Fore: \033[30m
+					* 		Back: \033[40m
+					* 		Extra: \033[7h + \033[0m + \033[1m + \033[?33h
+					**/
+
 					// find type of code
 					int type = ANSI::findCodeType(codePart);
 
 					if (0 <= type && type <= 7) {
+						//if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tfound COLOR (" + std::string(type % 2 ? "back" : "fore") + ")");
 						// color
 						// overrides prior codes
-						if (type % 2) build.color_back = code;
-						else          build.color_fore = code;
+						if (type % 2) build.color_back = codePart;
+						else          build.color_fore = codePart;
 					} else {
+						//if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tfound OTHER " + std::string(codePart == ANSI::reset ? "(reset)" : ""));
 						// other ANSI code
-						build.extra_codes += code;
-						if (code == ANSI::reset) {
+						build.extra_codes += codePart;
+						if (codePart == ANSI::reset) {
 							// reset colors
 							build.color_fore = "";
 							build.color_back = "";
@@ -146,7 +159,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tnew width: " + std::to_string(largestFoundWidth));
 
 	// put it all in
-	Cell priorColor {};
+	Cell priorCell {};
 	for (size_t i = 0; i < tempMap.size(); ++i) {
 		// fill in any blank spaces
 		while(tempMap[i].size() < largestFoundWidth) {
@@ -155,7 +168,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 
 		//reportLog("New size: " + std::to_string(tempMap[i].size()));
 
-		std::string bleed = "Bleed: ";
+		//std::string bleed = "Bleed: ";
 
 		for (size_t n = 0; n < tempMap[i].size(); ++n) {
 			Cell toAdd = tempMap[i][n];
@@ -169,13 +182,36 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			// if it is (AND if there is no reset code) then fill it
 			if (toAdd.extra_codes.find(ANSI::reset) == std::string::npos) <%
 				// reset not found!
-				if (!toAdd.color_fore.size()) toAdd.color_fore = priorColor.color_fore; else priorColor.color_fore = toAdd.color_fore;
-				if (!toAdd.color_back.size()) toAdd.color_back = priorColor.color_back; else priorColor.color_back = toAdd.color_back;
+				if (!toAdd.color_fore.size()) toAdd.color_fore = priorCell.color_fore; else priorCell.color_fore = toAdd.color_fore;
+				if (!toAdd.color_back.size()) toAdd.color_back = priorCell.color_back; else priorCell.color_back = toAdd.color_back;
 			%> else <%
-				// reset found, so reset
-				priorColor = Cell{};
+				// reset found, so assure colors do not bleed
+				priorCell.color_fore = toAdd.color_fore;
+				priorCell.color_back = toAdd.color_back;
+				
+				// reset extra codes if applicable
+				std::string newExtras = "";
+				for (const std::string& thiscode : ANSI::splitCodes(toAdd.extra_codes)) {
+					if (ANSI::findCodeType(thiscode) != -2) {
+						// applicable
+						reportLog("\tKeeping extra code after reset: " + thiscode);
+						newExtras += thiscode;
+					}
+				}
+				
+				priorCell.extra_codes = newExtras;
 			%>
 			// lil digraphs
+
+			// add extra codes if applicable
+			for (const std::string& thiscode : ANSI::splitCodes(toAdd.extra_codes)) {
+				reportLog("\tChecking for bleed: " + thiscode + " (is " + std::to_string(ANSI::findCodeType(thiscode)) + ")");
+				if (ANSI::findCodeType(thiscode) == -2) {
+					// applicable
+					reportLog("\tBleeding extra code: " + thiscode);
+					priorCell.extra_codes += thiscode;
+				}
+			}
 
 			newMap.push_back(toAdd);
 		}
@@ -225,7 +261,7 @@ bool loadArtIntoFile(const Art& art, const std::string& path) {
 				thisCell.ch = convert_utf8_cp437(thisCell.ch);
 			}
 
-			built += thisCell.color_fore + thisCell.color_back + thisCell.ch;
+			built += thisCell.extra_codes + thisCell.color_fore + thisCell.color_back + thisCell.ch;
 
 			if (thisCell.color_fore.size() || thisCell.color_back.size()) built += ANSI::reset;
 		}

@@ -132,16 +132,19 @@ namespace ANSI {
 	// color 8-bit: 4=foreground, 5=background
 	// color 24-bit: 6=foreground, 7=background
 	// 8 = reset
-	// -1=not a color code, -2=other code
+	// -1=not a color code,  -2=other code (changes graphics settings, codes 1-53),  -3 = other code
 	int findCodeType(const std::string& code);
 
-	// splits a code into parts, if it has any
-	// ONLY USE ON COLOR CODES
+	// splits a series of codes into separate codes
+	// does NOT break up compacted codes
+	std::vector<std::string> splitCodes(const std::string& codes);
+
+	// breaks up a color code into parts, if it has any
 	// ex.  
 	// "\033[1;30m" -> {"\033[1m", "\033[30m"}
 	// "\033[38;5;51;48;5;53m" -> {"\033[38;5;51m", "\033[48;5;53m"}
 	// "\033[38;2;255;255;100;48;2;100;255;100m" -> {"\033[38;2;255;255;100m", "\033[48;2;100;255;100m"}
-	std::vector<std::string> splitCode(const std::string& code);
+	std::vector<std::string> breakupColorCode(const std::string& code);
 
 	// inverts a color-code string from foreground to background and vice versa
 	std::string invertColor(const std::string& code);

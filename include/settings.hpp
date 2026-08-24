@@ -1,23 +1,9 @@
 /* 
- * Settings for the program
+ * Settings for the program, also a bunch of notes
 **/
 
 #pragma once
 
-
-/*
- * DIRECTORIES
- * 
- * /Export/Art/      --  exported .ans files
- * /Export/Palette/  --  exported .plt files
- * /Sessions/        --  session directories
- * 
- * 
- * SPECIFICATIONS
- * 
- * - .ans files can be CP437 or UTF-8, but everything internally is handled as UTF-8
- * - .plt files always store foreground colors
-**/
 
 /*
  *  == TODO ==
@@ -105,31 +91,94 @@
  *   		[x] 8-bit code RGB explicit picker
  *   		[x] 24-bit code table
  *   		[x] 24-bit code RGB explicit picker
- *   
  *   [x] char catalogue
  *   		[x] 16x16 grid
  *   		[x] hotkey swapper
  *   		[ ] default background changer
+ *   [ ] extra codes catalogue
  * 
  *  == CONSIDER ==
  * [ ] timeBeginPeriod() to change minimum sleep time
  * [ ] threaded inputs suck?
  * [ ] change 8-bit color catalogue layout
  * [ ] in color picker, render a character onto the currently chosen color
- * [ ] more than just color codes
  * [ ] halt program when not the focused window
  * 
  *  == BUGS ==
  * [x] 'pick to palette' crashes
  * [x] Art::trim() does some weird shit
+ * [ ] when rendering, art from previous cells are not bled over
  * [ ] importing is completely broken
- * 		[ ] color codes do not cross over properly
- * 		[ ] multiple codes not recognized properly (ex. \033[1;30m)
+ * 		[x] color codes do not cross over properly
+ * 		[x] multiple codes not recognized properly (ex. \033[1;30m)
+ * 		[ ] cursor movement codes not recognized
  * [ ] alt+HJKL for moving cursor is not affected by keystate delay
 **/
 
 
 /*
+ *  == CONTROLS ==
+ * 
+ * [←↕→] OR [HJKL]: cursor
+ * holding [Alt]: fast cursor
+ * holding [Ctrl]: move art
+ * 
+ * [0-9]: put character
+ * 
+ * [QE/W]: change/set background color
+ * [AD/S]: change/set foreground color
+ * 
+ * [N]: pick color into foreground palette
+ * [M]: pick color into background palette
+ * 
+ * [C]: clear color
+ * [Bksp]: clear character
+ * 
+ * [}]: open color catalogue
+ * 		[,]: change catalogue left
+ * 		[.]: change catalogue right
+ * 		[W]: apply color to foreground palette
+ * 		[S]: apply color to background palette
+ * 		[Q/E]: change active foreground palette color
+ * 		[A/D]: change active background palette color
+ * [{]: open character catalogue
+ * 		[0-9]: set character
+ * 
+ * [Del]: reset art
+ * 
+ * [Entr]: settings
+ * 		[←→]: edit setting
+ * 		[↕]: change which setting
+ * 
+ * [/]: export
+ * 		[Space]: change mode
+ * 		[Entr]: confirm
+ * [\]: import
+ * 		[Space]: change mode
+ * 		[Z]: edit path
+ * 		[Entr]: confirm
+ * 
+ * [Ctrl]+[S]: save art
+ * [Ctrl]+[A]: toggle ASCII mode
+ **/
+
+
+/*
+ * DIRECTORIES
+ * 
+ * /Export/Art/      --  exported .ans files
+ * /Export/Palette/  --  exported .plt files
+ * /Sessions/        --  session directories
+ * 
+ * 
+ * 
+ * SPECIFICATIONS
+ * 
+ * - .ans files can be CP437 or UTF-8, but everything internally is handled as UTF-8
+ * - .plt files always store foreground colors
+ *
+ * 
+ * 
  * CELL SYSTEM
  * 
  * Cell {
@@ -140,12 +189,17 @@
  * }
  * 
  * Cells are rendered in this order: 
- *      add. + fore. + back. + char.
+ *      extra. + fore. + back. + char.
  * 
  * Importing yields obvious issues as codes are not always cleanly formatted in .ans. 
  * Things that must be taken into account when converting to cells: 
  *      1. Colors must bleed into succeeding cells
  *      2. Redundant calls must be accounted for
+ * 
+ * Bleeding: 
+ * 		Bleed a fore/back color into the next cell if that next cell does not override the color, 
+ * 		and if it does not contain a reset string. 
+ * 		Any graphic modifiers also bleed over (codes 1-53) like bold, underline, etc.
  * 
  * Example (from PabloDraw README.ans)
  *      
