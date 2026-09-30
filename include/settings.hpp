@@ -24,6 +24,7 @@
  * [x] GPL -> AGPL
  * [x] load palettes to/from file
  * [x] trim empty spaces from art
+ * [ ] loading bar when importing
  * [ ] optimize export codes
  * [ ] import art with cursor in the middle
  * [ ] assure proper filetypes for importing

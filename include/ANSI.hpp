@@ -132,8 +132,8 @@ namespace ANSI {
 	// color 8-bit: 4=foreground, 5=background
 	// color 24-bit: 6=foreground, 7=background
 	// 8 = reset
-	// -1 = not a color code,  
-	// -2 = other code (changes graphics settings, codes 1-53),
+	// -1 = not an ANSI code
+	// -2 = other code (changes graphics settings, codes 1-53)
 	// -3 = other code
 	// -4 = move cursor code
 	int findCodeType(const std::string& code);

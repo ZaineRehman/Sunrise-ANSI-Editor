@@ -230,11 +230,11 @@ namespace ANSI {
 
 		// check digits
 		char firstDigit = code.substr(2,1).c_str()[0];
-		if ((!'0' <= firstDigit && firstDigit <= '9')) return -3;
+		if (!('0' <= firstDigit && firstDigit <= '9')) return -3;
 
 		bool single = false;  // single digit
 		char secondDigit = code.substr(3,1).c_str()[0];
-		if ((!'0' <= secondDigit && secondDigit <= '9')) single = true;
+		if (!('0' <= secondDigit && secondDigit <= '9')) single = true;
 
 		int section;
 		try {
@@ -245,10 +245,12 @@ namespace ANSI {
 
 		// edge case
 		if (code == "\033[10m") return -2;
+		// TODO does NOT work for codes with numbers over 109, 
+		// ex. \033[110m, \033[300m
 		// in case of 100-107
 		if (section == 10) section = std::stoi(code.substr(2,3));
 
-		if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tfindCodeType SECTION: " + std::to_string(section));
+		//if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tfindCodeType SECTION: " + std::to_string(section));
 
 		// 4-bit foreground
 		if (30 <= section && section <= 37) return 0;
@@ -270,11 +272,12 @@ namespace ANSI {
 		if (section == 48 && code.substr(5,1) == "2") return 7;
 
 		// changes graphics settings (bold, italics, etc.)
-		if (1 <= section && 53 <= section) {
+		if (1 <= section && section <= 53) {
 			return -2;
 		}
 
 		// other code
+		reportLog("OTHER CODE FOUND");
 		return -3;
 	}
 
@@ -432,6 +435,10 @@ namespace ANSI {
 			info.second = 1;
 			return info;
 		}
+
+		// check number
+		try { info.second = std::stoi(code.substr(2, code.size()-1-2)); }
+		catch (...) { info.second = 1; return info; }
 
 		return info;
 	}

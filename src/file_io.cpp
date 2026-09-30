@@ -139,8 +139,54 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	// turn temp map into a real map
 	// pinnochio
 
+	// sets new x and y of cursor
+	auto moveCellCursor = [&tempMap](size_t& x, size_t& y, int up, int down, int left, int right) {
+		// left
+		for (int i = 0; i < left && x > 0; ++i, --x);
+		
+		// up
+		for (int i = 0; i < up && y > 0; ++i, --y);
+
+		// right                                                                                  TODO check this  v
+		if (x + right >= tempMap[y].size()) tempMap[y].insert(tempMap[y].end(), (size_t)(x+right-tempMap[y].size()+1), Cell{" "});
+		x += right;
+		
+		// down
+		if (y + down >= tempMap.size()) tempMap.insert(tempMap.end(), (size_t)(y+down-tempMap.size()+1), std::vector<Cell>(x, Cell{" "}));
+		x += right;
+	};
+
+	// handle cursor codes
+	for (size_t y = 0; y < tempMap.size(); ++y) {
+		for (size_t x = 0; x < tempMap[y].size(); ++x) {
+			std::string allOfem = tempMap[y][x].extra_codes;
+			for (const std::string& c : ANSI::splitCodes(allOfem)) {
+				if (ANSI::findCodeType(c) == -4) {
+					std::pair<int,int> info = ANSI::getCursorCodeInfo(c);
+
+					if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tcursor code found: " + c + "  ->  " + std::to_string(info.first) + "," + std::to_string(info.second));
+
+					switch (info.first) {
+						case 0: moveCellCursor(x, y, info.second, 0, 0, 0); break;  // up
+						case 1: moveCellCursor(x, y, 0, info.second, 0, 0); break;  // down
+						case 2: moveCellCursor(x, y, 0, 0, info.second, 0); break;  // left
+						case 3: moveCellCursor(x, y, 0, 0, 0, info.second); break;  // right
+						case 4: moveCellCursor(x, y, 0, 1, 0, 0); break;  // next line
+						case 5: moveCellCursor(x, y, 1, 0, 0, 0); break;  // prev line
+						case 6: {  // set column
+							int amount = info.second - x;
+							moveCellCursor(x, y, 0, 0, (amount<0?-amount:0), (amount>0?amount:0));
+							break;
+						}
+						case 7: break;  // TODO
+					}
+				}
+			}
+		}
+	}
+
 	// find new width
-	int largestFoundWidth = 0;
+	size_t largestFoundWidth = 0;
 	for (size_t y = 0; y < tempMap.size(); ++y) {
 		if (DEBUG_REPORT_LEVEL >= 3) {
 			std::string linee = "";
@@ -150,10 +196,10 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				linee +=     i.extra_codes+"}";
 				linee += "("+(encodingFound == 1 ? convert_cp437_utf8(i.ch) : i.ch) + ") ";
 			}
-			reportLog("\tline " + std::to_string(y) + ": " + linee);
+			if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tline " + std::to_string(y) + ": " + linee);
 		}
 
-		largestFoundWidth = max(static_cast<size_t>(largestFoundWidth), tempMap[y].size());
+		largestFoundWidth = max(largestFoundWidth, tempMap[y].size());
 	}
 
 	if (DEBUG_REPORT_LEVEL >= 3) reportLog("\tnew width: " + std::to_string(largestFoundWidth));
@@ -162,6 +208,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	Cell priorCell {};
 	for (size_t i = 0; i < tempMap.size(); ++i) {
 		// fill in any blank spaces
+		// TODO do this later? blank spaces get bled into
 		while(tempMap[i].size() < largestFoundWidth) {
 			tempMap[i].push_back(Cell{" "});
 		}
@@ -184,6 +231,15 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				// reset not found!
 				if (!toAdd.color_fore.size()) toAdd.color_fore = priorCell.color_fore; else priorCell.color_fore = toAdd.color_fore;
 				if (!toAdd.color_back.size()) toAdd.color_back = priorCell.color_back; else priorCell.color_back = toAdd.color_back;
+
+				// also bleed extras
+				// dont add duplicates
+				for (const std::string& thiscode : ANSI::splitCodes(priorCell.extra_codes)) {
+					if (ANSI::findCodeType(thiscode) == -2 && toAdd.extra_codes.find(thiscode) == std::string::npos) {
+						// ok its not in there (and applicable code) lets add
+						toAdd.extra_codes += thiscode;
+					}
+				}
 			%> else <%
 				// reset found, so assure colors do not bleed
 				priorCell.color_fore = toAdd.color_fore;
@@ -200,8 +256,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				}
 				
 				priorCell.extra_codes = newExtras;
-			%>
-			// lil digraphs
+			%> // lil digraphs
 
 			// add extra codes if applicable
 			for (const std::string& thiscode : ANSI::splitCodes(toAdd.extra_codes)) {

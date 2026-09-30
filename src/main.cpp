@@ -238,6 +238,7 @@ int main() {
 					<< std::endl;
 			}
 		}
+		
 	#endif
 	if (INPUT_SAFE_MODE) {
 		std::jthread(safeModeInputHelper).detach();
@@ -289,7 +290,8 @@ int main() {
 		ART.changeFlag = false;
 
 		SCREEN_TOO_SMALL = false;
-
+		
+		
 		// -- INPUTS -- 
 
 		/*
@@ -345,8 +347,9 @@ int main() {
 		// ignore inputs if window not in focus
 		// TODO linux implementation
 		#ifdef _WIN32
-			if (!windowIsFocused(GetConsoleWindow())  // TODO this is broken??
+			if (GetConsoleWindow() == GetForegroundWindow() //GetFocus()  // TODO assure this works on everything
 		#else
+
 			if (false 
 		#endif
 		|| ignoreInputFrames) {  // ignore first couple inputs, trust me ok
