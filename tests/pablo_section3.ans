@@ -1,0 +1,17 @@
+[37m[7C[36mThis provides the best user experience on all platforms.
+
+[37m[7C[36mPabloDraw is now an integrated[37m [1;36mviewer[0;36m and [1meditor[0;36m.  PabloDraw
+[37m[7C[36msupports a multitude of formats for viewing:
+
+[37m[10C[1;33mCharacter Formats:[0;36m ANSI, ADF, ASCII, AVT, BIN, CG, IDF, XBIN,
+[37m[29C[36mTundra, CtrlA, ANSiMation
+
+[37m[10C[1;33mVector Formats:[0;36m    RIP
+
+[37m[10C[1;33mImage Formats: [0m    [36mJPEG, GIF, PNG, TIFF, BMP
+
+[37m[7C[36mCharacter and vector formats can save as any of the image formats,
+[37m[7C[36mproviding easy conversion for viewing on web pages or sharing.
+
+[37m[7C[36mPabloDraw can edit or create character and vector formats, and save as:
+[37m[7C[36m  ANSI, ASCII (no colour), BIN, Tundra, CtrlA, XBIN, and RIP.

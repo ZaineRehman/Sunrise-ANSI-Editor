@@ -108,7 +108,7 @@
  *  == BUGS ==
  * [x] 'pick to palette' crashes
  * [x] Art::trim() does some weird shit
- * [ ] when rendering, art from previous cells are not bled over
+ * [ ] UP/LEFT CURSOR CODES DO NOT WORK
  * [ ] importing is completely broken
  * 		[x] color codes do not cross over properly
  * 		[x] multiple codes not recognized properly (ex. \033[1;30m)

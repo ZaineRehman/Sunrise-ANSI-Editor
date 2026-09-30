@@ -56,7 +56,20 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 			if (line[i] == '\033') {
 				// start of ANSI code
 				codeStart = i;
-			} else if ((line[i] == 'm' || line[i] == 'h' || line[i] == 'l') && codeStart != -1) {  // TODO this only works for some codes
+			} else if ((
+					line[i] == 'm' || 
+					line[i] == 'h' || 
+					line[i] == 'l' ||
+					line[i] == 'A' ||
+					line[i] == 'B' ||
+					line[i] == 'C' ||
+					line[i] == 'D' ||
+					line[i] == 'E' ||
+					line[i] == 'F' ||
+					line[i] == 'G' ||
+					line[i] == 'H' ||
+					line[i] == 'f' 
+			) && codeStart != -1) {  // TODO this only works for some codes?
 				// end of ANSI (color) code
 				std::string code = line.substr(codeStart, i-codeStart+1);
 
@@ -139,21 +152,22 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 	// turn temp map into a real map
 	// pinnochio
 
-	// sets new x and y of cursor
-	auto moveCellCursor = [&tempMap](size_t& x, size_t& y, int up, int down, int left, int right) {
+	// sets new x and y of cursor, putting spaces in new cells
+	auto moveCellCursor = [&tempMap](size_t& x, size_t& y, size_t up, size_t down, size_t left, size_t right) {
+		if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tupdating size: " +std::to_string(up)+"," +std::to_string(down)+"," +std::to_string(left)+"," +std::to_string(right)+"," + " @ " +std::to_string(x)+"," +std::to_string(y));
 		// left
-		for (int i = 0; i < left && x > 0; ++i, --x);
+		for (size_t i = 0; i < left && x > 0; ++i, --x);
 		
 		// up
-		for (int i = 0; i < up && y > 0; ++i, --y);
+		for (size_t i = 0; i < up && y > 0; ++i, --y);
 
-		// right                                                                                  TODO check this  v
-		if (x + right >= tempMap[y].size()) tempMap[y].insert(tempMap[y].end(), (size_t)(x+right-tempMap[y].size()+1), Cell{" "});
+		// right
+		tempMap[y].insert(tempMap[y].begin()+x, right, Cell{" "});
 		x += right;
 		
 		// down
-		if (y + down >= tempMap.size()) tempMap.insert(tempMap.end(), (size_t)(y+down-tempMap.size()+1), std::vector<Cell>(x, Cell{" "}));
-		x += right;
+		tempMap.insert(tempMap.begin()+y, down, std::vector<Cell>(tempMap[y].size(), Cell{" "}));
+		y += down;
 	};
 
 	// handle cursor codes
@@ -161,8 +175,13 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 		for (size_t x = 0; x < tempMap[y].size(); ++x) {
 			std::string allOfem = tempMap[y][x].extra_codes;
 			for (const std::string& c : ANSI::splitCodes(allOfem)) {
+				reportLog("\tFound extra code: " + c);
 				if (ANSI::findCodeType(c) == -4) {
 					std::pair<int,int> info = ANSI::getCursorCodeInfo(c);
+
+					// REMOVE CURSOR CODE FROM CELL!! very important
+					// this means we need to extract every code from the otherwise unsplit cell extra codes
+					tempMap[y][x].extra_codes.erase(tempMap[y][x].extra_codes.find(c), c.size());
 
 					if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tcursor code found: " + c + "  ->  " + std::to_string(info.first) + "," + std::to_string(info.second));
 
@@ -250,7 +269,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				for (const std::string& thiscode : ANSI::splitCodes(toAdd.extra_codes)) {
 					if (ANSI::findCodeType(thiscode) != -2) {
 						// applicable
-						reportLog("\tKeeping extra code after reset: " + thiscode);
+						if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tKeeping extra code after reset: " + thiscode);
 						newExtras += thiscode;
 					}
 				}
@@ -263,7 +282,7 @@ bool loadArtFromFile(const std::string& path, Art& art) {
 				reportLog("\tChecking for bleed: " + thiscode + " (is " + std::to_string(ANSI::findCodeType(thiscode)) + ")");
 				if (ANSI::findCodeType(thiscode) == -2) {
 					// applicable
-					reportLog("\tBleeding extra code: " + thiscode);
+					if (DEBUG_REPORT_LEVEL >= 4) reportLog("\tBleeding extra code: " + thiscode);
 					priorCell.extra_codes += thiscode;
 				}
 			}
